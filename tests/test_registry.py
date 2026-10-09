@@ -1,5 +1,6 @@
 """Synthetic tests: no live OAuth data or external Antigravity interaction."""
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +8,7 @@ from unittest.mock import patch
 
 from raif_ag_supervisor.registry import LocalAccountRegistry, RegistryError
 from raif_ag_supervisor.vault import InMemoryTestVault
+from raif_ag_supervisor.windows_vault import WindowsCredentialVault
 
 
 def manifest():
@@ -105,6 +107,18 @@ class RegistryTests(unittest.TestCase):
         self.registry.registry_path.write_text('{"version":1,"accounts":[],"refresh_token":"synthetic"}')
         with self.assertRaises(RegistryError):
             self.registry.ids()
+
+    @unittest.skipUnless(os.name == "nt", "native Windows Credential Manager only")
+    def test_native_registry_with_synthetic_credentials(self):
+        vault = WindowsCredentialVault()
+        handles = self.registry.import_manifest(manifest(), vault)
+        try:
+            self.assertEqual(self.registry.ids(), handles)
+            self.assertTrue(all(vault.has(handle) for handle in handles))
+        finally:
+            for handle in handles:
+                vault.delete(handle)
+        self.assertTrue(all(not vault.has(handle) for handle in handles))
 
     def test_generated_collision_does_not_overwrite(self):
         account_id = "raif-" + "a" * 32
