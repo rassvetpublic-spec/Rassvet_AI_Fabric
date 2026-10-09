@@ -51,4 +51,6 @@
 - [Microsoft CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata)
 - [Microsoft CryptUnprotectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptunprotectdata)
 
-**Текущий курсор после офлайн-разработки:** `RAI-FABRIC/09.4-WINDOWS_CI_DPAPI_VERIFICATION`.
+**Подтверждённая проверка:** [Windows CI №38001948018](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38001948018) — 116/116 тестов на Python 3.11 и 3.13. Реальные токены не обрабатывались.
+
+**Следующий курсор:** `RAI-FABRIC/09.5-TRUSTED_JWKS_AND_VAULT_PERSISTENCE`.
