@@ -1,0 +1,25 @@
+{
+  "schema": "RAI_FABRIC_STAGE_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "language": "ru-RU",
+  "stage": "RAI-FABRIC/09.4-PACKAGING_FAILURE_CORRECTED",
+  "verdict": "PARTIAL",
+  "evidence": {
+    "failed_github_actions_run": 38001746366,
+    "failure_cause": "license_not_in_project_section",
+    "corrected_pyproject": true,
+    "packaging_regression_tests_added": 2,
+    "local_test_discovery": 116,
+    "local_test_executed": 113,
+    "local_skipped_windows": 3,
+    "local_test_errors": 0,
+    "wheel_built_offline": true,
+    "windows_dpapi_test": "PENDING",
+    "real_user_credentials_accessed": false,
+    "real_inference_requests": 0,
+    "bpr40_mutations": 0,
+    "tri_tower_publication": false
+  },
+  "cursor": "RAI-FABRIC/09.4-WINDOWS_CI_RETRY",
+  "next_action": "Переопубликовать исправленный TOML, повторить Windows CI и проверить DPAPI на синтетических данных."
+}

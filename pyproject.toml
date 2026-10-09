@@ -8,10 +8,10 @@ version = "0.1.0"
 description = "Независимое локальное ядро задач и MCP-шлюз только для чтения, ориентированные на Windows"
 requires-python = ">=3.11"
 dependencies = []
+license = {text = "MIT"}
 
 [project.optional-dependencies]
 security = ["PyJWT[crypto]>=2.10,<3"]
-license = {text = "MIT"}
 
 [project.scripts]
 rai = "rai_fabric.cli:main"
