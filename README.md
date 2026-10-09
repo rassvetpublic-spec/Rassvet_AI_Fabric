@@ -108,6 +108,7 @@ python -m rai_fabric --db C:\Temp\rai-test\state.db mcp --workspace C:\Temp\rai-
 - [Дорожная карта и критерии приёмки](docs/ROADMAP.md)
 - [Предварительная проверка Windows и подписных каналов](docs/WINDOWS_PREFLIGHT.md)
 - [Офлайн-контракт Codex App Server](docs/CODEX_APP_PROTOCOL.md)
+- [Протокол тестирования, редакция R5](docs/TEST_RESULTS_2026-10-10_R5.md)
 - [Протокол тестирования, редакция R4](docs/TEST_RESULTS_2026-10-10_R4.md)
 - [Протокол тестирования, редакция R3](docs/TEST_RESULTS_2026-10-10_R3.md)
 - [Протокол тестирования, редакция R2](docs/TEST_RESULTS_2026-10-10_R2.md)
