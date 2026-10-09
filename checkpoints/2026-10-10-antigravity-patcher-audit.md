@@ -41,3 +41,15 @@ AG_pather / CP-03 complete → CP-04 provenance AvenCores → CP-05 full static 
 
 ## CURSOR (обновлено)
 AG_pather / CP-04 COMPLETE → CP-05 full static audit → CP-06 AG-tools compatibility.
+
+
+## CP-05 — свежесть и границы статического аудита (2026-10-10)
+- SourceForge подтверждает V1.3.8 (2026-09-21) как самый новый из видимых выпусков. Источник: https://sourceforge.net/projects/open-antigravity-patcher/files/V1.3.8/
+- V1.3.8: архивы исходников ZIP 155.4 KB и TAR.GZ 141.9 KB; Windows x64/ARM64, Linux x64/ARM64, macOS; заявлен ARM64 патч для AGY CLI 1.2.7.
+- GitHub Actions release: https://github.com/AvenCores/open-antigravity-patcher/actions/runs/35653528572; VirusTotal ссылки размещены в SourceForge release notes. Содержимое проверок не инспектировалось.
+- Наблюдаемый GitHub исходный файл (индекс): https://github.com/AvenCores/open-antigravity-patcher/blob/main/source/patcher/manager/patcher.py (454 lines); прямое получение страницы даёт 404.
+- Попытка скачать архив V1.3.8 в среду аудита не удалась: DNS для downloads.sourceforge.net отсутствует. Поэтому полного исходного анализа AvenCores нет; уверенный вывод о безопасности/сетевой активности делать нельзя.
+- QNIX: ранее проверенные manager.py сетевые вызовы OAuth и quota, работа с refresh_token, credential manager, база SQLite и сигнатуры патча остаются действительными только для проверенной версии файла blob 544b1aa3e438804b02aa32bb395544cc6f2493ef.
+- Совместимость отдельного AG-tools НЕ подтверждена ни функциональным тестом, ни анализом конкретной версии.
+
+CURSOR: AG_pather / CP-05 PARTIAL (blocked source retrieval) → CP-06 AG-tools identification → CP-07 runtime validation (safe test environment).
