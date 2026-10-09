@@ -1,9 +1,12 @@
 # Budget policy: never test on each ordinary commit.
-# Create ag-ci-linux-<checkpoint> or ag-ci-full-<checkpoint> tag when validation is needed.
+# Validate using a temporary ag-ci-linux-* / ag-ci-full-* branch, or a matching tag.
 # workflow_dispatch becomes available after this workflow is present on the default branch.
 name: AG Supervisor Tests
 on:
   push:
+    branches:
+      - 'ag-ci-linux-*'
+      - 'ag-ci-full-*'
     tags:
       - 'ag-ci-linux-*'
       - 'ag-ci-full-*'
@@ -35,7 +38,7 @@ jobs:
       - name: Run synthetic tests
         run: python -m unittest discover -s tests -v
   unit-windows:
-    if: ${{ startsWith(github.ref, 'refs/tags/ag-ci-full-') || (github.event_name == 'workflow_dispatch' && inputs.include_windows) }}
+    if: ${{ startsWith(github.ref, 'refs/tags/ag-ci-full-') || startsWith(github.ref, 'refs/heads/ag-ci-full-') || (github.event_name == 'workflow_dispatch' && inputs.include_windows) }}
     runs-on: windows-latest
     timeout-minutes: 7
     steps:
