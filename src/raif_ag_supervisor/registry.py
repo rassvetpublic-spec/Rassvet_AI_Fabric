@@ -51,9 +51,12 @@ def _read(path: Path, key: str) -> list[str]:
         if len(body) > _MAX_FILE:
             raise RegistryError("registry metadata is oversized")
         data = json.loads(body)
-        if not isinstance(data, dict) or set(data) != {"version", key} or data["version"] != 1:
+        if not isinstance(data, dict) or set(data) != {"version", key} or type(data["version"]) is not int or data["version"] != 1:
             raise RegistryError("unknown registry metadata schema")
-        return _validate_ids(data[key])
+        ids = _validate_ids(data[key])
+        if key == "allocated" and not ids:
+            raise RegistryError("empty pending journal is invalid")
+        return ids
     except (OSError, ValueError, UnicodeError, TypeError) as error:
         raise RegistryError("cannot read registry metadata") from None
 
