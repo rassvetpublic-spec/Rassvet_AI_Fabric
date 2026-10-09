@@ -14,6 +14,12 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(len(parsed), 2)
         self.assertEqual(parsed[0].email, "one@example.test")
 
+    def test_imported_credential_hidden_from_repr(self):
+        record = parse_manifest(manifest([
+            {"email": "one@example.test", "refresh_token": "synthetic-internal-secret"}
+        ]))[0]
+        self.assertNotIn("synthetic-internal-secret", repr(record))
+
     def test_duplicate_case_insensitive(self):
         with self.assertRaises(ImportFormatError):
             parse_manifest(manifest([
