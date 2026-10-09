@@ -1,4 +1,4 @@
-"""Read-only local tool gateway. Never runs arbitrary shell from MCP."""
+"""Локальный шлюз инструментов только для чтения, без произвольных shell-команд."""
 from __future__ import annotations
 
 import json
@@ -22,41 +22,41 @@ class Gateway:
         self.store = store
         self.workspace = Path(workspace).expanduser().resolve(strict=True)
         if not self.workspace.is_dir():
-            raise FabricError("Workspace must be an existing folder")
+            raise FabricError("Рабочий каталог должен существовать")
 
     def _safe_path(self, relative: str) -> Path:
         if not isinstance(relative, str) or len(relative) > 2048 or "\x00" in relative:
-            raise FabricError("Invalid relative path")
+            raise FabricError("Некорректный относительный путь")
         candidate = Path(relative)
         if candidate.is_absolute() or ".." in candidate.parts:
-            raise FabricError("Only relative paths within the workspace are allowed")
+            raise FabricError("Разрешены только относительные пути внутри рабочего каталога")
         if any(part.casefold() in _FORBIDDEN_PARTS for part in candidate.parts):
-            raise FabricError("Protected directory")
+            raise FabricError("Доступ к защищённому каталогу запрещён")
         name = candidate.name.casefold()
         if (name in _FORBIDDEN_NAMES or name.startswith(".env") or
             name.endswith((".db-wal", ".db-shm", ".db-journal", ".sqlite-wal", ".sqlite-shm",
                            ".sqlite3-wal", ".sqlite3-shm")) or
             candidate.suffix.casefold() in _FORBIDDEN_SUFFIXES):
-            raise FabricError("Protected filename")
+            raise FabricError("Доступ к защищённому файлу запрещён")
         unresolved = self.workspace / candidate
-        # Refuse any link/reparse traversal: symlink aliases must not bypass guards.
+        # Запрещаем проход через ссылки и точки перенаправления Windows.
         cur = self.workspace
         for part in candidate.parts:
             cur = cur / part
             if cur.is_symlink() or (hasattr(cur, "is_junction") and cur.is_junction()):
-                raise FabricError("Links and junctions are not exposed through MCP")
+                raise FabricError("Ссылки и junction недоступны через MCP")
         resolved = unresolved.resolve(strict=True)
         if not resolved.is_relative_to(self.workspace):
-            raise FabricError("Path escapes workspace after symlink resolution")
+            raise FabricError("Путь выходит за пределы рабочего каталога после разрешения ссылок")
         rel = resolved.relative_to(self.workspace)
         if any(part.casefold() in _FORBIDDEN_PARTS for part in rel.parts):
-            raise FabricError("Protected resolved directory")
+            raise FabricError("Доступ к защищённому конечному каталогу запрещён")
         rname = rel.name.casefold()
         if (rname in _FORBIDDEN_NAMES or rname.startswith(".env") or
             rname.endswith((".db-wal", ".db-shm", ".db-journal", ".sqlite-wal", ".sqlite-shm",
                             ".sqlite3-wal", ".sqlite3-shm")) or
             rel.suffix.casefold() in _FORBIDDEN_SUFFIXES):
-            raise FabricError("Protected resolved filename")
+            raise FabricError("Доступ к защищённому конечному файлу запрещён")
         return resolved
 
     def health(self) -> dict[str, Any]:
@@ -66,19 +66,19 @@ class Gateway:
     def read_file(self, path: str) -> dict[str, Any]:
         file = self._safe_path(path)
         if not file.is_file():
-            raise FabricError("Not a regular file")
+            raise FabricError("Указанный путь не является обычным файлом")
         if file.stat().st_size > _MAX_TEXT_BYTES:
-            raise FabricError(f"File exceeds the {_MAX_TEXT_BYTES}-byte read-only MCP limit")
+            raise FabricError(f"Размер файла превышает лимит MCP на чтение: {_MAX_TEXT_BYTES} байт")
         data = file.read_bytes()
         if b"\x00" in data:
-            raise FabricError("Binary files are not readable through this gateway")
+            raise FabricError("Чтение бинарных файлов через этот шлюз запрещено")
         return {"path": str(file.relative_to(self.workspace)), "text": data.decode("utf-8"),
                 "bytes": len(data)}
 
     def list_files(self, path: str = ".", limit: int = 50) -> dict[str, Any]:
         directory = self._safe_path(path)
         if not directory.is_dir():
-            raise FabricError("Not a directory")
+            raise FabricError("Указанный путь не является каталогом")
         limit = max(1, min(int(limit), 100))
         result = []
         for item in sorted(directory.iterdir(), key=lambda p: p.name.casefold()):
@@ -103,7 +103,7 @@ class Gateway:
     def gpu_status(self) -> dict[str, Any]:
         executable = shutil.which("nvidia-smi")
         if not executable:
-            return {"available": False, "reason": "nvidia-smi is not on PATH"}
+            return {"available": False, "reason": "Утилита nvidia-smi не обнаружена в PATH"}
         args = [executable, "--query-gpu=name,memory.total,memory.free,utilization.gpu", "--format=csv,noheader,nounits"]
         result = subprocess.run(args, capture_output=True, text=True, timeout=5, check=False)
         return {"available": result.returncode == 0, "gpu": result.stdout.strip()[:1000],
@@ -126,7 +126,7 @@ class Gateway:
             return self.git_status()
         if name == "rai_gpu_status":
             return self.gpu_status()
-        raise FabricError("Unknown MCP tool")
+        raise FabricError("Неизвестный MCP-инструмент")
 
 
 def tools_manifest() -> list[dict[str, Any]]:
@@ -135,12 +135,12 @@ def tools_manifest() -> list[dict[str, Any]]:
                 "inputSchema": {"type": "object", "properties": properties,
                                 "required": required or [], "additionalProperties": False}}
     return [
-        spec("rai_health", "Read-only service health; no auth information", {}),
-        spec("rai_tasks_list", "List local task metadata, never lease tokens", {"limit": {"type": "integer"}}),
-        spec("rai_task_get", "Read one local task and its latest checkpoint", {"task_id": {"type": "string"}}, ["task_id"]),
-        spec("rai_checkpoint_latest", "Read/verify latest checkpoint", {"task_id": {"type": "string"}}, ["task_id"]),
-        spec("rai_workspace_list", "List allowlisted workspace files", {"path": {"type": "string"}, "limit": {"type": "integer"}}),
-        spec("rai_workspace_read", "Read allowlisted UTF-8 file up to 32 KiB", {"path": {"type": "string"}}, ["path"]),
-        spec("rai_git_status", "Read Git working tree status", {}),
-        spec("rai_gpu_status", "Read nvidia-smi status (no inference yet)", {}),
+        spec("rai_health", "Показать состояние сервиса; без данных авторизации", {}),
+        spec("rai_tasks_list", "Получить список задач без токенов аренды", {"limit": {"type": "integer"}}),
+        spec("rai_task_get", "Прочитать задачу и последний чекпойнт", {"task_id": {"type": "string"}}, ["task_id"]),
+        spec("rai_checkpoint_latest", "Прочитать и проверить контрольную сумму последнего чекпойнта", {"task_id": {"type": "string"}}, ["task_id"]),
+        spec("rai_workspace_list", "Показать разрешённые файлы рабочего каталога", {"path": {"type": "string"}, "limit": {"type": "integer"}}),
+        spec("rai_workspace_read", "Прочитать разрешённый UTF-8-файл размером до 32 КиБ", {"path": {"type": "string"}}, ["path"]),
+        spec("rai_git_status", "Показать состояние рабочего дерева Git без изменений", {}),
+        spec("rai_gpu_status", "Показать диагностику nvidia-smi (вывод моделей ещё не реализован)", {}),
     ]

@@ -1,39 +1,48 @@
-# Roadmap and acceptance gates
+# Дорожная карта и критерии приёмки
 
-## R0.1 — Original local core (this package)
-- [x] Explicit isolated initialization
-- [x] SQLite task queue/dependency, exclusive claim, leases, heartbeat, fencing generation
-- [x] Durable checkpoint with stage, cursor, sha256 and readback
-- [x] Crash recovery: BLOCKED for reconciliation, no blind relaunch
-- [x] MCP stdio read-only tools (legacy handshake)
-- [x] PowerShell demo and unit tests
-- [ ] Native Windows validation on the actual host
-- [ ] Antigravity real login/inference (not tested, user action required)
+**Официальный язык реализации и документации — русский.** Машинные идентификаторы остаются неизменными.
 
-## R0.2 — Provider adapters
-- [ ] Codex App Server JSON-RPC, clientInfo, thread/start, turn/start, delta + turn/completed
-- [ ] Explicit ChatGPT plan OAuth (SIWC, PKCE, token refresh, Windows credential storage)
-- [ ] Event/approval/cancel handling; no API-key fallback
-- [ ] Antigravity safe Windows launcher (avoid .cmd argument injection), resume by conversation_id
-- [ ] Verified Windows process supervision (Job Objects) and cancellation/timeout tests
-- [ ] Per-provider usage records: input/output/cache, no fake money estimates
+## R0.1 — собственное локальное ядро
 
-## R0.3 — Local GPU and budget-aware dispatcher
-- [ ] Ollama or llama.cpp local model selection, 5070 Ti VRAM preflight, latency/quality benchmark
-- [ ] Local embeddings/RAG, prompt shaping, context byte caps and retry budgets
-- [ ] No billable API fallback unless operator explicitly enables it
+- [x] Создание отдельной локальной базы только по явной команде.
+- [x] SQLite-очередь, зависимости, эксклюзивная выдача задачи, аренда, heartbeat, защита поколением аренды.
+- [x] Чекпойнт с этапом, курсором, SHA-256 и проверкой при чтении.
+- [x] Восстановление: `BLOCKED` до ручной сверки, без повторного запуска вслепую.
+- [x] MCP по stdio: восемь инструментов только для чтения, согласование legacy MCP.
+- [x] PowerShell-демонстрация и автоматические тесты.
+- [x] Русская основная документация, справка CLI, ошибки и описания MCP-инструментов.
+- [ ] Нативная проверка на реальном Windows-компьютере.
+- [ ] Настоящий вход и вывод Antigravity (нужны разрешение пользователя и контроль квоты).
 
-## R0.4 — BPR40 and remote chat connectivity
-- [ ] Verify current Router authority, publication schemas and allowed mutations
-- [ ] Read-only BPR40 bridge, then independently approved tri-tower checkpoint publication
-- [ ] Signed receipts, independent review, metadata-only sharing with cloud agents
-- [ ] Secure MCP tunnel/authorized user consent for ChatGPT Web; no scraping private endpoints
+## R0.2 — исполнители и подписные модели
 
-## R0.5 — Long-running production controller
-- [ ] Persistent daemon/service on Windows, queue polling and explicit scheduling
-- [ ] Worktrees/conflict locks, artifact diffs, integration QA and rollback
-- [ ] Crash/reboot recovery tests, watchdog and UI with current cursor/status
+- [ ] Codex App Server по JSON-RPC: `clientInfo`, `thread/start`, `turn/start`, события `delta`, `turn/completed`.
+- [ ] Официальный вход ChatGPT там, где подписка и клиент имеют право на использование; PKCE, обновление токенов, защищённое хранилище Windows.
+- [ ] Обработка согласований, отмены и завершения без автоматического перехода на платный API.
+- [ ] Безопасный запуск Antigravity в Windows: не передавать недоверенные аргументы через `.cmd`.
+- [ ] Продолжение диалога по `conversation_id`, когда это поддерживается установленной версией.
+- [ ] Управление процессами через Windows Job Objects, проверки отмены и тайм-аутов.
+- [ ] Учёт вызовов/квот провайдера, без вымышленных оценок денежных затрат.
 
-## Distinguish done vs planned
+## R0.3 — локальный GPU и экономная диспетчеризация
 
-The code in R0.1 only implements the checked items. The remaining rows must not be described as working. Avoid using the word "autonomous" until native cancellation, crash recovery, and provider integration have passed acceptance tests.
+- [ ] Ollama или llama.cpp, проверка VRAM RTX 5070 Ti, сравнение задержек и качества.
+- [ ] Локальные embeddings/RAG, сокращение контекста и ограничения повторных попыток.
+- [ ] Отсутствие платного API fallback без отдельного включения оператором.
+
+## R0.4 — BPR40 и связь с веб-чатом
+
+- [ ] Проверка активного Router, схем публикации и границ полномочий.
+- [ ] Сначала BPR40-адаптер только для чтения; затем отдельно одобренная запись чекпойнтов в три башни.
+- [ ] Подписанные подтверждения, независимая приёмка и обмен только минимальными метаданными с облачными агентами.
+- [ ] Защищённое подключение ChatGPT Web к MCP с согласием пользователя; без извлечения данных через недокументированные внутренние endpoint.
+
+## R0.5 — длительная работа на Windows
+
+- [ ] Постоянный процесс/служба, опрос очереди и планирование по явным правилам.
+- [ ] Git worktrees, блокировки файлов, проверка diff, интеграционные тесты и откат.
+- [ ] Проверки восстановления после crash/reboot, watchdog, отображение курсора и состояния.
+
+## Разграничение выполненного и планируемого
+
+Готовыми считаются **только** отмеченные пункты. Слово «автономная» не следует использовать применительно к версии 0.1, пока нативные тесты отмены, восстановления и реальных провайдеров не пройдены.

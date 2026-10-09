@@ -22,8 +22,8 @@
   "authority": {
     "bpr40_authority_mutations": 0,
     "bpr40_tri_tower_publication": false,
-    "publication_scope": "GitHub project repository only"
+    "publication_scope": "Только репозиторий проекта на GitHub"
   },
   "next_cursor": "RAI-FABRIC/08-WINDOWS_READONLY_SMOKE_THEN_CODEX_APP_SERVER",
-  "next_action": "Validate on Windows in isolated workspace; then implement Codex App Server subscription adapter without billable API fallback."
+  "next_action": "Проверить Windows в изолированном каталоге, затем реализовать адаптер Codex App Server с подписной авторизацией и запретом платного API по умолчанию."
 }

@@ -90,7 +90,7 @@ class ToolTests(unittest.TestCase):
         try:
             (self.root/'bar.txt').symlink_to(self.root/'foo.txt')
         except (OSError, NotImplementedError):
-            self.skipTest('OS does not permit symlinks')
+            self.skipTest('ОС запрещает создание символических ссылок')
         with self.assertRaises(FabricError):
             self.gateway.read_file('bar.txt')
 

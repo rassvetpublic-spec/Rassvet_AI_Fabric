@@ -1,76 +1,86 @@
-# Rassvet AI Fabric / 0.1.0
+# Rassvet AI Fabric — независимая среда разработки ИИ
 
-**Original implementation, from zero.** Windows-first development harness prototype with a transactional local queue, read-only MCP gateway, explicit task checkpoints, and opt-in worker adapters. The repository does **not** copy code from oh-my-codex, Superpowers, or the preceding `omx-app` package.
+**Официальный язык проекта — русский.** Это правило распространяется на документацию, интерфейс командной строки, сообщения об ошибках, описания MCP-инструментов, отчёты, шаблоны и новые изменения. Технические названия протоколов, параметры CLI, ключи JSON и программные идентификаторы сохраняются без перевода для совместимости. Подробности — в [языковой политике](docs/LANGUAGE_POLICY.md).
 
-## Runtime and safety
+**Версия 0.1.0 (локальное ядро).** Исходный код написан независимо. [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) и [Superpowers](https://github.com/obra/superpowers) служат донорами идей; их исходники и предыдущий `omx-app` не копировались в эту реализацию.
 
-- Python 3.11+ (standard library only at runtime), Windows 10/11 or Linux.
-- SQLite task state with one transaction per task transition. Durable events and SHA-256 checkpoint readback.
-- Task dependency graph, leases, heartbeat, fencing generation, cancellation request, and manual recovery after lease expiry.
-- MCP stdio: `initialize`, `notifications/initialized`, `ping`, `tools/list`, `tools/call`; negotiates the **legacy 2025-11-25 / 2025-06-18 protocol**, not the newer 2026-07-28 transport.
-- MCP is read-only. There is no shell execution, file write, token sharing, network listener, or remote access enabled through MCP.
-- `mock` provider works without any model usage. Antigravity headless `agy -p ... --output-format json --sandbox` is an opt-in adapter and is **not tested on the user's actual Windows host**. A Windows `.cmd`/`.bat` launcher is rejected pending a Windows-specific safe argument transport.
-- `codex-app` is a deliberately non-executing provider slot. Codex App Server integration requires a separate OAuth/client and event/approval test, not use of reverse-engineered web endpoints.
-- NVIDIA GPU diagnostic is available through `nvidia-smi` if present. GPU inference, persistent supervisor, local LLM model routing, BPR40 publication, Chrome bridge, and real Codex app-server execution are **not yet implemented**.
-- No billable API provider or automatic fallback. This package does not register/login via OAuth or ask for account tokens.
+## Что реализовано
 
-## PowerShell smoke test (isolated TEMP workspace)
+1. **Локальная очередь задач на SQLite** с зависимостями, транзакциями, выдачей аренды (lease), heartbeat, поколением аренды для защиты от устаревших исполнителей и запросом отмены.
+2. **События и чекпойнты** после ключевых переходов. Содержат этап, статус проверки, текущий курсор, доказательства и SHA-256, проверяемый при чтении.
+3. **Безопасное восстановление.** Просроченная задача получает `BLOCKED` и курсор `VERIFY_EXTERNAL_SIDE_EFFECTS`; внешние действия не повторяются без проверки оператором.
+4. **MCP по stdio — только чтение:** восемь инструментов для задач, чекпойнтов, разрешённых файлов, Git и диагностики NVIDIA. Сетевой порт не открывается.
+5. **Имитатор `mock`** для сквозной проверки без модели, интернета и расходов; экспериментальный исполнитель Antigravity через `agy` требует явного флага разрешения.
+6. **PowerShell-сценарии** тестирования и демонстрации с отдельной тестовой БД в `%TEMP%`.
 
-From the extracted repository root in PowerShell:
+## Пока не реализовано
 
-1. `Set-ExecutionPolicy -Scope Process Bypass -Force` (only if needed and allowed by your security policy).
-2. `./scripts/run-tests.ps1`
-3. `./scripts/demo.ps1`
+- Работающий драйвер Codex App Server, OAuth-поток и вызовы моделей по подписке.
+- Локальный вывод модели на RTX 5070 Ti: доступна только диагностика `nvidia-smi`.
+- Управление Chrome / ChatGPT Web и удалённое подключение к MCP.
+- Фоновый Windows Service, гарантированный перезапуск после перезагрузки и управление всем деревом процессов.
+- Публикация в BPR40/DUTY и три башни. **Проект не имеет полномочий менять внешнюю систему BPR40.**
+- Защита для недоверенной многопользовательской среды и полноценная удалённая авторизация.
 
-The demo creates a **new** temporary test database under `%TEMP%`, submits a mock task, completes it, and reports the current status. It never edits `CODEX_HOME`, BPR40, `.codex`, `AGENTS.md`, Windows registry, or browser state.
+## Быстрый запуск на Windows
 
-Alternatively set `PYTHONPATH` to the package `src` directory, then use the standard module command. The CLI always requires `--db <dedicated-local-path>`. Only `init` creates a new database:
+Требования: Python **3.11+**, Windows 10/11 (или Linux для тестов), без сторонних библиотек во время работы ядра. Распакуйте проект **отдельно** от `.codex`, `C:\CODEX` и `C:\GIT\BPR40`.
 
-- `python -m rai_fabric --db <isolated-state.db> init`
-- `python -m rai_fabric --db <isolated-state.db> submit --workspace <your-test-repository> --provider mock --objective "test task"`
-- `python -m rai_fabric --db <isolated-state.db> run-once --provider mock`
-- `python -m rai_fabric --db <isolated-state.db> tasks`
-- `python -m rai_fabric --db <isolated-state.db> mcp --workspace <your-test-repository>`
+Откройте PowerShell в корне репозитория и выполните:
 
-Manual worker operations (`checkpoint`, `heartbeat`, `finish`, `confirm-cancel`) require an active lease token in the `RAI_LEASE_TOKEN` environment variable. This is safer than putting a credential in a command-line argument. Do not log or disclose claim outputs because `claim` returns a lease token to the local operator.
+1. `./scripts/run-tests.ps1` — тесты.
+2. `./scripts/demo.ps1` — локальная демонстрация с `mock`.
+3. Проверьте выведенный каталог `%TEMP%`: там создана отдельная SQLite-БД.
 
-## MCP clients
+Не требуется менять `CODEX_HOME`, `AGENTS.md`, профиль Codex или реестр. Если выполнение PS1 запрещено локальной политикой, согласуйте разрешение для текущего процесса; не меняйте системную политику без необходимости.
 
-Register an stdio MCP server with Python executable and arguments:
+## Работа через CLI
 
-- `-m`, `rai_fabric`, `--db`, `<isolated-state.db>`, `mcp`, `--workspace`, `<explicitly-allowed-test-repository>`.
-- Set `PYTHONPATH` to the extracted repository's `src` directory, or install the package in an isolated venv and use its interpreter.
-- Use a client that supports the 2025-11-25 MCP handshake, not a mandatory 2026-only MCP implementation.
+CLI сохраняет существующие английские **команды и параметры** как машинный контракт, но выводит справку и сообщения оператору **на русском**.
 
-Eight read-only tools:
+Сначала установите `PYTHONPATH` в `<корень-проекта>/src` либо установите пакет в отдельное виртуальное окружение. Базовые операции (пути ниже — примеры):
 
-| Tool | Function |
+```powershell
+python -m rai_fabric --db C:\Temp\rai-test\state.db init
+python -m rai_fabric --db C:\Temp\rai-test\state.db submit --workspace C:\Temp\rai-test --provider mock --objective "Проверить очередь задач"
+python -m rai_fabric --db C:\Temp\rai-test\state.db run-once --provider mock
+python -m rai_fabric --db C:\Temp\rai-test\state.db tasks
+python -m rai_fabric --db C:\Temp\rai-test\state.db mcp --workspace C:\Temp\rai-test
+```
+
+`--db` обязателен: используется **отдельная** локальная БД. Только команда `init` создаёт новую БД. Операции исполнителя `heartbeat`, `checkpoint`, `finish`, `confirm-cancel` требуют активный токен аренды в переменной окружения `RAI_LEASE_TOKEN` (не передавайте его в аргументах команд и не пишите в журнал). Команда `claim` выдаёт токен только локальному оператору.
+
+## MCP-интерфейс
+
+Для MCP-клиента зарегистрируйте stdio-сервер: исполняемый файл Python, аргументы `-m rai_fabric --db <изолированная-БД> mcp --workspace <разрешённый-каталог>`. Требуется `PYTHONPATH` на `src` либо отдельная установка пакета. Поддерживаются согласования MCP **2025-11-25** и **2025-06-18**; транспорт **2026-07-28** пока не реализован.
+
+| Инструмент | Назначение |
 |---|---|
-| `rai_health` | Service identity and mode |
-| `rai_tasks_list` | Task metadata without lease credentials |
-| `rai_task_get` | Task + current checkpoint |
-| `rai_checkpoint_latest` | Checkpoint with recomputed SHA-256 |
-| `rai_workspace_list` | Bounded directory listing, denylisted secrets |
-| `rai_workspace_read` | Bounded UTF-8 read (max 32 KiB) |
-| `rai_git_status` | Git tracked-file status |
-| `rai_gpu_status` | NVIDIA diagnostics via nvidia-smi |
+| `rai_health` | Версия, режим работы и корень разрешённого каталога |
+| `rai_tasks_list` | Список задач без токенов аренды |
+| `rai_task_get` | Задача и текущий чекпойнт |
+| `rai_checkpoint_latest` | Чекпойнт с перепроверкой SHA-256 |
+| `rai_workspace_list` | Список разрешённых файлов с ограничением размера ответа |
+| `rai_workspace_read` | Чтение UTF-8-файла размером до 32 КиБ |
+| `rai_git_status` | Состояние Git без изменяющих команд |
+| `rai_gpu_status` | Диагностика NVIDIA через `nvidia-smi` |
 
-Do not expose this read-only stdio server to untrusted remote users yet: file names, task objective texts and Git status can still be confidential. It is designed for a local trusted client inside an explicitly selected workspace. There is no authentication, network gateway, audit policy, or adversarial multi-user filesystem defense.
+**Ограничения безопасности.** MCP доступен только локальному доверенному клиенту. Защита запрещает опасные пути, файлы секретов, переходы через symlink/junction, произвольные команды и запись. Но даже имена файлов, тексты задач и Git status могут содержать конфиденциальные данные. Не публикуйте stdio-интерфейс в сети без отдельного слоя аутентификации и аудита.
 
-## Checkpoint semantics
+## Смысл статусов и чекпойнтов
 
-Every task transition includes an event. Submission, dispatch, worker result, cancellation, expired-lease recovery, and explicit requeue also create a structured checkpoint. Each checkpoint records `{task_id, timestamp, stage, verdict, cursor, evidence}` plus SHA-256; the latest checkpoint is verified on read. SHA-256 **detects accidental alterations**, but is not a tamperproof signature. A PASS worker result certifies that the *executor stage completed*, not that an independent code review was performed.
+Машинные значения `QUEUED`, `RUNNING`, `COMPLETE`, `FAILED`, `BLOCKED`, `CANCELLED` и `PASS`, `PARTIAL`, `BLOCKED` **не переводятся**: это стабильная схема хранения и обмена. Пользовательские объяснения этих статусов всегда даются по-русски. SHA-256 обнаруживает случайные изменения, но не является цифровой подписью. Результат `PASS` от имитатора подтверждает работу транспорта, **не выполнение реальной задачи**.
 
-`recover` marks expired RUNNING work as BLOCKED / `VERIFY_EXTERNAL_SIDE_EFFECTS`. The operator must verify side effects and explicitly run `requeue --acknowledge ...` to retry. External agents are never restarted blindly.
+`recover` помечает просроченные задачи `BLOCKED`; после проверки внешних побочных эффектов оператор вправе вручную выполнить `requeue --acknowledge ...`. Автоматически повторно запускать внешнего агента небезопасно.
 
-## Evidence and future stages
+## Документация и подтверждение результатов
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/ROADMAP.md`](docs/ROADMAP.md), and the bundled test suite. Testing has been performed in an isolated Linux environment with Python 3.13. Native Windows and real provider integration remain pending acceptance tests. All generated package files have a manifest with SHA-256 hashes.
+- [Архитектура и границы доверия](docs/ARCHITECTURE.md)
+- [Дорожная карта и критерии приёмки](docs/ROADMAP.md)
+- [Протокол тестирования](docs/TEST_RESULTS_2026-10-10.md)
+- [Языковая политика](docs/LANGUAGE_POLICY.md)
+- [Русский перевод условий лицензии MIT (справочно)](docs/LICENSE_RU.md)
 
-## Donor references
+Базовая версия тестировалась в изолированном Linux с Python 3.13; реальная интеграция с подписными агентами и Windows **не проверена**. Новая локализация проходит отдельные тесты и фиксируется отдельным чекпойнтом. Суммы файлов текущей версии приведены в `SHA256SUMS.txt`.
 
-The **ideas**, not source code, were informed by:
-- https://github.com/Yeachan-Heo/oh-my-codex (MIT, Yeachan Heo)
-- https://github.com/obra/superpowers (MIT, Jesse Vincent)
-
-Independent design and implementation; no dependency on the donor repositories. BPR40/DUTY remains an external, read-only authority until an explicitly approved bridge is validated.
+Исходная лицензия MIT остаётся в `LICENSE` на английском как юридически значимый первоисточник. Официальный язык **всей авторской документации и интерфейса проекта** — русский.

@@ -1,4 +1,4 @@
-"""Transactional task state; deliberately independent of OMX and Superpowers code."""
+"""Транзакционное состояние задач; не использует код OMX или Superpowers."""
 from __future__ import annotations
 
 import hashlib
@@ -14,7 +14,7 @@ from typing import Any, Iterator
 
 
 class FabricError(Exception):
-    """A stable, operator-readable failure."""
+    """Ошибка с сообщением для оператора."""
 
 
 def canonical(value: Any) -> str:
@@ -35,7 +35,7 @@ class FabricStore:
         if initialize:
             self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.is_file() and not initialize:
-            raise FabricError(f"State database is absent; initialize explicitly: {self.path}")
+            raise FabricError(f"База состояния отсутствует; создайте её явной командой: {self.path}")
         self.db = sqlite3.connect(str(self.path), timeout=10, isolation_level=None)
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA foreign_keys=ON")
@@ -45,7 +45,7 @@ class FabricStore:
             self._init_schema()
         elif not self.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='tasks'").fetchone():
             self.close()
-            raise FabricError("The selected database is not a Rassvet AI Fabric store")
+            raise FabricError("Выбранная БД не является хранилищем Rassvet AI Fabric")
 
     def close(self) -> None:
         self.db.close()
@@ -124,9 +124,9 @@ class FabricStore:
     def _checkpoint(self, task_id: str, stage: str, verdict: str, cursor: str,
                     evidence: dict[str, Any]) -> dict[str, Any]:
         if verdict not in {"PASS", "PARTIAL", "BLOCKED"}:
-            raise FabricError("Invalid checkpoint verdict")
+            raise FabricError("Недопустимый статус проверки чекпойнта")
         if not stage or not cursor or len(cursor) > 512:
-            raise FabricError("Checkpoint stage and cursor are required")
+            raise FabricError("Для чекпойнта обязательны этап и курсор")
         created = time.time()
         payload = {"task_id": task_id, "timestamp": created, "stage": stage,
                    "verdict": verdict, "cursor": cursor, "evidence": evidence}
@@ -142,7 +142,7 @@ class FabricStore:
 
     @staticmethod
     def _view(row: sqlite3.Row) -> dict[str, Any]:
-        # Never expose lease_hash / authorization data to status consumers.
+        # Не раскрываем хеш аренды и данные авторизации через просмотр статуса.
         return {k: row[k] for k in (
             "id", "objective", "provider", "workspace", "status", "lease_owner",
             "lease_epoch", "lease_deadline", "attempt", "cancel_requested",
@@ -152,18 +152,18 @@ class FabricStore:
                *, task_id: str | None = None, depends_on: list[str] | None = None) -> dict[str, Any]:
         objective = objective.strip()
         if not objective or len(objective) > 20000:
-            raise FabricError("Objective must contain 1..20000 characters")
+            raise FabricError("Описание задачи должно содержать от 1 до 20000 символов")
         if provider not in PROVIDERS:
-            raise FabricError(f"Provider must be one of {', '.join(sorted(PROVIDERS))}")
+            raise FabricError(f"Исполнитель должен быть одним из: {', '.join(sorted(PROVIDERS))}")
         project = Path(workspace).expanduser().resolve(strict=True)
         if not project.is_dir():
-            raise FabricError("Workspace must be an existing directory")
+            raise FabricError("Рабочий каталог должен существовать")
         deps = sorted(set(depends_on or []))
         task_id = task_id or f"rf-{uuid.uuid4().hex[:16]}"
         if not task_id or len(task_id) > 128 or not all(c.isalnum() or c in "-_" for c in task_id):
-            raise FabricError("Invalid task ID")
+            raise FabricError("Некорректный идентификатор задачи")
         if task_id in deps:
-            raise FabricError("A task cannot depend on itself")
+            raise FabricError("Задача не может зависеть от самой себя")
         with self.atomic():
             old = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             if old:
@@ -171,11 +171,11 @@ class FabricStore:
                     "SELECT depends_on FROM dependencies WHERE task_id=? ORDER BY depends_on", (task_id,))]
                 if ((old["objective"], old["provider"], old["workspace"], old_deps)
                         != (objective, provider, str(project), deps)):
-                    raise FabricError("Task ID already exists with different content")
+                    raise FabricError("Задача с таким идентификатором уже существует, но её содержимое отличается")
                 return self._view(old)
             for dep in deps:
                 if not self.db.execute("SELECT 1 FROM tasks WHERE id=?", (dep,)).fetchone():
-                    raise FabricError(f"Unknown dependency: {dep}")
+                    raise FabricError(f"Неизвестная зависимость: {dep}")
             now = time.time()
             self.db.execute(
                 "INSERT INTO tasks(id,objective,provider,workspace,status,created_at,updated_at) "
@@ -191,7 +191,7 @@ class FabricStore:
     def get(self, task_id: str) -> dict[str, Any]:
         row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         if not row:
-            raise FabricError(f"Task not found: {task_id}")
+            raise FabricError(f"Задача не найдена: {task_id}")
         item = self._view(row)
         item["dependencies"] = [r[0] for r in self.db.execute(
             "SELECT depends_on FROM dependencies WHERE task_id=? ORDER BY depends_on", (task_id,))]
@@ -205,9 +205,9 @@ class FabricStore:
 
     def claim(self, owner: str, *, provider: str | None = None, lease_seconds: int = 120) -> dict[str, Any] | None:
         if not owner or len(owner) > 120 or lease_seconds < 5 or lease_seconds > 3600:
-            raise FabricError("Invalid owner or lease duration (5..3600 seconds)")
+            raise FabricError("Некорректный исполнитель или срок аренды (от 5 до 3600 секунд)")
         if provider and provider not in PROVIDERS:
-            raise FabricError("Unknown provider")
+            raise FabricError("Неизвестный исполнитель")
         with self.atomic():
             now = time.time()
             row = self.db.execute("""
@@ -238,18 +238,18 @@ class FabricStore:
 
     def _assert_lease(self, row: sqlite3.Row | None, owner: str, token: str, now: float) -> None:
         if not row or row["status"] != "RUNNING" or row["lease_owner"] != owner:
-            raise FabricError("Lease is not owned by this worker")
+            raise FabricError("Текущий исполнитель не владеет арендой задачи")
         digest = hashlib.sha256(token.encode()).hexdigest()
         if not row["lease_hash"] or not hmac.compare_digest(row["lease_hash"], digest):
-            raise FabricError("Lease token mismatch")
+            raise FabricError("Токен аренды не совпадает")
         if row["lease_deadline"] is None or row["lease_deadline"] <= now:
-            raise FabricError("Lease expired; reconciliation required")
+            raise FabricError("Срок аренды истёк; требуется сверка внешних действий")
         if row["cancel_requested"]:
-            raise FabricError("Cancellation requested")
+            raise FabricError("Запрошена отмена задачи")
 
     def heartbeat(self, task_id: str, owner: str, token: str, *, lease_seconds: int = 120) -> dict[str, Any]:
         if lease_seconds < 5 or lease_seconds > 3600:
-            raise FabricError("Invalid lease duration")
+            raise FabricError("Недопустимый срок аренды")
         with self.atomic():
             now = time.time()
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
@@ -263,7 +263,7 @@ class FabricStore:
                    stage: str, cursor: str, evidence: dict[str, Any],
                    verdict: str = "PARTIAL") -> dict[str, Any]:
         if not isinstance(evidence, dict):
-            raise FabricError("Evidence must be a JSON object")
+            raise FabricError("Доказательства должны быть объектом JSON")
         with self.atomic():
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             self._assert_lease(row, owner, token, time.time())
@@ -274,9 +274,9 @@ class FabricStore:
                external_run_id: str | None = None) -> dict[str, Any]:
         target = {"PASS": "COMPLETE", "PARTIAL": "FAILED", "BLOCKED": "BLOCKED"}.get(verdict)
         if target is None:
-            raise FabricError("Invalid verdict")
+            raise FabricError("Недопустимый статус проверки")
         if not isinstance(evidence, dict) or len(response) > 100000:
-            raise FabricError("Invalid evidence or excessive response size")
+            raise FabricError("Некорректные доказательства либо слишком длинный ответ")
         with self.atomic():
             now = time.time()
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
@@ -301,17 +301,17 @@ class FabricStore:
                 "stage": row["stage"], "verdict": row["verdict"],
                 "cursor": row["cursor"], "evidence": json.loads(row["evidence"])}
         if not hmac.compare_digest(checksum(item), row["content_sha256"]):
-            raise FabricError("Checkpoint integrity failure")
+            raise FabricError("Нарушена целостность чекпойнта")
         return {**item, "sha256": row["content_sha256"], "sequence": row["seq"]}
 
     def result(self, task_id: str) -> dict[str, Any] | None:
         row = self.db.execute("SELECT result_json FROM tasks WHERE id=?", (task_id,)).fetchone()
         if row is None:
-            raise FabricError("Task not found")
+            raise FabricError("Задача не найдена")
         return json.loads(row[0]) if row[0] else None
 
     def recover(self) -> list[str]:
-        # Safety: never relaunch an expired external worker automatically.
+        # Безопасность: не запускаем просроченного внешнего исполнителя автоматически.
         with self.atomic():
             now = time.time()
             expired = [r[0] for r in self.db.execute(
@@ -321,18 +321,18 @@ class FabricStore:
                   UPDATE tasks SET status='BLOCKED',lease_owner=NULL,lease_hash=NULL,
                         lease_deadline=NULL,updated_at=? WHERE id=?
                 """, (now, task_id))
-                self._event(task_id, "LEASE_EXPIRED", {"reason": "manual reconciliation required"})
+                self._event(task_id, "LEASE_EXPIRED", {"reason": "требуется ручная сверка"})
                 self._checkpoint(task_id, "RECOVERY", "BLOCKED", "VERIFY_EXTERNAL_SIDE_EFFECTS",
-                                 {"reason": "lease expired; never duplicate an unverified external run"})
+                                 {"reason": "аренда истекла; запрещено дублировать непроверенный внешний запуск"})
             return expired
 
     def requeue(self, task_id: str, *, acknowledgement: str) -> dict[str, Any]:
         if len(acknowledgement.strip()) < 12:
-            raise FabricError("Requeue requires an explicit reconciliation acknowledgement")
+            raise FabricError("Для повторной постановки требуется явное подтверждение сверки")
         with self.atomic():
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             if not row or row["status"] not in {"BLOCKED", "FAILED"}:
-                raise FabricError("Only BLOCKED or FAILED tasks can be requeued")
+                raise FabricError("Вернуть в очередь можно только задачи BLOCKED или FAILED")
             self.db.execute("UPDATE tasks SET status='QUEUED',cancel_requested=0,updated_at=? WHERE id=?",
                             (time.time(), task_id))
             self._event(task_id, "REQUEUED", {"acknowledgement": acknowledgement[:1024]})
@@ -344,11 +344,11 @@ class FabricStore:
         with self.atomic():
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             if not row:
-                raise FabricError("Task not found")
+                raise FabricError("Задача не найдена")
             if row["status"] in TERMINAL:
                 return self.get(task_id)
             if row["status"] == "RUNNING":
-                # Only request; process supervisor must actually terminate worker.
+                # Здесь только запрос: завершить процесс должен отдельный супервизор.
                 self.db.execute("UPDATE tasks SET cancel_requested=1,updated_at=? WHERE id=?",
                                 (time.time(), task_id))
                 self._event(task_id, "CANCELLATION_REQUESTED", {})
@@ -356,18 +356,18 @@ class FabricStore:
                 self.db.execute("UPDATE tasks SET status='CANCELLED',updated_at=? WHERE id=?",
                                 (time.time(), task_id))
                 self._event(task_id, "CANCELLED", {})
-                self._checkpoint(task_id, "CANCELLED", "BLOCKED", "STOP", {"reason": "operator cancellation"})
+                self._checkpoint(task_id, "CANCELLED", "BLOCKED", "STOP", {"reason": "отмена по запросу оператора"})
             return self.get(task_id)
 
     def confirm_cancel(self, task_id: str, owner: str, token: str) -> dict[str, Any]:
         with self.atomic():
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             if not row or not row["cancel_requested"] or row["status"] != "RUNNING":
-                raise FabricError("No active cancellation request")
-            # Cancellation must be acknowledged by the holder of the current lease.
+                raise FabricError("Активный запрос отмены отсутствует")
+            # Отмену подтверждает только владелец текущей аренды.
             digest = hashlib.sha256(token.encode()).hexdigest()
             if row["lease_owner"] != owner or not hmac.compare_digest(row["lease_hash"], digest):
-                raise FabricError("Cancellation acknowledgement requires the live lease holder")
+                raise FabricError("Подтвердить отмену может только действующий владелец аренды")
             self.db.execute("""UPDATE tasks SET status='CANCELLED',lease_owner=NULL,lease_hash=NULL,
                  lease_deadline=NULL,updated_at=? WHERE id=?""", (time.time(), task_id))
             self._event(task_id, "CANCELLED", {"worker_acknowledged": True})

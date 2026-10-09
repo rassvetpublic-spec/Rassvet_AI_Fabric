@@ -1,4 +1,4 @@
-# Python development
+# Артефакты Python и инструментов разработки
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -10,7 +10,7 @@ dist/
 build/
 *.egg-info/
 
-# Local orchestration state and credentials
+# Локальное состояние, журналы и секреты
 .env
 .env.*
 !.env.example
@@ -30,7 +30,7 @@ credentials.json
 *.pem
 *.key
 
-# Editor and OS noise
+# Редакторы и ОС
 .vscode/
 .idea/
 .DS_Store

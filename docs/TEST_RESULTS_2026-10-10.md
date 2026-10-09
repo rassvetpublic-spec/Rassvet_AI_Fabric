@@ -1,21 +1,33 @@
-# Validation record — 2026-10-10
+# Протокол проверок — 10 октября 2026 года
 
-## Environment
+## Проверка исходной версии 0.1.0
 
-- Python 3.13.5 in an isolated Linux container; not the user's Windows host.
-- Standard library only in test execution.
-- 45 unit/integration tests PASS (`unittest discover`).
-- Verified areas: schema initialization, idempotency, dependencies, exclusive claims across SQLite connections, heartbeat, lease fencing, checkpoint tamper detection, worker completion, blocked crash recovery, cancellation acknowledgement, MCP stdio handshake/tools, local file allowlist, secret-path and SQLite-WAL protection, no external calls for `mock`, provider opt-in and Windows batch-shim rejection.
-- A real child process exercised the MCP stdio exchange.
-- No use of OpenAI/Google inference, no browser automation, no GPU compute, no background work, no writes to user's PC/Drive/GitHub.
+- Python 3.13.5 в изолированном Linux-контейнере; **не на пользовательском Windows-компьютере**.
+- Только стандартная библиотека Python.
+- **45/45 исходных модульных и интеграционных тестов пройдены.**
+- Проверены создание схемы, идемпотентность, зависимости, конкурентный захват задач через разные SQLite-соединения, heartbeat, защита lease, контроль SHA-256, завершение исполнителя, блокирующее восстановление, подтверждение отмены, MCP stdio и набор инструментов, ограничение файловой системы, защита секретов и SQLite-WAL, отсутствие облачных запросов у `mock`, явное разрешение внешнего провайдера и запрет небезопасного `.cmd`-запуска.
+- Выполнен обмен с дочерним процессом MCP по stdio.
+- Не выполнялись обращения к OpenAI/Google, браузерные операции, GPU-вычисления и изменения компьютера пользователя.
 
-## Not yet validated
+## Отдельная проверка русификации
 
-- PowerShell and process supervision on Windows.
-- Codex App Server, OAuth/ChatGPT subscription usage, Antigravity authentication, local GPU inference.
-- Checkpoint publication to BPR40 towers or integration with BPR40 Router policies.
-- Modern MCP 2026-07-28 client compatibility, authorization for remote exposure, adversarial multi-user filesystems.
+**50/50 тестов пройдены** в изолированной среде после перевода. Новые проверки охватывают:
 
-## Verdict
+1. Русскую справку общего CLI и подкоманды `submit`.
+2. Русский префикс ошибок аргументов без смены CLI-параметров.
+3. Русские описания восьми MCP-инструментов и русскую инструкцию сервера.
+4. Русские сообщения об ошибках и ответ имитатора при неизменных машинных `COMPLETE` и `REVIEW`.
+5. Явное объявление русского официальным языком в README и языковой политике.
 
-**PASS for the original core's automated tests. PARTIAL for the complete Rassvet AI Fabric product.**
+Русификация не меняет машинные значения JSON/MCP, порядок задач или границы полномочий. Точный чекпойнт: `checkpoints/RAI_FABRIC_RUSSIAN_LANGUAGE_2026-10-10_R1.json`. Проверка PowerShell непосредственно на Windows не выполнялась.
+
+## Не проверено
+
+- PowerShell и управление процессами на реальной Windows.
+- Codex App Server, OAuth и работа по подписке; Antigravity и локальная GPU-модель.
+- Публикация чекпойнтов в три башни BPR40 и интеграция с действующим Router.
+- MCP-клиенты, требующие только транспорт 2026-07-28; защита недоверенного многопользовательского окружения.
+
+## Вывод
+
+**PASS:** автоматические тесты ядра в изолированной среде. **PARTIAL:** готовность полной среды Rassvet AI Fabric; для Windows и подписных агентов требуется отдельная проверка.

@@ -1,2 +1,2 @@
-"""Rassvet AI Fabric: original, standalone orchestration prototype."""
+"""Rassvet AI Fabric: независимый прототип системы оркестрации."""
 __version__ = "0.1.0"

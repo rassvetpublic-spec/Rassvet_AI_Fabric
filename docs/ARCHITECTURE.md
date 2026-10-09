@@ -1,47 +1,52 @@
-# Architecture Decision Record — RAI Fabric R0.1
+# Архитектурное решение RAI Fabric 0.1
 
-Date: 2026-10-10. Status: TESTED CORE / UNVERIFIED PROVIDERS.
+**Дата:** 10 октября 2026 года. **Статус:** ядро проверено автоматическими тестами; реальные провайдеры не подтверждены. **Официальный язык:** русский.
 
-## Decision
+## Решение
 
-Create an original Windows-first orchestration system rather than modifying `oh-my-codex`, `Superpowers`, `omx-app`, `.codex`, or BPR40 runtime.
+Создаём независимую Windows-first среду оркестрации, **не изменяя** `oh-my-codex`, Superpowers, `omx-app`, `.codex` или исполняемый BPR40. Идеи доноров допустимы; исходный код не копируем. Состояние задач хранится локально и детерминированно в SQLite. MCP-шлюз первой версии преднамеренно работает только на чтение. Внешние провайдеры требуют отдельного разрешения, а выполнение через Antigravity использует `--sandbox`. BPR40 остаётся отдельным источником полномочий. Автоматизация внутренних endpoint ChatGPT Web не применяется.
 
-The **core** is a local, deterministic task/event store. The **MCP gateway** is intentionally read-only. **Provider drivers** have explicit opt-in and sandbox defaults. **BPR40 authority** is external and cannot be superseded by this software. **ChatGPT web** and private backend endpoints are not used for agent dispatch.
-
-## Component boundaries
+## Состав системы
 
 ```text
-BPR40 / DUTY authority (external, currently NO WRITE BRIDGE)
-             |
-      Future BPR40 adapter (schema/readback/provenance)
-             |
-     RAI CORE (SQLite/WAL + checkpoint + event journal)
-       |          |                  |
-     CLI      MCP stdio           Worker driver
-     local    read only      mock | agy (opt-in) | codex (blocked)
-       |          |                  |
-   operator  files/git/GPU         subscribed clients (future verified)
+BPR40 / DUTY — внешний источник полномочий (запись ЗАПРЕЩЕНА)
+                    |
+       Будущий адаптер BPR40 (схемы / сверка / происхождение)
+                    |
+      RAI CORE — SQLite, события и чекпойнты
+           |                  |                        |
+      Локальный CLI       MCP stdio                Исполнители
+                           чтение              mock | agy | codex-app*
+           |                  |                        |
+        Оператор          Файлы/Git/GPU         Подписные клиенты*
+
+* Интеграция и режим оплаты ещё не проверены.
 ```
 
-## Defined contracts
+## Устойчивые контракты
 
-- A task has a stable `id`, `objective`, `provider`, `workspace`, dependencies and state.
-- Terminal: `COMPLETE`, `FAILED`, `BLOCKED`, `CANCELLED`.
-- A live lease is (task_id, owner, token SHA-256, epoch, deadline). Leases are scoped to RUNNING.
-- Only the lease holder can add progress or finish. `lease_epoch` fences stale workers even when a retry is allowed.
-- Each checkpoint has stage, PASS/PARTIAL/BLOCKED verdict, cursor, evidence, SHA-256 and ordered sequence.
-- Every event records task, kind, timestamp, data. No authorization token is included in a journal entry.
-- Dependencies of a queued task must all be `COMPLETE` before claim.
-- Expiration is reconciled, never automatically replayed. Fail-closed is required when side effects are uncertain.
-- `PASS` at the worker stage is not BPR40 authority. Review/independent acceptance must be separate later.
+1. Задача имеет устойчивые `id`, `objective`, `provider`, `workspace`, зависимости и состояние.
+2. Терминальные состояния: `COMPLETE`, `FAILED`, `BLOCKED`, `CANCELLED`.
+3. Аренда исполнителя включает идентификатор задачи, владельца, SHA-256 токена, номер поколения и срок. Аренда допустима только для `RUNNING`.
+4. Только действующий владелец аренды может добавлять прогресс или завершить задачу. `lease_epoch` отсекает устаревшего исполнителя.
+5. Чекпойнт содержит `stage`, `verdict`, `cursor`, `evidence`, SHA-256 и порядковый номер.
+6. Событие фиксирует задачу, тип, время и данные, **без токена доступа**.
+7. Задача `QUEUED` выдаётся только после завершения всех зависимостей со статусом `COMPLETE`.
+8. Истёкшая аренда требует сверки побочных эффектов; **автоматического повтора нет**.
+9. `PASS` от исполнителя не является признанием со стороны BPR40. Независимая приёмка — будущий этап.
 
-## Basic threat model
+## Границы доверия и угрозы
 
-Assets: local source code, Windows credentials, ChatGPT/Google subscription sessions, BPR40 authority, GPU resources, user files.
-Threats: agent prompt injection, malicious repository symlinks, accidental credential exposure, duplicated side effects from lost workers, provider charge fallback, unauthorized shell access.
-Controls in R0.1: no network listener, stdio-only MCP, read-only tools, specific workspace, symlink/junction rejection, blocked sensitive paths, no arbitrary shell, 32-KiB file ceiling, no API-key providers, local explicit CLI mutations, non-replay after crashes.
-Not yet mitigated: multi-user filesystem race/TOCTOU, distributed authentication, signed evidence, stronger Windows job-object process-tree termination, remote tunneling, BPR40 publish policy. **Do not expose MCP outside trusted local context.**
+**Защищаем:** исходники, файлы пользователя, локальные учётные данные, сессии подписок, полномочия BPR40 и GPU.
 
-## Build and verification
+**Угрозы:** инъекция инструкций из репозитория, вредоносные ссылки/junction, утечка токенов, повтор уже выполненных действий после сбоя, незаметный переход на платный API, произвольные команды оболочки.
 
-Runtime dependency count: zero (standard library). Test runner: `unittest`. Native Windows smoke and subscription inference require interactive, explicitly authorized verification. `scripts/demo.ps1` is an isolated mock end-to-end exercise.
+**Защита 0.1:** нет сетевого порта; MCP только по stdio и на чтение; каталог разрешается явно; ссылки/junction и секретные файлы блокируются; чтение ограничено 32 КиБ; у MCP нет произвольного shell; платные API и автоматическое переключение запрещены; изменения происходят только локальными командами CLI.
+
+**Пока не решено:** гонки файловой системы в многопользовательской среде (TOCTOU), удалённая аутентификация, подписанные доказательства, остановка дерева процессов Windows через Job Objects, удалённый туннель, публикация чекпойнтов в BPR40. **Нельзя предоставлять этот MCP недоверенным удалённым клиентам.**
+
+## Проверка и совместимость
+
+Исполнение ядра не требует сторонних библиотек Python; тесты используют `unittest`. Демонстрация `scripts/demo.ps1` выполняется с имитатором в отдельном каталоге. Нативную Windows-проверку и подписные вызовы моделей необходимо подтвердить отдельно с разрешения пользователя.
+
+В рамках локализации переведены авторские интерфейсы и диагностика. Протокольные поля, имена методов MCP, статусы и структура SQLite сохраняются ради обратной совместимости. Правила — [LANGUAGE_POLICY.md](LANGUAGE_POLICY.md).

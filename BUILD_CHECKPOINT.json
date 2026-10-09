@@ -3,36 +3,36 @@
   "build_date": "2026-10-10",
   "project": "Rassvet AI Fabric",
   "version": "0.1.0",
-  "source_policy": "Independent original implementation; OMX and Superpowers are conceptual donors only",
+  "source_policy": "Самостоятельная реализация; OMX и Superpowers служат только донорами идей",
   "overall_status": "PARTIAL",
   "stages": [
     {
       "id": "RAI-FABRIC/06.1",
       "stage": "DONORS_AND_ARCHITECTURE",
       "status": "PASS",
-      "evidence": "Official donor licenses MIT; no source code copied"
+      "evidence": "Лицензии обоих доноров — MIT; исходный код не копировался"
     },
     {
       "id": "RAI-FABRIC/06.2",
       "stage": "ORIGINAL_CORE",
       "status": "PASS",
-      "evidence": "SQLite queue, lease/fencing, checkpoint, event journal, recovery"
+      "evidence": "Очередь SQLite, аренда и защита поколений, чекпойнты, журнал событий, восстановление"
     },
     {
       "id": "RAI-FABRIC/06.3",
       "stage": "MCP_AND_LOCAL_TESTS",
       "status": "PASS",
-      "evidence": "45 passing tests; read-only MCP + child-process roundtrip + mock provider"
+      "evidence": "45 тестов пройдены; MCP только для чтения, обмен с дочерним процессом, имитатор mock"
     },
     {
       "id": "RAI-FABRIC/06.4",
       "stage": "REAL_WINDOWS_AND_SUBSCRIPTION_ADAPTERS",
       "status": "BLOCKED",
-      "evidence": "Requires user's Windows preflight, explicitly authorized provider authentication and executable checks"
+      "evidence": "Нужны проверка Windows на компьютере пользователя, разрешённый вход к провайдерам и проверка исполняемых файлов"
     }
   ],
   "cursor": "RAI-FABRIC/07-WINDOWS_READONLY_SMOKE_THEN_CODEX_APP_SERVER",
-  "next_action": "Run supplied isolated PS1 tests on Windows; implement and verify Codex App Server OAuth and Antigravity safe launcher afterwards",
+  "next_action": "Запустить изолированные PS1-тесты на Windows, затем реализовать и проверить авторизацию Codex App Server и безопасный запуск Antigravity",
   "bpr40_authority_mutations": 0,
   "tri_tower_publication": false,
   "cloud_inference_calls": 0

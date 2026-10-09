@@ -23,7 +23,7 @@ class CliTests(unittest.TestCase):
 
     def test_init_submit_worker_status(self):
         self.assertTrue(run(['--db',str(self.state),'init'])['initialized'])
-        task=run(['--db',str(self.state),'submit','--objective','Test orchestration',
+        task=run(['--db',str(self.state),'submit','--objective','Проверка оркестрации',
                   '--provider','mock','--workspace',str(self.root),'--task-id','fixture'])
         self.assertEqual(task['status'],'QUEUED')
         self.assertEqual(run(['--db',str(self.state),'run-once','--provider','mock'])['status'],'COMPLETE')
@@ -32,7 +32,7 @@ class CliTests(unittest.TestCase):
 
     def test_external_cli_needs_explicit_flag(self):
         run(['--db',str(self.state),'init'])
-        run(['--db',str(self.state),'submit','--objective','Not billed','--provider','antigravity',
+        run(['--db',str(self.state),'submit','--objective','Без дополнительных расходов','--provider','antigravity',
              '--workspace',str(self.root),'--task-id','fixture'])
         with self.assertRaises(FabricError):
             run(['--db',str(self.state),'run-once','--provider','antigravity'])
@@ -40,7 +40,7 @@ class CliTests(unittest.TestCase):
 
     def test_windows_batch_runner_blocked_before_claim(self):
         with FabricStore(self.state, initialize=True) as s:
-            s.submit('Any test', 'antigravity', str(self.root), task_id='fixture')
+            s.submit('Любой тест', 'antigravity', str(self.root), task_id='fixture')
             with patch('rai_fabric.worker.shutil.which', return_value=r'C:\\tools\\agy.cmd'):
                 with self.assertRaises(FabricError):
                     run_one(s,'antigravity',allow_external=True)

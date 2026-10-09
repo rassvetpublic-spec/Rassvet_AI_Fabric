@@ -119,7 +119,7 @@ class StateTests(unittest.TestCase):
         self.db.finish('one', 'worker', w['lease_token'], verdict='BLOCKED', response='error', evidence={})
         with self.assertRaises(FabricError):
             self.db.requeue('one', acknowledgement='ok')
-        self.db.requeue('one', acknowledgement='external actions verified not executed')
+        self.db.requeue('one', acknowledgement='подтверждено отсутствие побочных внешних действий')
         self.assertEqual(self.db.get('one')['status'], 'QUEUED')
         w2 = self.db.claim('worker')
         self.assertNotEqual(w['lease_token'], w2['lease_token'])
