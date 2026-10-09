@@ -15,7 +15,7 @@
 - От обычных коммитов в AG_pather workflow не запускается.
 - Дополнительно разрешены одноразовые ветки `ag-ci-linux-*` и `ag-ci-full-*`, помимо тегов.
 - Создана контрольная ветка `ag-ci-full-cp23-20261010` на коммите `7396ea3fab5a61d76406e7527738182ea15d0e23` для одного прогона Linux + Windows.
-- Статус одного прогона: https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38002137444 . До получения финального результата тесты считать не подтверждёнными.
+- Статус одного прогона: https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38002137444 . Проверка завершена: Linux success (8 секунд job), Windows success (26 секунд job) по GitHub API. Сведения о списанных минутах/биллинге недоступны.
 
 ## Границы и риски
 - Валидируются только синтетические данные; реальные refresh_token не использовались.
@@ -24,4 +24,4 @@
 - Поведение файловой блокировки на целевой машине RASSVET_DESKTOP не проверено: удалённое выполнение Desktop Commander ограничено квотой.
 
 ## Текущий курсор
-AG_pather → CP-23 VALIDATION_RUNNING → CP-24 REVIEW_TEST_RESULTS → CP-25 SAFE_SESSION_DIAGNOSTICS.
+AG_pather → CP-23 PASSED_LINUX_WINDOWS → CP-24 SAFE_SESSION_DIAGNOSTICS → CP-25 LOCAL_STANDALONE_VALIDATION.
