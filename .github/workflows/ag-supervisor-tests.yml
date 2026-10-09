@@ -1,32 +1,47 @@
+# Budget policy: never test on each ordinary commit.
+# Create ag-ci-linux-<checkpoint> or ag-ci-full-<checkpoint> tag when validation is needed.
+# workflow_dispatch becomes available after this workflow is present on the default branch.
 name: AG Supervisor Tests
 on:
   push:
-    branches: [AG_pather]
+    tags:
+      - 'ag-ci-linux-*'
+      - 'ag-ci-full-*'
   workflow_dispatch:
+    inputs:
+      include_windows:
+        description: 'Also run the Windows Credential Manager integration tests'
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
+concurrency:
+  group: ag-supervisor-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  PYTHONPATH: src
+  PYTHONUTF8: '1'
+  PYTHONIOENCODING: utf-8
 jobs:
   unit-linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - name: Run synthetic tests
-        env:
-          PYTHONPATH: src
         run: python -m unittest discover -s tests -v
   unit-windows:
+    if: ${{ startsWith(github.ref, 'refs/tags/ag-ci-full-') || (github.event_name == 'workflow_dispatch' && inputs.include_windows) }}
     runs-on: windows-latest
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - name: Test Windows Credential Manager using synthetic data only
-        env:
-          PYTHONUTF8: '1'
-          PYTHONIOENCODING: utf-8
-          PYTHONPATH: src
         run: python -m unittest discover -s tests -v
