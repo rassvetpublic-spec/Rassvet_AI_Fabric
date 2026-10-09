@@ -120,6 +120,17 @@ class RegistryTests(unittest.TestCase):
                 vault.delete(handle)
         self.assertTrue(all(not vault.has(handle) for handle in handles))
 
+    def test_empty_pending_journal_fails_closed(self):
+        self.registry.pending_path.write_text('{"version":1,"allocated":[]}')
+        with self.assertRaises(RegistryError):
+            self.registry.recover(self.vault)
+        self.assertTrue(self.registry.pending_path.exists())
+
+    def test_schema_boolean_version_rejected(self):
+        self.registry.registry_path.write_text('{"version":true,"accounts":[]}')
+        with self.assertRaises(RegistryError):
+            self.registry.ids()
+
     def test_generated_collision_does_not_overwrite(self):
         account_id = "raif-" + "a" * 32
         self.vault.put(account_id, "synthetic-preserved")
