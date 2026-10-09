@@ -51,9 +51,10 @@
 
 Откройте PowerShell в корне репозитория и выполните:
 
-1. `./scripts/run-tests.ps1` — тесты.
-2. `./scripts/demo.ps1` — локальная демонстрация с `mock`.
-3. Проверьте выведенный каталог `%TEMP%`: там создана отдельная SQLite-БД.
+1. `./scripts/windows-preflight.ps1 -RequireWindows` — проверка команд и файлов без чтения профилей и вызовов моделей.
+2. `./scripts/run-tests.ps1` — тесты.
+3. `./scripts/demo.ps1` — локальная демонстрация с `mock` и новой БД в `%TEMP%`.
+4. Отдельная [инструкция Windows preflight](docs/WINDOWS_PREFLIGHT.md) объясняет, что проверено, а что ещё не подтверждено.
 
 Не требуется менять `CODEX_HOME`, `AGENTS.md`, профиль Codex или реестр. Если выполнение PS1 запрещено локальной политикой, согласуйте разрешение для текущего процесса; не меняйте системную политику без необходимости.
 
@@ -101,6 +102,7 @@ python -m rai_fabric --db C:\Temp\rai-test\state.db mcp --workspace C:\Temp\rai-
 - [Целевая архитектура платформы и пять подсистем](docs/PRODUCT_SCOPE.md)
 - [Архитектура реализованного ядра 0.1](docs/ARCHITECTURE.md)
 - [Дорожная карта и критерии приёмки](docs/ROADMAP.md)
+- [Предварительная проверка Windows и подписных каналов](docs/WINDOWS_PREFLIGHT.md)
 - [Протокол тестирования](docs/TEST_RESULTS_2026-10-10.md)
 - [Языковая политика](docs/LANGUAGE_POLICY.md)
 - [Русский перевод условий лицензии MIT (справочно)](docs/LICENSE_RU.md)

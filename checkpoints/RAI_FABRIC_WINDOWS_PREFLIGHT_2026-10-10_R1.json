@@ -1,0 +1,27 @@
+{
+  "schema": "RAI_FABRIC_STAGE_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "language": "ru-RU",
+  "stage": "RAI-FABRIC/08.3-WINDOWS_PREFLIGHT_CI_PREPARED",
+  "verdict": "PARTIAL",
+  "summary": "Подготовлена безопасная Windows CI на Python 3.11/3.13, предварительная проверка без облачных вызовов, документация и тесты.",
+  "evidence": {
+    "baseline_local_unittest": "52/52 PASS",
+    "current_local_unittest": "57/57 PASS",
+    "ci_jobs_configured": 2,
+    "github_windows_runs": "NOT_VERIFIED",
+    "personal_windows_host": "NOT_TESTED",
+    "siwc_account_eligibility": "NOT_TESTED",
+    "codex_app_server_inference": "NOT_EXECUTED",
+    "antigravity_inference": "NOT_EXECUTED",
+    "external_model_calls": 0,
+    "api_paid_fallback": false,
+    "protected_codex_profile_mutations": 0,
+    "bpr40_authority_mutations": 0,
+    "tri_tower_publication": false
+  },
+  "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "base_main_commit": "95122c90a4ac684e0ffba8b493001f7c4797d15a",
+  "cursor": "RAI-FABRIC/08.3-C-GITHUB_WINDOWS_CI_READBACK",
+  "next_action": "Опубликовать и проверить результаты Windows CI; при неуспехе исправить тесты или сценарии без обращения к моделям; затем перейти к офлайн-контрактам Codex App Server."
+}
