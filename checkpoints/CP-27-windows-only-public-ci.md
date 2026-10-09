@@ -31,5 +31,5 @@
 - https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
 
 ## CHECKPOINT/CURSOR
-CP-27 WINDOWS_ONLY_PUBLIC_POLICY_APPLIED; Windows CI run is to be verified separately.
-Курсор: AG_pather → CP-27_VERIFY_WINDOWS_JOB → CP-28_LOCAL_AUTH_OBSERVER_DESIGN → CP-29_RASSVET_DESKTOP_RUNTIME_VALIDATION.
+CP-27 WINDOWS_ONLY_PUBLIC_POLICY_APPLIED + WINDOWS_CI_SUCCESS. Workflow run 38002761301 успешно завершился на коммите cb42ce086a958a26b24b343729eac3b2f06eff20: https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38002761301 . Единственное выполненное задание — unit-windows, status=success. Продолжительность job 26 секунд по GitHub API; не тарифицируемые минуты.
+Курсор: AG_pather → CP-27_VERIFIED → CP-28_LOCAL_AUTH_OBSERVER_DESIGN → CP-29_RASSVET_DESKTOP_RUNTIME_VALIDATION.
