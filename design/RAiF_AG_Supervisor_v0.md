@@ -1,17 +1,23 @@
 # RAiF AG Supervisor — проект с нуля
 
-Дата 2026-10-10. Статус: архитектурный каркас, без исполняемого кода и без runtime проверки.
+Дата 2026-10-10. Статус: исполняемый прототип и синтетические CI-тесты на Windows готовы; реальная авторизация Standalone и hot-swap не проверены.
 
 ## Цель
-Windows-first управление авторизованными аккаунтами Google Antigravity Standalone и CLI, обнаружение исчерпания квот, восстановление работы локальных задач при переключении аккаунта. Не считать смену Credential Manager бесшовной сменой живого language_server.exe. Не обещать снятие серверных региональных ограничений.
+Windows-only управление авторизованными аккаунтами Google Antigravity Standalone и CLI, обнаружение исчерпания квот, восстановление работы локальных задач при переключении аккаунта. Не считать смену Credential Manager бесшовной сменой живого language_server.exe. Не обещать снятие серверных региональных ограничений.
 
 ## Подтверждённые исходники и лицензии
 - QNIX-Dev/eligibility-antigravity-patcher — Python, MIT; изучать менеджер профилей и отдельные IDE/CLI credential backends.
 - demusraph/antigravity-control-center — Python, MIT; изучать Windows Credential Manager, quota telemetry, CDP recovery.
-- Muriel-Gasparini/antigravity-account-switcher — Go, MIT; изучать supervisor, 429 detection, replay и ограничения stream lifecycle.
+- Muriel-Gasparini/antigravity-account-switcher — Go, MIT; изучать архитектуру supervisor, 429 detection, replay и ограничения stream lifecycle. Linux-реализация НЕ переносится в продукт.
 - Doomd/antigravity-account-switcher — JS + PowerShell, MIT; изучать профильный switching + restart fallback.
 - AvenCores/open-antigravity-patcher — исторические исходные архивы SourceForge, полный аудит не закончен.
 - lbjlaq/Antigravity-Manager — лицензия CC BY-NC-SA 4.0; не копировать в нашу реализацию; пользователь сообщает о несовместимости с AG Standalone.
+
+## Целевая платформа
+- Windows 10/11 x64, Windows Credential Manager, Antigravity Standalone и CLI.
+- Linux/macOS runners, упаковка и native adapters не планируются.
+- CI — стандартный GitHub-hosted `windows-latest` только для публичного репозитория.
+- Синтетические тесты должны проходить без реальных OAuth токенов.
 
 ## Компоненты v0
 1. CredentialAdapter: доступ к Windows Credential Manager с минимальными правами; секреты не выводить в logs/checkpoints.
@@ -29,4 +35,4 @@ Windows-first управление авторизованными аккаунт
 A. Проверка standalone version и расположения state/token storage; B. manual switch + valid request; C. auto 429 detection; D. controlled recovery с checkpoint; E. one account failure не заражает остальной пул; F. секреты не попадают в логи; G. no-restart only if proven through live test.
 
 ## Следующий курсор
-AG_pather / CP-09 SOURCE_AVAILABLE + ARCHITECTURE_DRAFT → CP-10 inspect demusraph / Muriel source modules → CP-11 implement safe skeleton + unit tests → CP-12 Windows sandbox runtime PoC.
+AG_pather → CP-27 WINDOWS_ONLY_PUBLIC_CI_VERIFIED → CP-28 LOCAL_AUTH_OBSERVER_DESIGN → CP-29 RASSVET_DESKTOP_RUNTIME_VALIDATION.
