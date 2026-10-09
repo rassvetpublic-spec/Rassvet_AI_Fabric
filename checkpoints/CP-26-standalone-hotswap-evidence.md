@@ -19,7 +19,7 @@
 ## Бюджет GitHub Actions
 - Обычные коммиты в AG_pather не запускают CI.
 - CP-23: разовый Linux+Windows success; CP-24: разовый Linux-only success.
-- Для CP-26 нужен один пакетный Linux+Windows контрольный прогон после фиксации исходников.
+- CP-26 прошёл пакетную проверку https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38002549199 : Windows success (18 секунд job), Linux success (4 секунды job). Это не биллинговые минуты.
 
 ## Текущий курсор
-AG_pather → CP-26 BATCHED_TEST_PENDING → CP-27 LOCAL_AUTH_OBSERVER_DESIGN → CP-28 RASSVET_DESKTOP_RUNTIME_VALIDATION.
+AG_pather → CP-26 PASSED_WINDOWS_LINUX → CP-27 LOCAL_AUTH_OBSERVER_DESIGN → CP-28 RASSVET_DESKTOP_RUNTIME_VALIDATION.
