@@ -176,3 +176,39 @@ class OAuthCallbackGuard:
         report = validate_authorization_callback(self._attempt, callback_url)
         self._consumed = True
         return report
+
+    def consume_private(self, callback_url: str) -> "PrivateAuthorizationCode":
+        """Одноразово возвращает код ТОЛЬКО вызывающему доверенному обработчику.
+
+        Не сохраняйте возвращённый объект в SQLite, журнале или checkpoint.
+        """
+        if self._consumed:
+            raise OAuthReadinessError("Повторное использование callback запрещено")
+        # До извлечения кода проверяем state, точный адрес и выданный client_id.
+        validate_authorization_callback(self._attempt, callback_url)
+        self._consumed = True
+        values = parse_qs(urlsplit(callback_url).query, keep_blank_values=True,
+                          strict_parsing=True, max_num_fields=12)
+        client = values.get("client_id", [self._attempt.client_id])[0]
+        return PrivateAuthorizationCode(
+            client_id=client,
+            code=values["code"][0],
+            code_verifier=self._attempt.code_verifier,
+            redirect_uri=self._attempt.redirect_uri,
+            host_id=self._attempt.host_id,
+            nonce=self._attempt.nonce,
+        )
+
+
+@dataclass(frozen=True, repr=False)
+class PrivateAuthorizationCode:
+    """Чувствительные параметры, доступные только доверенному локальному коду."""
+    client_id: str
+    code: str = field(repr=False)
+    code_verifier: str = field(repr=False)
+    redirect_uri: str
+    host_id: str
+    nonce: str = field(repr=False)
+
+    def __repr__(self) -> str:
+        return "PrivateAuthorizationCode(секреты скрыты)"

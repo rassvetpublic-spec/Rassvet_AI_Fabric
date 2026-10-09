@@ -219,6 +219,28 @@ class RealWindowsVaultTests(unittest.TestCase):
         self.assertEqual(self.vault.load(self.id).credentials['refresh_token'],
                          changed['refresh_token'])
 
+    def test_windows_refresh_lock_has_acl_and_is_removed_after_success(self):
+        self.vault.save(self.id, credentials())
+        lock = self.vault._root / (self.vault._path(self.id).stem + '.refresh.lock')
+        with self.vault.refresh_lock(self.id):
+            self.assertTrue(lock.exists())
+            self.vault._guard.verify(lock)
+            with self.assertRaises(VaultError):
+                with self.vault.refresh_lock(self.id):
+                    pass
+        self.assertFalse(lock.exists())
+
+    def test_windows_refresh_lock_persists_after_uncertain_failure(self):
+        self.vault.save(self.id, credentials())
+        lock = self.vault._root / (self.vault._path(self.id).stem + '.refresh.lock')
+        with self.assertRaises(RuntimeError):
+            with self.vault.refresh_lock(self.id):
+                raise RuntimeError('тест отказа внешнего провайдера')
+        self.assertTrue(lock.exists())
+        with self.assertRaises(VaultError):
+            with self.vault.refresh_lock(self.id):
+                pass
+
     def test_wrong_root_refused(self):
         with self.assertRaises(VaultError):
             WindowsCredentialVault(root=self.root.parent / 'unrelated')

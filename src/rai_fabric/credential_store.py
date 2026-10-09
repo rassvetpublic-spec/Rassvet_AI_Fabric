@@ -9,6 +9,7 @@ import json
 import os
 import re
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Any
@@ -151,6 +152,45 @@ class _AtomicVaultStore:
         if not path.exists():
             raise VaultError("Учётная запись отсутствует в хранилище")
         return self._read(path, identity)
+
+    @contextmanager
+    def refresh_lock(self, identity: VerifiedIdentity):
+        """Межпроцессный запрет ДВУХ сетевых refresh для одного токена.
+
+        Блокировка удерживается с момента чтения старого refresh до
+        атомарной CAS-записи нового. При аварийном завершении остаётся
+        .refresh.lock: его нельзя автоматически удалить и повторить grant.
+        """
+        self._ensure_root()
+        path = self._path(identity)
+        lock = self._root / (path.stem + ".refresh.lock")
+        self._guard.reject_reparse(lock)
+        fd = -1
+        owns = False
+        completed = False
+        try:
+            try:
+                fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                             | getattr(os, "O_BINARY", 0), 0o600)
+                owns = True
+                os.close(fd)
+                fd = -1
+            except FileExistsError:
+                raise VaultError("OAuth refresh уже выполняется или требует ручной сверки") from None
+            except OSError:
+                raise VaultError("Не удалось заблокировать OAuth refresh") from None
+            self._guard.restrict(lock)
+            yield
+            completed = True
+        finally:
+            if fd != -1:
+                os.close(fd)
+            if owns and completed:
+                try:
+                    lock.unlink(missing_ok=True)
+                except OSError:
+                    # Ошибка удаления => будущие refresh блокируются до сверки.
+                    pass
 
     def save(self, identity: VerifiedIdentity, credential: Mapping[str, Any],
              *, expected_revision: str | None = None) -> str:

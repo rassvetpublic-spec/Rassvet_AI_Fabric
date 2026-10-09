@@ -1,0 +1,31 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.6-OAUTH_EXCHANGE_REFRESH_OFFLINE",
+  "verdict": "PARTIAL",
+  "description_ru": "Реализован офлайн-обмен OAuth-кода и сериализованное обновление refresh-токена без живого аккаунта",
+  "scope": "Windows-first, только синтетические токены и внедрённый тестовый транспорт",
+  "evidence": {
+    "local_test_cases_discovered": 173,
+    "local_test_cases_passed": 166,
+    "windows_only_skipped": 7,
+    "local_errors": 0,
+    "python_wheel_built": true,
+    "live_token_exchange": false,
+    "live_inference": false,
+    "linux_ci_created": false,
+    "github_actions_runs_initiated_by_stage": 0,
+    "bpr40_mutations": 0
+  },
+  "security": {
+    "pkce_callback_one_time": true,
+    "id_token_signature_checked_before_persistence": true,
+    "scopes_verified_from_token_response": true,
+    "refresh_interprocess_lock": true,
+    "ambiguous_refresh_requires_manual_reconciliation": true,
+    "secret_logging_allowed": false
+  },
+  "cursor": "RAI-FABRIC/09.6-B-WINDOWS_CI_SINGLE_RUN",
+  "next_action_ru": "Опубликовать исходники одним коммитом, проверить один экономный Windows CI и записать финальный readback-чекпойнт без второго CI",
+  "tri_tower_publication": false
+}
