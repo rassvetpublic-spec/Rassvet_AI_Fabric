@@ -65,3 +65,15 @@ CURSOR: AG_pather / CP-05 PARTIAL (blocked source retrieval) → CP-06 AG-tools 
 - Статус: документационный и метаданный аудит проведён, runtime-тестов и детального review Rust исходников нет.
 
 CURSOR: AG_pather / CP-06 COMPLETE (architecture/docs) → CP-07 Rust proxy token handling and network audit → CP-08 patcher-vs-AG-tools empirical compatibility.
+
+
+## CP-07 — correction: AG-tools standalone integration and candidates (2026-10-10)
+- Пользователь подтвердил практический дефект: lbjlaq/Antigravity-Manager не обеспечивает ожидаемую работу с AG Standalone и бесшовную смену аккаунта в его окружении. Прежняя схема CP-06 как готового рабочего шлюза для AG Standalone должна считаться архитектурной гипотезой, НЕ решением.
+- Публичное подтверждение похожей ошибки: https://github.com/lbjlaq/Antigravity-Manager/issues/3221; различие keyring и SQLite путей, issue closed с упоминанием PR #3220; фактическая исправность на версии пользователя не тестировалась.
+- Windows-кандидат: https://github.com/demusraph/antigravity-control-center — заявляет credential hot swap Windows Credential Manager, CDP-мониторинг/продолжение задач, квоты. Проверен README blob af83f37d5ea6f4bda4e30d8e8aae5a94d3279c01; фактическое обновление авторизации живого language_server.exe НЕ проверено.
+- Linux standalone-кандидат: https://github.com/Muriel-Gasparini/antigravity-account-switcher — supervisor proxy с перехватом HTTP 429, автоматической ротацией и replay in-flight; README blob 32c792416a3bcdeec298a861b577abfa8dd1f8d9. Windows поддержка не подтверждена.
+- Windows fallback: https://github.com/Doomd/antigravity-account-switcher — сохраняет профили и детектирует лимиты, но переключение с рестартом; НЕ соответствует требованию no-restart.
+- Требования приемки: Windows + конкретный Standalone build; ручная/автоматическая смена без повторной авторизации; переключение активного language_server процесса; продолжение текущей задачи; безопасный escrow OAuth токенов; rollback; логирование без секретов. Не считать proxy/account rotation равным реальному seamless current-stream handoff.
+- Заметка: механизм переключения не должен обходить серверные политики авторизации/допуска; проверять разрешения аккаунтов и условия поставщика.
+
+CURSOR: AG_pather / CP-07 DISCOVERY COMPLETE → CP-08 source & behavior audit demusraph → CP-09 controlled Standalone validation.
