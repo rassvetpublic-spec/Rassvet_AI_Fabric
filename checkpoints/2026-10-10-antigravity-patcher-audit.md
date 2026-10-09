@@ -53,3 +53,15 @@ AG_pather / CP-04 COMPLETE → CP-05 full static audit → CP-06 AG-tools compat
 - Совместимость отдельного AG-tools НЕ подтверждена ни функциональным тестом, ни анализом конкретной версии.
 
 CURSOR: AG_pather / CP-05 PARTIAL (blocked source retrieval) → CP-06 AG-tools identification → CP-07 runtime validation (safe test environment).
+
+
+## CP-06 — идентификация AG-tools / lbjlaq/Antigravity-Manager (2026-10-10)
+- Оригинал: https://github.com/lbjlaq/Antigravity-Manager (GitHub API доступен), создан 2025-11-26, последняя запись 2026-10-09. На момент проверки: 32030 stars, 3460 forks, 1730 open issues; это показатели популярности и нагрузки поддержки, НЕ аудит безопасности.
+- Стек: Rust, Tauri v2, React; документация https://github.com/lbjlaq/Antigravity-Manager/blob/main/README.md, blob e6125b46e0e62f17bf631325c1007c4d922e8d8c.
+- README подтверждает функции: OAuth account management, quota monitoring, smart rotation on 401/429, model mapping, OpenAI /v1/chat/completions, Anthropic /v1/messages, Gemini-compatible API, Docker/Windows/Linux/macOS; сервис по документации обычно на localhost:8045.
+- Лицензия: проверенный LICENSE blob f1ba7b85b2b4ca4547d28599413dc48592d648f6 содержит Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0); коммерческую/производную интеграцию нужно отдельно юридически оценивать. GitHub API указывает license=other/NOASSERTION.
+- Архитектурное отличие: AG-tools = независимый локальный proxy/gateway и account router; QNIX/AvenCores = патчеры локальных компонентов Antigravity IDE/CLI. Совместимость этих патчей с AG-tools НЕ установлена, для API-проксирования бинарный патч language_server.exe может быть не нужен.
+- Безопасность: шлюз имеет доступ к OAuth credentials и может читать запросы/ответы клиентов; для тестов использовать isolated accounts, bind loopback, отдельный API key и WEB_PASSWORD, исключить токены из git/logs; не утверждать, что локальное пропатчивание снимает серверные ограничения.
+- Статус: документационный и метаданный аудит проведён, runtime-тестов и детального review Rust исходников нет.
+
+CURSOR: AG_pather / CP-06 COMPLETE (architecture/docs) → CP-07 Rust proxy token handling and network audit → CP-08 patcher-vs-AG-tools empirical compatibility.
