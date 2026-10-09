@@ -57,3 +57,49 @@ def running_components() -> tuple[ProcessIdentity, ...]:
     )
     output = result.stdout.decode(locale.getpreferredencoding(False), "replace")
     return parse_tasklist(output)
+
+
+def windows_process_start_marker(pid: int) -> str | None:
+    """Return Windows process creation FILETIME without reading process memory.
+
+    The marker helps distinguish process restart from PID reuse. Insufficient
+    permissions, exited processes, or non-Windows systems yield no marker.
+    """
+    if os.name != "nt" or not isinstance(pid, int) or pid <= 0:
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    api = ctypes.WinDLL("kernel32", use_last_error=True)
+    api.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    api.OpenProcess.restype = wintypes.HANDLE
+    api.GetProcessTimes.argtypes = (
+        wintypes.HANDLE,
+        ctypes.POINTER(wintypes.FILETIME),
+        ctypes.POINTER(wintypes.FILETIME),
+        ctypes.POINTER(wintypes.FILETIME),
+        ctypes.POINTER(wintypes.FILETIME),
+    )
+    api.GetProcessTimes.restype = wintypes.BOOL
+    api.CloseHandle.argtypes = (wintypes.HANDLE,)
+    api.CloseHandle.restype = wintypes.BOOL
+    handle = api.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        return None
+    try:
+        started = wintypes.FILETIME()
+        exited = wintypes.FILETIME()
+        kernel_time = wintypes.FILETIME()
+        user_time = wintypes.FILETIME()
+        if not api.GetProcessTimes(
+            handle,
+            ctypes.byref(started),
+            ctypes.byref(exited),
+            ctypes.byref(kernel_time),
+            ctypes.byref(user_time),
+        ):
+            return None
+        value = (started.dwHighDateTime << 32) | started.dwLowDateTime
+        return f"{value:016x}" if value else None
+    finally:
+        api.CloseHandle(handle)
