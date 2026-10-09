@@ -21,7 +21,7 @@
 - Работа с реальными токенами не проводилась.
 
 ## Статус
-CP-24 CODE_COMMITTED; CI_PENDING (до появления контрольного запуска).
+CP-24 PASSED_LINUX_CI. Контрольный прогон https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38002313922 завершён success; Linux job выполнен, Windows job пропущен по политике экономии.
 
 ## Курсор
-AG_pather → CP-24 VERIFY_LINUX_CI → CP-25 RASSVET_DESKTOP_STANDALONE_SESSION_DIAGNOSTICS.
+AG_pather → CP-24 VERIFIED_LINUX_CI → CP-25 RASSVET_DESKTOP_STANDALONE_SESSION_DIAGNOSTICS.
