@@ -1,0 +1,29 @@
+{
+  "schema": "RAI_FABRIC_PUBLICATION_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "project": "Rassvet AI Fabric",
+  "version": "0.1.0",
+  "stage": "RAI-FABRIC/07.2-REPOSITORY_PUBLICATION",
+  "verdict": "PASS",
+  "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "published_branch": "main",
+  "original_source_commit": "95dba3c9dddec1b4ce222bd2fe8a966c45b6182e",
+  "original_source_tree": "8bc4c58c9bac0373fcd825c5420832dbe7ecc31f",
+  "original_source_files": 21,
+  "validation": {
+    "original_package_sha256sums": "21/21 PASS",
+    "python_unit_tests": "45/45 PASS",
+    "git_tree_exact_local_match": true,
+    "windows_smoke": "NOT_RUN",
+    "codex_app_server": "NOT_INTEGRATED",
+    "antigravity_live": "NOT_VERIFIED",
+    "gpu_local_inference": "NOT_INTEGRATED"
+  },
+  "authority": {
+    "bpr40_authority_mutations": 0,
+    "bpr40_tri_tower_publication": false,
+    "publication_scope": "GitHub project repository only"
+  },
+  "next_cursor": "RAI-FABRIC/08-WINDOWS_READONLY_SMOKE_THEN_CODEX_APP_SERVER",
+  "next_action": "Validate on Windows in isolated workspace; then implement Codex App Server subscription adapter without billable API fallback."
+}
