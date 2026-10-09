@@ -28,3 +28,10 @@
 ## Статус и курсор
 CP-20 POLICY_APPLIED / BILLING_UNAVAILABLE
 Следующий курсор: AG_pather → CP-21 VERIFY_NO_PUSH_CI → CP-22 TAG_CONTROLLED_VALIDATION → CP-23 SAFE_REGISTRY_IMPLEMENTATION.
+
+## Проверка после переключения политики
+- После двух обычных push (изменение workflow и этот чекпойнт) количество запусков в `AG_pather` осталось **20**. Последний запуск по-прежнему связан с SHA `d7cba1338b62cb48e5e0e091f084524cf3738865`, то есть новая конфигурация не запустила CI на обычные коммиты.
+- Настроен ежедневный read-only контроль через задачу ChatGPT: сообщать при неожиданных push-запусках, более 4 контрольных запусках за 7 дней, длительно зависших/неудачных jobs или расходе свыше 70% лимита, если достоверный биллинг доступен.
+- Автоматизация не создаёт GitHub Actions, не отправляет коммиты и не заменяет реальный биллинг владельца аккаунта.
+
+CURSOR: AG_pather / CP-20 CONFIG_APPLIED + NO_PUSH_TRIGGER_VERIFIED + DAILY_WATCH_ENABLED → CP-21 TAGGED_CI_ON_DEMAND → CP-22 SAFE_REGISTRY.
