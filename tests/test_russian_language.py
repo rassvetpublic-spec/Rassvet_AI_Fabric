@@ -64,5 +64,24 @@ class RussianLanguageTests(unittest.TestCase):
         self.assertIn("обязательное правило проекта", policy)
 
 
+    def test_readme_describes_all_product_domains_without_donor_names(self):
+        root = Path(__file__).resolve().parents[1]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        for name in ("KAT9I_OS", "CKS", "RULESHUB", "ANTIGRAVITYDATA", "CONTROL TOWER"):
+            self.assertIn(name, readme)
+        for identifier in ("oh-my-codex", "Superpowers", "Yeachan-Heo", "obra/superpowers"):
+            self.assertNotIn(identifier.casefold(), readme.casefold())
+
+    def test_product_scope_keeps_web_chat_and_subscription_distinct(self):
+        root = Path(__file__).resolve().parents[1]
+        scope = (root / "docs" / "PRODUCT_SCOPE.md").read_text(encoding="utf-8")
+        self.assertIn("Codex App Server", scope)
+        self.assertIn("ChatGPT Web", scope)
+        self.assertIn("не безлимит", scope)
+        self.assertIn("CONTROL TOWER", scope)
+        self.assertIn("ротацию аккаунтов", scope)
+
+
+
 if __name__ == "__main__":
     unittest.main()
