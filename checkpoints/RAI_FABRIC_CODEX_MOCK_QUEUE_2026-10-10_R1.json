@@ -1,0 +1,23 @@
+{
+  "schema": "RAI_FABRIC_STAGE_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "language": "ru-RU",
+  "stage": "RAI-FABRIC/09.2-MOCK_QUEUE_INTEGRATION",
+  "verdict": "PARTIAL",
+  "summary": "Внедрён отдельный провайдер codex-mock: SQLite claim, stdio дочернего процесса, результат, чекпойнт и запрет подмены реального Codex имитацией.",
+  "evidence": {
+    "local_tests": "81/81 PASS",
+    "previous_windows_ci": "76/76 PASS on Python 3.11 and 3.13",
+    "new_windows_ci": "NOT_RUN",
+    "fake_provider_separate": true,
+    "real_codex_provider_still_disabled": true,
+    "mock_result_marked_simulation": true,
+    "real_task_depends_on_mock_blocked": true,
+    "external_model_calls": 0,
+    "oauth_tokens_read": false,
+    "bpr40_mutations": 0,
+    "tri_tower_publication": false
+  },
+  "cursor": "RAI-FABRIC/09.2-WINDOWS_CI_AND_09.3_OAUTH_PREFLIGHT",
+  "next_action": "Проверить Windows CI и PowerShell-демонстрацию; после этого перейти к безопасному OAuth/PKCE без чтения профилей Codex и без платного fallback."
+}

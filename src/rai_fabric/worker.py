@@ -16,7 +16,7 @@ def run_one(store: FabricStore, provider: str, *, allow_external: bool = False,
             timeout_seconds: int = 300, owner: str | None = None) -> dict[str, Any]:
     if provider == "codex-app":
         raise FabricError("Драйвер Codex App Server не реализован в 0.1.0; задача не захвачена")
-    if provider not in {"mock", "antigravity"}:
+    if provider not in {"mock", "codex-mock", "antigravity"}:
         raise FabricError("Исполнение через этого провайдера не поддерживается")
     if provider == "antigravity" and not allow_external:
         raise FabricError("Для внешнего исполнителя требуется --allow-external; задача не захвачена")
@@ -39,14 +39,31 @@ def run_one(store: FabricStore, provider: str, *, allow_external: bool = False,
             # PASS означает успех тестового транспорта; в доказательствах указана имитация.
             verdict = "PASS"
             external_id = None
+        elif provider == "codex-mock":
+            # Имитатор является отдельным провайдером; никогда не выдаём его за codex-app.
+            from .codex_mock_transport import run_codex_mock
+            outcome = run_codex_mock(timeout_seconds=min(30, timeout_seconds))
+            verdict = outcome["verdict"] or "BLOCKED"
+            response = outcome["response"] or "Подставной процесс завершился без ответа"
+            evidence = {
+                "provider": "codex-mock", "simulation": True, "real_codex": False,
+                "external_model_calls": 0, "billing": "NONE",
+                "protocol_state": outcome["state"], "protocol_cursor": outcome["cursor"],
+                "protocol_error": outcome["error_code"],
+            }
+            external_id = None
         else:
             response, evidence, verdict, external_id = _run_antigravity(
                 store, claim, owner, token, timeout_seconds)
         if store.get(task_id)["cancel_requested"]:
             return store.confirm_cancel(task_id, owner, token)
+        if provider == "codex-mock":
+            cursor = ("REVIEW_EVIDENCE" if verdict == "PASS" else
+                      evidence.get("protocol_cursor", "VERIFY_EXTERNAL_SIDE_EFFECTS"))
+        else:
+            cursor = "REVIEW" if verdict == "PASS" else "RECONCILE"
         return store.finish(task_id, owner, token, verdict=verdict, response=response,
-                            evidence=evidence, cursor=("REVIEW" if verdict == "PASS" else "RECONCILE"),
-                            external_run_id=external_id)
+                            evidence=evidence, cursor=cursor, external_run_id=external_id)
     except Exception as exc:
         # Внешние побочные эффекты могли уже возникнуть: повтор запрещён до сверки.
         if store.get(task_id)["cancel_requested"]:

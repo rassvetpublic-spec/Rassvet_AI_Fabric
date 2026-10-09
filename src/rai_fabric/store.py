@@ -25,7 +25,7 @@ def checksum(value: Any) -> str:
     return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
 
 
-PROVIDERS = frozenset({"mock", "antigravity", "codex-app"})
+PROVIDERS = frozenset({"mock", "codex-mock", "antigravity", "codex-app"})
 TERMINAL = frozenset({"COMPLETE", "FAILED", "BLOCKED", "CANCELLED"})
 
 
@@ -174,8 +174,11 @@ class FabricStore:
                     raise FabricError("Задача с таким идентификатором уже существует, но её содержимое отличается")
                 return self._view(old)
             for dep in deps:
-                if not self.db.execute("SELECT 1 FROM tasks WHERE id=?", (dep,)).fetchone():
+                dependency = self.db.execute("SELECT provider FROM tasks WHERE id=?", (dep,)).fetchone()
+                if not dependency:
                     raise FabricError(f"Неизвестная зависимость: {dep}")
+                if provider not in {"mock", "codex-mock"} and dependency["provider"] in {"mock", "codex-mock"}:
+                    raise FabricError("Реальная задача не может зависеть от имитации вместо проверки")
             now = time.time()
             self.db.execute(
                 "INSERT INTO tasks(id,objective,provider,workspace,status,created_at,updated_at) "

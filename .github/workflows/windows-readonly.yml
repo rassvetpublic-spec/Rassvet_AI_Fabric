@@ -49,3 +49,9 @@ jobs:
           $env:PYTHONUTF8 = '1'
           $env:PYTHONIOENCODING = 'utf-8'
           ./scripts/demo.ps1
+      - name: Очередь и отдельный процесс Codex-mock (без моделей)
+        shell: pwsh
+        run: |
+          $env:PYTHONUTF8 = '1'
+          $env:PYTHONIOENCODING = 'utf-8'
+          ./scripts/demo-codex-mock.ps1

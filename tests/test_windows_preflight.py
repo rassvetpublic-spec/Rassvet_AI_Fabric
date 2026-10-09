@@ -16,7 +16,7 @@ class WindowsPreflightTests(unittest.TestCase):
         self.assertIn("python: ['3.11', '3.13']", workflow)
         self.assertIn('contents: read', workflow)
         self.assertIn('persist-credentials: false', workflow)
-        for step in ('windows-preflight.ps1', 'run-tests.ps1', 'demo.ps1'):
+        for step in ('windows-preflight.ps1', 'run-tests.ps1', 'demo.ps1', 'demo-codex-mock.ps1'):
             self.assertIn(step, workflow)
         for forbidden in ('OPENAI_API_KEY', 'GEMINI_API_KEY', 'curl ', 'Authorization: Bearer',
                           'codex exec', 'agy -p', 'workflow_run'):
