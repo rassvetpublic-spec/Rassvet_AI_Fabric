@@ -29,7 +29,11 @@
   "publication": {
     "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
     "base_main_sha": "8076460b509f14d9700f8745afe4208afedc83f9",
-    "github_commit": "NOT_YET_RECORDED"
+    "github_commit": "fc0d0495c5d5971af989bad2274cb7d98495c12a",
+    "github_source_tree_sha": "ee7bc0010247b60edfdad8d23b1824f0c3a3d08c",
+    "github_source_files": 28,
+    "remote_tree_verified": true,
+    "readback_verified": true
   },
   "cursor": "RAI-FABRIC/08-WINDOWS_READONLY_SMOKE_THEN_CODEX_APP_SERVER",
   "next_action": "Проверить русскую версию на Windows в отдельном тестовом каталоге; после этого реализовать адаптер Codex App Server без платного API fallback",
