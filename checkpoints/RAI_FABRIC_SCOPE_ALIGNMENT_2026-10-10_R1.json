@@ -29,6 +29,11 @@
   "next_cursor": "RAI-FABRIC/08.2-WINDOWS_READONLY_PREFLIGHT_AND_SIWC_PROBE",
   "publication": {
     "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
-    "status": "PENDING_COMMIT_READBACK"
+    "status": "SOURCE_COMMIT_READBACK_VERIFIED",
+    "source_commit": "99c4b252bbf7ffd3d00d60856e102ac68b9fb30a",
+    "source_tree": "1af53bd949fb5a609f5a9a212f1c1efe4090058d",
+    "readme_donor_mentions": false,
+    "verified_main_after_source_commit": true,
+    "verified_scope_and_five_domains": true
   }
 }
