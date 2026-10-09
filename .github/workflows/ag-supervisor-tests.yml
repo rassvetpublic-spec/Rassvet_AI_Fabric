@@ -26,5 +26,7 @@ jobs:
           python-version: "3.12"
       - name: Test Windows Credential Manager using synthetic data only
         env:
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
           PYTHONPATH: src
         run: python -m unittest discover -s tests -v
