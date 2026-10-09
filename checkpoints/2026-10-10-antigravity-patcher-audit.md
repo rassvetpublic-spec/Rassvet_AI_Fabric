@@ -102,3 +102,20 @@ CURSOR: AG_pather / CP-07 DISCOVERY COMPLETE → CP-08 source & behavior audit d
 Никакого рейтинга безопасности по stars, без исполняемых тестов. Проверить прежде всего корректность обработки OAuth токенов, ключей и TLS/HTTP proxy (особенно replay и буфер 100MB), устойчивость CDP, совместимость с текущим Windows LS. Переключение локальных учётных данных не гарантирует обновление токена уже запущенным LS. Обход серверной авторизации не считается рабочим функционалом.
 
 CURSOR: AG_pather / CP-08 COMPLETE (evidence matrix) → CP-09 Windows Control Center source security audit → CP-10 standalone runtime PoC.
+
+
+## CP-10 / CP-11 — audit and original prototype (2026-10-10)
+Source findings:
+- QNIX manager.py lines 701-960: CredReadW/CredWriteW, independent CLI-Manager Credential Manager target and IDE SQLite, token matching, profile snapshot. In-memory live token refresh still unproven.
+- demusraph switcher.py blob 2d6458fc28c1b90d1596fc10a9b7ad6db4cb0f79 includes Credential Manager, OAuth, and taskkill /F /IM Antigravity.exe + relaunch; daemon.py blob 8e4ffae4b822d3edaa3faf293701b1de21ae83b9 detects 429 / RESOURCE_EXHAUSTED and attempts CDP resume. Hence no-interruption claim must NOT be assumed.
+
+Clean-room initial prototype committed:
+- src/raif_ag_supervisor/__init__.py
+- src/raif_ag_supervisor/core.py
+- tests/test_raif_ag_supervisor.py
+
+Capabilities: pure stdlib state machine, candidate selection on 429, no auto-switch on 401/403, human/adapter confirmation before resuming, no credential handling or network, cursor checkpoint and audit events without secrets. Five unittest cases added. Tests not executed by GitHub connector; execution status UNVERIFIED. This is NOT a running Standalone integration.
+
+Important limitation: CLI/IDE binary modification intentionally out of scope for safety-first v0. Future Windows credential adapter must use validated backend and test process behavior; do not log tokens.
+
+CURSOR: AG_pather / CP-11 PROTOTYPE_COMMITTED, TESTS_UNRUN → CP-12 run unit tests + analyze credential adapter → CP-13 isolated Windows Standalone validation.
