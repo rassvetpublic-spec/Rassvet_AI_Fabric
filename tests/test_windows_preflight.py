@@ -13,7 +13,11 @@ class WindowsPreflightTests(unittest.TestCase):
     def test_windows_ci_has_no_ai_auth_and_is_read_only(self):
         workflow = self.read('.github/workflows/windows-readonly.yml')
         self.assertIn('runs-on: windows-latest', workflow)
-        self.assertIn("python: ['3.11', '3.13']", workflow)
+        # Обычный push проверяет Python 3.11; 3.13 доступен вручную без CI-матрицы.
+        self.assertIn("python_version:", workflow)
+        self.assertIn("default: '3.11'", workflow)
+        self.assertIn("- '3.13'", workflow)
+        self.assertNotIn("matrix:", workflow)
         self.assertIn('contents: read', workflow)
         self.assertIn('persist-credentials: false', workflow)
         for step in ('windows-preflight.ps1', 'run-tests.ps1', 'demo.ps1', 'demo-codex-mock.ps1'):
