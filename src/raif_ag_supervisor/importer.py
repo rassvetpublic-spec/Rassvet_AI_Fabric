@@ -4,7 +4,7 @@ Only use with explicitly user-authorized accounts and an approved local vault.
 """
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 _EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -17,7 +17,7 @@ class ImportFormatError(ValueError):
 @dataclass(frozen=True)
 class AccountRecord:
     email: str
-    credential: str
+    credential: str = field(repr=False)
 
 def parse_manifest(data: bytes) -> list[AccountRecord]:
     """Parse entirely in memory; caller owns the sensitive return value."""
