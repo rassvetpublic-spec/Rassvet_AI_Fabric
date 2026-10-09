@@ -1,0 +1,38 @@
+"""Minimal non-destructive command line interface for RAiF AG Supervisor."""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from .diagnostics import default_registry_dir, readonly_status
+from .registry import RegistryError
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="raif_ag_supervisor",
+        description="Безопасная диагностика Antigravity Standalone без чтения токенов",
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    status = commands.add_parser("status", help="Показать процессы и состояние локального реестра")
+    status.add_argument(
+        "--registry-dir", type=Path, default=None,
+        help="Папка собственного реестра RAiF (по умолчанию LOCALAPPDATA/RAiF/AGSupervisor)",
+    )
+    args = parser.parse_args(argv)
+    if args.command != "status":
+        parser.error("Неизвестная команда")
+    try:
+        registry_dir = args.registry_dir if args.registry_dir is not None else default_registry_dir()
+        result = readonly_status(registry_dir)
+    except (OSError, RegistryError, ValueError):
+        print("ОШИБКА: невозможно безопасно прочитать состояние", file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=True, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
