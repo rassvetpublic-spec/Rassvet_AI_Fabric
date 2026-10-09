@@ -1,13 +1,21 @@
-# Экономный Windows-only workflow. Обычный push в AG_pather не запускает CI.
-# Для явного контрольного запуска создайте ветку/тег ag-ci-win-*.
+# Политика: только стандартные GitHub-hosted Windows runners для ПУБЛИЧНОГО репозитория.
+# Изменения исходников/тестов запускают один Windows job. Чекпойнты и документация не запускают CI.
+# Если репозиторий станет приватным, job пропускается во избежание тарифицируемых минут.
 name: Проверка AG Supervisor на Windows
 
 "on":
   push:
     branches:
+      - AG_pather
       - 'ag-ci-win-*'
     tags:
       - 'ag-ci-win-*'
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'scripts/run-tests.ps1'
+      - '.github/workflows/ag-supervisor-tests.yml'
   workflow_dispatch:
 
 permissions:
@@ -24,6 +32,7 @@ env:
 
 jobs:
   unit-windows:
+    if: ${{ github.event.repository.private == false }}
     runs-on: windows-latest
     timeout-minutes: 7
     steps:
