@@ -1,0 +1,32 @@
+{
+  "schema": "RAI_FABRIC_STAGE_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "language": "ru-RU",
+  "stage": "RAI-FABRIC/09.3-OAUTH_OFFLINE_WINDOWS_VERIFIED",
+  "verdict": "PASS",
+  "passed_scope": "Только offline готовность OAuth/PKCE и fail-closed callback; это не разрешение подписных inference",
+  "evidence": {
+    "tested_source_commit": "8e0344e75dd2b1332336460c77645bd294342017",
+    "tested_tree": "4fbc06a27c58967d1703cc39c620b952b9505711",
+    "github_actions_run_id": 38000714409,
+    "github_actions_run_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38000714409",
+    "github_actions_conclusion": "success",
+    "python_3_11": "94/94 PASS",
+    "python_3_13": "94/94 PASS",
+    "local_tests": "94/94 PASS",
+    "callback_loopback_strict": true,
+    "unique_pkce_state_nonce": true,
+    "callback_single_use": true,
+    "secret_free_public_evidence": true,
+    "auth_code_exchanged": false,
+    "id_token_signature_verified": false,
+    "subscription_scope_verified": false,
+    "personal_windows_host_tested": false,
+    "paid_api_calls": 0,
+    "real_inference_requests": 0,
+    "bpr40_mutations": 0,
+    "tri_tower_publication": false
+  },
+  "cursor": "RAI-FABRIC/09.4-ID_TOKEN_VERIFICATION_AND_WINDOWS_TOKEN_VAULT_DESIGN",
+  "next_action": "Далее нужна отдельная криптографическая валидация ID-token/JWKS и хранилище токенов Windows; настоящий пользовательский вход только после согласия."
+}
