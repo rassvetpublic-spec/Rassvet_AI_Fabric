@@ -1,27 +1,46 @@
-name: Проверка Windows без облачных моделей
+# Ограничение расхода CI: только Windows, без Linux/macOS и матрицы на каждый push.
+name: Проверка Windows (экономный режим)
 
 "on":
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - '.github/workflows/windows-readonly.yml'
   pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - '.github/workflows/windows-readonly.yml'
   workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Версия Python для контрольной проверки'
+        type: choice
+        required: true
+        default: '3.11'
+        options:
+          - '3.11'
+          - '3.13'
 
 permissions:
   contents: read
 
 concurrency:
-  group: windows-readonly-${{ github.workflow }}-${{ github.ref }}
+  group: windows-readonly-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   windows-smoke:
-    name: Windows / Python ${{ matrix.python }}
+    name: Windows / Python ${{ inputs.python_version || '3.11' }}
     runs-on: windows-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ['3.11', '3.13']
+    timeout-minutes: 12
     steps:
       - name: Получить исходники без сохранения учётных данных
         uses: actions/checkout@v4
@@ -30,7 +49,7 @@ jobs:
       - name: Установить выбранный Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ inputs.python_version || '3.11' }}
       - name: Установить зависимости проверки подписи токенов
         shell: pwsh
         run: |
