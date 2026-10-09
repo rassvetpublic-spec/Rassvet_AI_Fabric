@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .importer import parse_manifest
+from .filelock import exclusive_file_lock
 
 
 _ID_RE = re.compile(r"raif-[0-9a-f]{32}\Z")
@@ -105,30 +106,33 @@ class LocalAccountRegistry:
             return tuple(_read(self.registry_path, "accounts"))
 
     def recover(self, vault: RegistryVault) -> str:
-        """Resolve an interrupted import. Never delete committed IDs."""
-        with self._mutex:
-            if not self.pending_path.exists():
-                return "clean"
-            pending = _read(self.pending_path, "allocated")
-            committed = set(_read(self.registry_path, "accounts"))
-            overlap = sum(handle in committed for handle in pending)
-            if 0 < overlap < len(pending):
-                raise RegistryError("ambiguous partially committed registry; manual review")
-            if overlap == len(pending):
-                self.pending_path.unlink()
-                return "committed"
-            try:
-                for handle in reversed(pending):
-                    vault.delete(handle)
-            except Exception:
-                raise RegistryError("rollback incomplete; pending journal retained") from None
+        """Resolve an interrupted import under an OS-released write lock."""
+        with self._mutex, exclusive_file_lock(self.root / ".registry.lock"):
+            return self._recover_locked(vault)
+
+    def _recover_locked(self, vault: RegistryVault) -> str:
+        if not self.pending_path.exists():
+            return "clean"
+        pending = _read(self.pending_path, "allocated")
+        committed = set(_read(self.registry_path, "accounts"))
+        overlap = sum(handle in committed for handle in pending)
+        if 0 < overlap < len(pending):
+            raise RegistryError("ambiguous partially committed registry; manual review")
+        if overlap == len(pending):
             self.pending_path.unlink()
-            return "rolled_back"
+            return "committed"
+        try:
+            for handle in reversed(pending):
+                vault.delete(handle)
+        except Exception:
+            raise RegistryError("rollback incomplete; pending journal retained") from None
+        self.pending_path.unlink()
+        return "rolled_back"
 
     def import_manifest(self, raw: bytes, vault: RegistryVault) -> tuple[str, ...]:
         """Import a validated manifest with write-ahead journal and recovery."""
         records = parse_manifest(raw)
-        with self._mutex:
+        with self._mutex, exclusive_file_lock(self.root / ".registry.lock"):
             if self.pending_path.exists():
                 raise RegistryError("pending import requires recovery before new import")
             existing = _read(self.registry_path, "accounts")
@@ -147,7 +151,7 @@ class LocalAccountRegistry:
                 _write(self.registry_path, "accounts", existing + allocated)
             except Exception:
                 # If a vault call fails, preserve the journal if rollback fails.
-                self.recover(vault)
+                self._recover_locked(vault)
                 raise RegistryError("import failed; staged credentials rolled back") from None
             # Registry commit is durable before removing the pending journal.
             # A crash here is resolved by recover() without deleting credentials.
