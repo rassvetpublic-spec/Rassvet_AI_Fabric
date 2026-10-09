@@ -27,6 +27,8 @@ build/
 .rai-fabric/
 auth.json
 credentials.json
+*.dpapi
+oauth_v1/
 *.pem
 *.key
 

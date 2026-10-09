@@ -36,4 +36,4 @@
 - [Codex App Server с OAuth](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server)
 - [Ограничения предварительного доступа](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations)
 
-**Следующий курсор:** `RAI-FABRIC/09.4-ID_TOKEN_VERIFICATION_AND_WINDOWS_TOKEN_VAULT_DESIGN`.
+**Продолжение:** криптографическая проверка токена и проект DPAPI — [этап 09.4](OIDC_ID_TOKEN_AND_WINDOWS_VAULT.md). Эта страница сохраняет историческую границу версии 09.3.
