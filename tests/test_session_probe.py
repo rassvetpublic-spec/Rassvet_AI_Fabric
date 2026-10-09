@@ -1,6 +1,6 @@
 import os
 import unittest
-from raif_ag_supervisor.session_probe import parse_tasklist, running_components
+from raif_ag_supervisor.session_probe import parse_tasklist, running_components, windows_process_start_marker
 
 
 class ProcessProbeTests(unittest.TestCase):
@@ -30,6 +30,16 @@ class ProcessProbeTests(unittest.TestCase):
         result = parse_tasklist('"Antigravity.exe","42"\n')
         self.assertEqual(result[0].image_name, "antigravity.exe")
         self.assertFalse(hasattr(result[0], "token"))
+
+    def test_invalid_process_marker_is_unavailable(self):
+        self.assertIsNone(windows_process_start_marker(-1))
+
+    @unittest.skipUnless(os.name == "nt", "Windows-only native process times")
+    def test_current_process_has_creation_marker(self):
+        marker = windows_process_start_marker(os.getpid())
+        self.assertIsInstance(marker, str)
+        self.assertGreater(int(marker, 16), 0)
+        self.assertEqual(windows_process_start_marker(os.getpid()), marker)
 
     @unittest.skipUnless(os.name == "nt", "Windows-only process discovery")
     def test_live_probe_is_read_only(self):
