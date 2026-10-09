@@ -77,3 +77,28 @@ CURSOR: AG_pather / CP-06 COMPLETE (architecture/docs) → CP-07 Rust proxy toke
 - Заметка: механизм переключения не должен обходить серверные политики авторизации/допуска; проверять разрешения аккаунтов и условия поставщика.
 
 CURSOR: AG_pather / CP-07 DISCOVERY COMPLETE → CP-08 source & behavior audit demusraph → CP-09 controlled Standalone validation.
+
+
+## CP-08 — матрица всех шести кандидатов (2026-10-10)
+Цель: Windows + Antigravity Standalone + ротация аккаунтов при квотах + отсутствие ручного re-login + непрерывность активной задачи.
+
+| Кандидат | Механизм | Автопереключение | Без рестарта | Оценка применимости |
+|---|---|---|---|---|
+| demusraph/antigravity-control-center | Windows Credential Manager + лог LS + CDP resume | заявлено при HTTP 429 | заявлено | приоритет Windows PoC; не подтверждено, что LS перечитывает live token |
+| Muriel-Gasparini/antigravity-account-switcher | scoped HTTP proxy/supervisor + replay запроса | заявлено | заявлено | сильный донор архитектуры, Linux-first, Windows не подтверждён |
+| QNIX-Dev/eligibility-antigravity-patcher | патч локального eligibility + snapshot профилей CLI/IDE | ручное управление | не доказано | утилита патчинга/управления профилями, не бесшовный broker |
+| AvenCores/open-antigravity-patcher | binary patch IDE/CLI | нет подтверждения | не доказано | только патч допуска; оригинал GitHub 404, архивы SourceForge |
+| lbjlaq/Antigravity-Manager | отдельный OpenAI/Anthropic API gateway, account pool | заявлено для proxy | сценарий пользователя не работает | не считать заменой Standalone hot-swap |
+| Doomd/antigravity-account-switcher | VSIX + PowerShell профили | предлагает переключиться | НЕТ (IDE restart) | не подходит для non-stop |
+
+Свидетельства:
+- https://github.com/demusraph/antigravity-control-center — README: hot swap WCM gemini:antigravity, daemon читает language_server.log, CDP resume
+- https://github.com/Muriel-Gasparini/antigravity-account-switcher — README: Linux AG2.0, proxy, replay in-flight 429, fallback tier
+- https://github.com/QNIX-Dev/eligibility-antigravity-patcher/blob/main/README.en.md — IDE SQLite отдельно от CLI/Manager credentials
+- https://github.com/Doomd/antigravity-account-switcher — README явно требует restart
+- https://github.com/lbjlaq/Antigravity-Manager/issues/3221 — IDE switching path defect
+- https://sourceforge.net/projects/open-antigravity-patcher/files/V1.3.8/ — AvenCores архив
+
+Никакого рейтинга безопасности по stars, без исполняемых тестов. Проверить прежде всего корректность обработки OAuth токенов, ключей и TLS/HTTP proxy (особенно replay и буфер 100MB), устойчивость CDP, совместимость с текущим Windows LS. Переключение локальных учётных данных не гарантирует обновление токена уже запущенным LS. Обход серверной авторизации не считается рабочим функционалом.
+
+CURSOR: AG_pather / CP-08 COMPLETE (evidence matrix) → CP-09 Windows Control Center source security audit → CP-10 standalone runtime PoC.
