@@ -1,0 +1,64 @@
+{
+  "artifacts_sha256": {
+    "OPERATOR_RAI_FABRIC_10_1B_README_R1.md": "0b1c208e7b545b9cdb4508fb2f47fc45a8259f5467f42a7eb4f4cdca16b6400b",
+    "STATIC_QA_10_1B_R1.json": "f13f3579085a1d43dc5cf4057e9c1a024ab1d354dac1d81aa708d2a3c2bbe3b8",
+    "Test-RaiF-10_1B-Static.ps1": "744a930c0b310ae74458c82cadecce45357046dde7c8c827eab9e1a16a729eff",
+    "Verify-RaiF-10_1B-Windows.ps1": "777fb2b1ae05ecc237e0287270c9640e51090ba24e1e0572ab7b4c0d0b702039"
+  },
+  "created_utc": "2026-10-10T04:56:14+00:00",
+  "current_cursor": "RAI-FABRIC/10.1A-CLONE_PREFLIGHT_AND_QA_RECONCILIATION",
+  "date": "2026-10-10",
+  "known_limits": [
+    "PowerShell 5.1 AST not executed on real Windows",
+    "Real clone not executed on user host",
+    "On timeout child descendant processes are not independently contained via Windows Job Object",
+    "This static check is necessary but not sufficient for host PASS"
+  ],
+  "mode": "BPR:PLAN++-- / OFFLINE WINDOWS-ONLY",
+  "next_action_ru": "На Windows проверить R2 clone через inspection; после подтверждения exact SHA запустить Test-RaiF-10_1B-Static.ps1, затем Verify-RaiF-10_1B-Windows.ps1 без параметров и отдельно с -Run. Передать санитизированные evidence.",
+  "next_on_qa_pass": "RAI-FABRIC/10.1C-ADVERSARIAL_OFFLINE_REVIEW",
+  "next_on_verified_clone": "RAI-FABRIC/10.1B-WINDOWS_HOST_ACCEPTANCE",
+  "no_action": {
+    "bpr40_mutations": 0,
+    "five_product_domain_mutations": 0,
+    "new_ci_runs_requested": 0,
+    "new_git_merge": 0,
+    "new_git_pushes_to_main": 0,
+    "new_model_turns": 0
+  },
+  "preconditions": [
+    "Windows 10/11 with Windows PowerShell >= 5.1, Git.exe and Python >= 3.11",
+    "Existing local clone C:\\GIT\\Rassvet_AI_Fabric, exact pinned HEAD, clean tracked/untracked/ignored files",
+    "Do not reuse successful Codex turn 10.0B",
+    "Explicit -Run flag for local tests and synthetic demo"
+  ],
+  "project": "Rassvet AI Fabric",
+  "schema": "RAI_FABRIC_10_1B_HOST_QA_HANDOFF_CHECKPOINT/1",
+  "source": {
+    "handoff_branch": "raif-10-1a-clone-handoff-20261010",
+    "handoff_prior_head": "381754c5eaf13ff89bf0ada38431ad4f35e17350",
+    "main_at_readback": "b18f31cb39bd655c7fd7e50466069f23d29c957a",
+    "pinned_branch": "raif-10-1-worktree-offline-20261010",
+    "pinned_sha": "a0daf08375b70d202b3dc7b5ab51f894e87d9ae0",
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric"
+  },
+  "stage": "RAI-FABRIC/10.1B-HOST_QA_PREPARATION",
+  "stage_status": {
+    "10.1A_PUBLISHED_HANDOFF_R2": "PASS_WITH_SCOPE",
+    "10.1A_WINDOWS_CLONE": "NOT_VERIFIED",
+    "10.1B_FULL_WINDOWS_SUITE": "NOT_RUN",
+    "10.1B_NEW_PS_SCRIPT_PREPARED": "PASS_STATIC_ONLY",
+    "10.1B_OFFLINE_MOCK_3_TESTS": "NOT_RUN",
+    "10.1B_POWERSHELL5_AST": "NOT_RUN",
+    "10.1B_STATIC_MARKER_CHECKS": "PASS_STATIC_ONLY",
+    "10.1B_TARGETED_20_WINDOWS_TESTS": "NOT_RUN",
+    "10.1C_ADVERSARIAL_REVIEW": "NOT_RUN"
+  },
+  "static_evidence": {
+    "checks_passed": 38,
+    "checks_total": 38,
+    "test_methods_by_python_ast": 20,
+    "windows_evidence": false
+  },
+  "verdict": "PASS_STATIC_ONLY / HOST_NOT_RUN"
+}
