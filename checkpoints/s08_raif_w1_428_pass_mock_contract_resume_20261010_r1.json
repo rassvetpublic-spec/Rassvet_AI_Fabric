@@ -1,0 +1,98 @@
+{
+  "schema": "RAIF_W1_R2_RECOVERY_HANDOFF/1",
+  "checkpoint_id": "RAIF_W1_WINDOWS_428_PASS_MOCK_HARNESS_CONTRACT_FIX_R2_READY_20261010_R1",
+  "date": "2026-10-10",
+  "owner_repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "owner_branch": "AG_pather",
+  "base_head": "bbdce434de6f656776cdf547771697eb83521da6",
+  "prior_checkpoint": "RAIF_W0B_134_MODIFIED_WIP_W1_ISOLATED_10_3_READY_20261010_R1",
+  "W1": {
+    "uploaded_result_name": "RAiF-W1-RESULT_20261010_134700_872266a9.zip",
+    "sha256": "61535dd5ec1622d985e9ded2c321a21f0191c742dcf5ae77fa8b0bb4fb5d795a",
+    "crc": "PASS",
+    "members": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "run_id": "20261010_134700_872266a9",
+    "commit_pin": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "tree_pin": "8d2a0d0c195a3ffbb64cf26ba46e906936261894",
+    "source_files_scanned": 289,
+    "source_integrity": "EXACT_COMMIT_TREE_VERIFIED",
+    "checkout_clean_before_tests": true,
+    "windows_unittest": {
+      "total": 428,
+      "passed": 428,
+      "worktree_included": 20,
+      "skipped": 0
+    },
+    "checkpoint_status": "BLOCKED",
+    "reason_code": "LOCAL_MOCK_SUBMIT_FAILED",
+    "host_acceptance": "NOT_RUN",
+    "mock_queue": "NOT_RUN",
+    "codex_mock": "NOT_RUN",
+    "checkout_clean_after_tests": "NOT_EXECUTED_DEFAULT_FALSE_NOT_DIRTY_EVIDENCE",
+    "original_c_repo_mutations_reported": 0,
+    "new_github_clone_reusable_if_unchanged": true,
+    "test_evidence_provenance": "SANITIZED_USER_HOST_RESULT"
+  },
+  "code_defect": {
+    "stage": "W1_HOST_HARNESS_ONLY",
+    "incorrect_expectation": "doc.get('task_id') == task_id",
+    "actual_fabric_store_view_field": "id",
+    "affected_checks": [
+      "submit",
+      "run-once",
+      "task"
+    ],
+    "source": "src/rai_fabric/store.py::FabricStore._view + submit + get + finish",
+    "claim_api_exception": "claim() uses task_id but W1 did not call claim",
+    "inference_limits": "Submit returned valid JSON rc0; SQLite worker completion had not been attempted"
+  },
+  "R2": {
+    "zip": "RAiF-W1-SmokeResume-R2.zip",
+    "zip_sha256": "e2702e50e6140111849a7f31454eda6c492f48a281eb763bd4445e4ee041ed07",
+    "launcher": "Start-RAiF-W1-SmokeResume-R2.ps1",
+    "launcher_sha256": "fc6b2226a5a52e11ae739fd22909440ed3546d0cdd77c4fe00b4fd554db1c775",
+    "offline_contract_tests_passed": 30,
+    "offline_contract_tests_total": 30,
+    "unit_test_os": "Linux",
+    "R2_windows_host": "NOT_RUN",
+    "r2_ps7_ast": "NOT_RUN",
+    "no_reclone": true,
+    "no_retest_428": true,
+    "no_original_c_checkout_access": true,
+    "source_expected": "D:\\ЗАГРУЗКИ\\RAIF_W1_RUNTIME_20261010_134700_872266a9\\isolated_source",
+    "prior_result_expected": "D:\\ЗАГРУЗКИ\\RAiF-W1-RESULT_20261010_134700_872266a9.zip",
+    "required_mode": "-Apply",
+    "command": "pwsh.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\\ЗАГРУЗКИ\\Start-RAiF-W1-SmokeResume-R2.ps1\" -Apply",
+    "output_pattern": "D:\\ЗАГРУЗКИ\\RAiF-W1R2-RESULT_<runid>.zip",
+    "result_members": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "expected_if_all_pass": "W1_OFFLINE_CORE_ACCEPTED_COMPOSITE",
+    "safe_fail_if_source_missing": "ISOLATED_SOURCE_MISSING",
+    "fresh_test_databases": 2,
+    "model_calls": 0,
+    "authority_changes": 0
+  },
+  "next_cursor": "W1_R2/VERIFY_PRIOR_428_AND_TWO_FRESH_MOCK_SMOKES",
+  "after_pass": "W2/10_4_CP54D_DURABLE_TASK_RECOVERY",
+  "protected": {
+    "current_main_sha": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "current_tower_sha": "ccf077d4e1c26526acc7cb007a347cddc525c9ce",
+    "tower_authority": "USER_CONTROL_TOWER_DRIVE",
+    "G2_identity": "CLOSED",
+    "main_merge": false,
+    "tower_write": false,
+    "client_wip_134_modified": "PRESERVE",
+    "new_ci_jobs_this_stage": 0
+  }
+}
