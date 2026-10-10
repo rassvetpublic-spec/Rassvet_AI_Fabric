@@ -51,3 +51,15 @@ AG_pather → CP-48 READ_ONLY_VAULT_AUDIT → CP-49 CONTROLLED_ONE_PROFILE_TEST 
 - CP-52 — **отдельный** эксперимент: реальная смена аккаунта требует согласованного изменения активной сессии и возможности возвращения к исходному состоянию.
 
 Курсор после формирования пакета: `CP-48_51 PACKAGE_PREPARED → RECEIVE_USER_RESULT_ZIP → ASSESS_SCOPE → CP-52 CONTROLLED_SWITCH_DESIGN`.
+
+## CP-54: независимый путь (корректировка после CP-53A)
+
+**Действующий документ для следующих этапов:** [RAiF AG Supervisor — independent Windows path](RAiF_AG_Supervisor_Independent_Path_CP54.md).
+
+Ветка AG_pather не должна зависеть от AG-tools: требования "запустить AG-tools", "найти там 5 свежих access tokens", "обновить AG-tools cache" **не являются условиями приёмки**. CP-53 остановился до любых live switches, потому что ошибочно отбирал кандидатов исключительно из AG-tools. Собственный RAiF Credential Manager содержит 9 зарегистрированных записей, а CP-52D подтвердил новый DPAPI-snapshot исходной native сессии.
+
+Проверять кандидатов из оригинальной матрицы CP-08: demusraph/antigravity-control-center (Windows/LS/CDP), Muriel-Gasparini/antigravity-account-switcher (supervisor/proxy/replay), QNIX-Dev/eligibility-antigravity-patcher (Windows credentials/OAuth); Doomd — controlled restart fallback; AvenCores — только справка. AG-tools — сравнительный эталон, не SDK и не runtime.
+
+Новый курсор: `AG_pather → CP-54A INDEPENDENT_WINDOWS_SESSION_ADAPTER → CP-54B OWNED_AUTH_QUOTA → CP-54C SAFE_SWITCH_PROOF_60S_5ACCOUNTS`.
+
+Ограничения потребительской подписки и автоматической ротации сохраняются из `docs/PRODUCT_SCOPE.md`; самостоятельная реализация не делает неразрешённую интеграцию допустимой.
