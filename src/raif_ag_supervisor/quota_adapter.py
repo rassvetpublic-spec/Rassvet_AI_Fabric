@@ -105,9 +105,9 @@ def parse_quota_summary(
                 continue
             if window in values:
                 raise QuotaParseError("ambiguous quota window")
-            raw_disabled = bucket.get("disabled", False)
-            # An invalid disabled field must not be treated as proof of eligibility.
-            disabled = raw_disabled if type(raw_disabled) is bool else True
+            raw_disabled = bucket.get("disabled")
+            # Missing/invalid disabled flag is UNKNOWN; never infer eligibility.
+            disabled = raw_disabled if type(raw_disabled) is bool else None
             values[window] = QuotaWindow(
                 _fraction(bucket.get("remainingFraction")),
                 float(observed_at),

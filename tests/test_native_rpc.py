@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from raif_ag_supervisor.native_rpc import (
     LocalRpcTarget, NativeRpcError, NativeRpcObserver,
-    _decode_reply, invoke_native_rpc,
+    _decode_reply, invoke_native_rpc, invoke_native_quota_rpc,
 )
 
 
@@ -168,6 +168,78 @@ class ObserverTests(unittest.TestCase):
         report = NativeRpcObserver(LocalRpcTarget(1234, "csrf"), boom).observe()
         self.assertNotIn("private-client-secret", str(report))
         self.assertEqual(set(report["method_status"].values()), {"RPC_OBSERVATION_FAILED"})
+
+
+class NativeQuotaWireTests(unittest.TestCase):
+    def setUp(self):
+        self.target = LocalRpcTarget(19876, "opaque-test-csrf")
+
+    def test_unauthorized_network_does_not_start(self):
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection") as conn:
+            for args in (
+                {},
+                {"allow_quota_read": True},
+                {"allow_quota_read": 1, "ownership_verified": lambda: True},
+                {"allow_quota_read": True, "ownership_verified": lambda: False},
+            ):
+                with self.subTest(args=tuple(args)), self.assertRaises(NativeRpcError):
+                    invoke_native_quota_rpc(self.target, **args)
+            conn.assert_not_called()
+
+    def test_quota_request_fixed_https_localhost_and_small_body(self):
+        class Response:
+            status = 200
+            def getheader(self, _): return None
+            def read(self, _): return b'{"response":{"groups":[]}}'
+        class Connection:
+            used = None
+            def __init__(self, host, port, timeout, context):
+                self.location = (host, port)
+                self.tls = context
+                Connection.used = self
+            def request(self, verb, path, body, headers):
+                self.requested = (verb, path, body, headers)
+            def getresponse(self): return Response()
+            def close(self): self.closed = True
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection", Connection):
+            received = invoke_native_quota_rpc(
+                self.target, allow_quota_read=True, ownership_verified=lambda: True,
+            )
+        self.assertEqual(received, {"response": {"groups": []}})
+        c = Connection.used
+        self.assertEqual(c.location, ("127.0.0.1", 19876))
+        self.assertEqual(
+            c.requested[:3],
+            ("POST",
+             "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
+             b'{"request":{},"forceRefresh":false}'),
+        )
+        self.assertEqual(c.requested[3]["x-codeium-csrf-token"], "opaque-test-csrf")
+        self.assertTrue(c.closed)
+
+    def test_oversize_quota_response_rejected(self):
+        class Response:
+            status = 200
+            def getheader(self, _): return None
+            def read(self, _): return b"x" * (256 * 1024 + 1)
+        class Connection:
+            def __init__(self, *_a, **_kw): pass
+            def request(self, *_a, **_kw): pass
+            def getresponse(self): return Response()
+            def close(self): pass
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection", Connection):
+            with self.assertRaises(NativeRpcError) as cm:
+                invoke_native_quota_rpc(
+                    self.target, allow_quota_read=True, ownership_verified=lambda: True,
+                )
+        self.assertEqual(cm.exception.code, "RPC_RESPONSE_SIZE_INVALID")
+
+    def test_owner_exception_is_never_exposed(self):
+        def verifier():
+            raise RuntimeError("secret-personal-host-path")
+        with self.assertRaises(NativeRpcError) as cm:
+            invoke_native_quota_rpc(self.target, allow_quota_read=True, ownership_verified=verifier)
+        self.assertEqual(str(cm.exception), "RPC_OWNER_EVIDENCE_FAILED")
 
 
 if __name__ == "__main__":

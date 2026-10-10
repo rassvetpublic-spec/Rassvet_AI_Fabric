@@ -16,6 +16,7 @@ from typing import Callable
 _SERVICE = "/exa.language_server_pb.LanguageServerService/"
 _ALLOWED = frozenset(("HasAuthToken", "GetAuthStatus"))
 _MAX_RESPONSE_BYTES = 16 * 1024
+_MAX_QUOTA_BYTES = 256 * 1024
 
 
 class NativeRpcError(RuntimeError):
@@ -43,8 +44,8 @@ class LocalRpcTarget:
             raise ValueError("RPC_CSRF_HEADER_INVALID")
 
 
-def _decode_reply(data: bytes) -> dict:
-    if not isinstance(data, bytes) or len(data) > _MAX_RESPONSE_BYTES:
+def _decode_reply(data: bytes, *, max_bytes: int = _MAX_RESPONSE_BYTES) -> dict:
+    if not isinstance(data, bytes) or len(data) > max_bytes:
         raise NativeRpcError("RPC_RESPONSE_SIZE_INVALID")
     try:
         parsed = json.loads(data.decode("utf-8"))
@@ -55,28 +56,23 @@ def _decode_reply(data: bytes) -> dict:
     return parsed
 
 
-def invoke_native_rpc(target: LocalRpcTarget, method: str, *, timeout: float = 2.0) -> dict:
-    """POST fixed, mutation-free Connect JSON over HTTPS IPv4 loopback only.
-
-    Deliberately no redirects, custom paths, proxy support, or arbitrary body.
-    A successful response is NOT proof of a new authenticated account.
-    """
-    if method not in _ALLOWED:
-        raise NativeRpcError("RPC_METHOD_NOT_READONLY_ALLOWLISTED")
-    if not 0 < timeout <= 10:
+def _post_fixed_local_rpc(
+    target: LocalRpcTarget, method: str, body: bytes,
+    *, timeout: float, max_bytes: int,
+) -> dict:
+    if type(target) is not LocalRpcTarget:
+        raise NativeRpcError("RPC_TARGET_INVALID")
+    if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not 0 < timeout <= 10:
         raise ValueError("RPC_TIMEOUT_INVALID")
-
-    # The installed LS uses a self-signed certificate on a per-process loopback
-    # HTTPS port. Disable CA verification for this literal IPv4 loopback ONLY.
-    # The caller MUST independently verify PID + start marker + port ownership
-    # before acquiring a LocalRpcTarget; this transport does not discover PIDs.
+    # The installed LS uses a self-signed certificate on per-process loopback
+    # HTTPS. This is never a global SSL override; remote hosts are forbidden.
     tls_context = ssl._create_unverified_context()
     conn = http.client.HTTPSConnection(
         "127.0.0.1", target.port, timeout=timeout, context=tls_context,
     )
     try:
         conn.request(
-            "POST", _SERVICE + method, body=b"{}",
+            "POST", _SERVICE + method, body=body,
             headers={
                 "content-type": "application/json",
                 "accept": "application/json",
@@ -93,16 +89,53 @@ def invoke_native_rpc(target: LocalRpcTarget, method: str, *, timeout: float = 2
                 n = int(declared)
             except (ValueError, TypeError):
                 raise NativeRpcError("RPC_RESPONSE_LENGTH_INVALID") from None
-            if n < 0 or n > _MAX_RESPONSE_BYTES:
+            if n < 0 or n > max_bytes:
                 raise NativeRpcError("RPC_RESPONSE_SIZE_INVALID")
-        raw = response.read(_MAX_RESPONSE_BYTES + 1)
-        return _decode_reply(raw)
+        raw = response.read(max_bytes + 1)
+        return _decode_reply(raw, max_bytes=max_bytes)
     except NativeRpcError:
         raise
-    except (OSError, http.client.HTTPException, TimeoutError):
+    except (OSError, http.client.HTTPException, TimeoutError, ssl.SSLError):
         raise NativeRpcError("RPC_TRANSPORT_FAILED") from None
     finally:
         conn.close()
+
+
+def invoke_native_rpc(target: LocalRpcTarget, method: str, *, timeout: float = 2.0) -> dict:
+    """Only allowlisted local status reads; never accept caller-provided URLs."""
+    if method not in _ALLOWED:
+        raise NativeRpcError("RPC_METHOD_NOT_READONLY_ALLOWLISTED")
+    return _post_fixed_local_rpc(
+        target, method, b"{}", timeout=timeout, max_bytes=_MAX_RESPONSE_BYTES,
+    )
+
+
+def invoke_native_quota_rpc(
+    target: LocalRpcTarget, *, allow_quota_read: bool = False,
+    ownership_verified: Callable[[], bool] | None = None, timeout: float = 2.0,
+) -> dict:
+    """Opt-in native quota read. May trigger provider traffic from the LS.
+
+    A trusted Windows observer MUST recheck the live LS PID, process creation
+    marker and local listening-port ownership for this target immediately
+    before the HTTPS call; this lower-level client never discovers processes.
+    """
+    if allow_quota_read is not True:
+        raise NativeRpcError("RPC_QUOTA_OPT_IN_REQUIRED")
+    if not callable(ownership_verified):
+        raise NativeRpcError("RPC_OWNER_EVIDENCE_REQUIRED")
+    try:
+        if ownership_verified() is not True:
+            raise NativeRpcError("RPC_OWNER_EVIDENCE_FAILED")
+    except NativeRpcError:
+        raise
+    except Exception:
+        raise NativeRpcError("RPC_OWNER_EVIDENCE_FAILED") from None
+    return _post_fixed_local_rpc(
+        target, "RetrieveUserQuotaSummary",
+        b'{"request":{},"forceRefresh":false}',
+        timeout=timeout, max_bytes=_MAX_QUOTA_BYTES,
+    )
 
 
 def _bool_field(payload: dict, *names: str) -> bool | None:

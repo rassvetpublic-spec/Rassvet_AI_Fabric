@@ -10,8 +10,8 @@ OBS = 1_700_000_000.0
 
 def group(name="Gemini Models", five=.7, week=.4, **overrides):
     buckets = [
-        {"window": "5h", "remainingFraction": five},
-        {"window": "weekly", "remainingFraction": week},
+        {"window": "5h", "remainingFraction": five, "disabled": False},
+        {"window": "weekly", "remainingFraction": week, "disabled": False},
     ]
     buckets[0].update(overrides)
     return {"displayName": name, "buckets": buckets}
@@ -50,6 +50,24 @@ class QuotaAdapterTests(unittest.TestCase):
             with self.subTest(value=value):
                 result = self.parse([group(five=value)])
                 self.assertIsNone(result[ModelGroup.GEMINI].score(OBS))
+
+    def test_missing_disabled_is_unknown_even_when_fraction_positive(self):
+        payload = group()
+        for bucket in payload["buckets"]:
+            bucket.pop("disabled")
+        result = self.parse([payload])
+        gemini = result[ModelGroup.GEMINI]
+        self.assertEqual(gemini.five_hour.status(OBS), QuotaStatus.UNKNOWN)
+        self.assertEqual(gemini.weekly.status(OBS), QuotaStatus.UNKNOWN)
+        self.assertIsNone(gemini.score(OBS))
+
+    def test_one_window_missing_disabled_prevents_selection(self):
+        payload = group()
+        payload["buckets"][1].pop("disabled")
+        self.assertIsNone(self.parse([payload])[ModelGroup.GEMINI].score(OBS))
+
+    def test_explicit_disabled_false_preserves_known_available_snapshot(self):
+        self.assertEqual(self.parse([group()])[ModelGroup.GEMINI].score(OBS), .4)
 
     def test_disabled_removes_candidate(self):
         result = self.parse([group(disabled=True)])

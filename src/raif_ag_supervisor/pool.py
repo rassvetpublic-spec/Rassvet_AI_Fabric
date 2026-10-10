@@ -59,13 +59,13 @@ class QuotaWindow:
     remaining_fraction: float | None
     observed_at: float
     reset_at: float | None = None
-    disabled: bool = False
+    disabled: bool | None = False  # None means eligibility unknown, not enabled.
 
     def __post_init__(self) -> None:
         _timestamp(self.observed_at, "observation timestamp")
         if self.reset_at is not None:
             _timestamp(self.reset_at, "reset timestamp")
-        if not isinstance(self.disabled, bool):
+        if self.disabled is not None and type(self.disabled) is not bool:
             raise PoolError("invalid disabled flag")
         value = self.remaining_fraction
         if value is not None:
@@ -76,6 +76,8 @@ class QuotaWindow:
 
     def status(self, now: float, max_age: float = _MAX_SNAPSHOT_AGE) -> QuotaStatus:
         timestamp = _timestamp(now, "current timestamp")
+        if self.disabled is None:
+            return QuotaStatus.UNKNOWN
         if self.disabled:
             return QuotaStatus.DISABLED
         if self.remaining_fraction is None:
