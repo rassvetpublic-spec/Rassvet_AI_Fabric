@@ -80,3 +80,7 @@ PowerShell 7 Windows-only. `D:\ЗАГРУЗКИ`: один ZIP + один PS1, �
 `AG_pather → CP-54A / INDEPENDENT_WINDOWS_SESSION_ADAPTER → CP-54B / OWNED_AUTH_QUOTA → CP-54C / NATIVE_SWITCH_PROOF → CP-54D / CONTINUITY → CP-55/56`.
 
 **Запрещённый старый курсор:** `CP-53B / REFRESH_AGTOOLS_CACHE` как обязательный шаг.
+
+## Master plan исполнения (актуальный)
+
+**Подробный план с этапами, ownership, тестами и stop/go критериями:** [RAiF_AG_Supervisor_Master_Implementation_Plan_CP54.md](RAiF_AG_Supervisor_Master_Implementation_Plan_CP54.md). Старая обязательная зависимость `REFRESH_AGTOOLS_CACHE` отменена. Следующий этап: `CP-54A1 / OWNED_SESSION_ADAPTER_CONTRACT_AND_TESTS`; GitHub checkpoint: `checkpoints/CP-54-master-implementation-plan-approved.md`.
