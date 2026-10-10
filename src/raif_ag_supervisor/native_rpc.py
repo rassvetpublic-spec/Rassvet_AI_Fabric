@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import ssl
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -55,7 +56,7 @@ def _decode_reply(data: bytes) -> dict:
 
 
 def invoke_native_rpc(target: LocalRpcTarget, method: str, *, timeout: float = 2.0) -> dict:
-    """POST a fixed, mutation-free Connect JSON method via IPv4 loopback only.
+    """POST fixed, mutation-free Connect JSON over HTTPS IPv4 loopback only.
 
     Deliberately no redirects, custom paths, proxy support, or arbitrary body.
     A successful response is NOT proof of a new authenticated account.
@@ -65,7 +66,14 @@ def invoke_native_rpc(target: LocalRpcTarget, method: str, *, timeout: float = 2
     if not 0 < timeout <= 10:
         raise ValueError("RPC_TIMEOUT_INVALID")
 
-    conn = http.client.HTTPConnection("127.0.0.1", target.port, timeout=timeout)
+    # The installed LS uses a self-signed certificate on a per-process loopback
+    # HTTPS port. Disable CA verification for this literal IPv4 loopback ONLY.
+    # The caller MUST independently verify PID + start marker + port ownership
+    # before acquiring a LocalRpcTarget; this transport does not discover PIDs.
+    tls_context = ssl._create_unverified_context()
+    conn = http.client.HTTPSConnection(
+        "127.0.0.1", target.port, timeout=timeout, context=tls_context,
+    )
     try:
         conn.request(
             "POST", _SERVICE + method, body=b"{}",
@@ -142,7 +150,7 @@ class NativeRpcObserver:
                 # User-provided sender errors may embed private URLs/headers.
                 statuses[method] = "RPC_OBSERVATION_FAILED"
         return {
-            "transport": "CONNECT_JSON_LOOPBACK_UNVERIFIED",
+            "transport": "CONNECT_JSON_HTTPS_LOOPBACK",
             "method_status": statuses,
             "has_token_reported": has_token,
             "local_auth_flag_untrusted": auth_flag,

@@ -1,5 +1,6 @@
 """Synthetic-only tests; never contact Google or a real Language Server."""
 import json
+import ssl
 import unittest
 from unittest.mock import patch
 
@@ -53,24 +54,27 @@ class ProtocolTests(unittest.TestCase):
             with self.subTest(length=len(data)), self.assertRaises(NativeRpcError):
                 _decode_reply(data)
 
-    def test_http_transport_is_fixed_local_post_and_no_redirect(self):
+    def test_https_transport_is_fixed_local_post_and_no_redirect(self):
         class Response:
             status = 200
             def getheader(self, _): return None
             def read(self, _: int): return b'{"hasToken":true}'
         class Connection:
             used = None
-            def __init__(self, host, port, timeout):
+            def __init__(self, host, port, timeout, context):
                 self.address = (host, port, timeout)
+                self.context = context
                 Connection.used = self
             def request(self, verb, path, body, headers):
                 self.requested = (verb, path, body, headers)
             def getresponse(self): return Response()
             def close(self): self.closed = True
-        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPConnection", Connection):
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection", Connection):
             result = invoke_native_rpc(self.target, "HasAuthToken")
         self.assertEqual(result, {"hasToken": True})
         self.assertEqual(Connection.used.address[:2], ("127.0.0.1", 12345))
+        self.assertFalse(Connection.used.context.check_hostname)
+        self.assertEqual(Connection.used.context.verify_mode, ssl.CERT_NONE)
         verb, path, body, headers = Connection.used.requested
         self.assertEqual((verb, path, body), ("POST", "/exa.language_server_pb.LanguageServerService/HasAuthToken", b"{}"))
         self.assertEqual(headers["connect-protocol-version"], "1")
@@ -86,10 +90,26 @@ class ProtocolTests(unittest.TestCase):
                     status = 302
                 return Response()
             def close(self): pass
-        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPConnection", Connection):
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection", Connection):
             with self.assertRaises(NativeRpcError) as cm:
                 invoke_native_rpc(self.target, "GetAuthStatus")
         self.assertEqual(str(cm.exception), "RPC_HTTP_NON_200")
+
+    def test_transport_exception_redacts_private_error(self):
+        class Connection:
+            def __init__(self, *_a, **_kw): pass
+            def request(self, *_a, **_kw):
+                raise OSError("private-access-token-in-exception")
+            def close(self): pass
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection", Connection):
+            with self.assertRaises(NativeRpcError) as cm:
+                invoke_native_rpc(self.target, "HasAuthToken")
+        self.assertEqual(str(cm.exception), "RPC_TRANSPORT_FAILED")
+        self.assertNotIn("private-access-token", repr(cm.exception))
+
+    def test_invalid_remote_target_not_accepted_before_tls(self):
+        with self.assertRaises(ValueError):
+            LocalRpcTarget(12345, "csrf", host="remote.example")
 
     def test_oversize_http_body_is_refused(self):
         class Connection:
@@ -102,7 +122,7 @@ class ProtocolTests(unittest.TestCase):
                     def read(self, _): return b"x" * 20000
                 return Response()
             def close(self): pass
-        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPConnection", Connection):
+        with patch("raif_ag_supervisor.native_rpc.http.client.HTTPSConnection", Connection):
             with self.assertRaises(NativeRpcError) as cm:
                 invoke_native_rpc(self.target, "GetAuthStatus")
         self.assertEqual(cm.exception.code, "RPC_RESPONSE_SIZE_INVALID")
