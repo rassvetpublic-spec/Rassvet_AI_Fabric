@@ -88,7 +88,8 @@ class LiveTransportTests(unittest.TestCase):
 class QueueLiveTests(unittest.TestCase):
     def setUp(self):
         temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup)
-        root=Path(temp.name);self.work=root/'workspace';self.work.mkdir()
+        root=Path(temp.name)/'_RAIF_RUNTIME';root.mkdir()
+        self.work=root/'workspace';self.work.mkdir()
         self.home=root/'rassvet_ai_fabric';self.home.mkdir()
         self.exe=root/'codex.exe';self.exe.write_bytes(b'fake')
         self.digest=hashlib.sha256(self.exe.read_bytes()).hexdigest()
