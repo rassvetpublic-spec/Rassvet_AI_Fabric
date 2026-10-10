@@ -36,3 +36,13 @@ A. Проверка standalone version и расположения state/token s
 
 ## Следующий курсор
 AG_pather → CP-27 WINDOWS_ONLY_PUBLIC_CI_VERIFIED → CP-28 LOCAL_AUTH_OBSERVER_DESIGN → CP-29 RASSVET_DESKTOP_RUNTIME_VALIDATION.
+
+## Windows ZIP/PS1 exchange — contract CP-35 (2026-10-10)
+
+- Delivery to user: exactly two files, `RAiF_AG_CPxx_*.zip` plus one `RAiF_AG_CPxx_Run.ps1`, placed in `D:\ЗАГРУЗКИ`.
+- One launch line: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\ЗАГРУЗКИ\RAiF_AG_CPxx_Run.ps1"`. PowerShell execution-policy bypass only applies to the launched process; do not change machine-wide policy.
+- Working root: `C:\GIT\Rassvet_AI_Fabric`.
+- **Final result ZIP must be written directly to project root**: `C:\GIT\Rassvet_AI_Fabric\RAiF_AG_CPxx_RESULT_<timestamp>_<id>.zip`. Avoid `_RAIF_RUNTIME` as final delivery location. Temporary extraction may remain inside `_RAIF_RUNTIME`.
+- Root-level `RAiF_*_RESULT_*.zip` and `_RAIF_RUNTIME` excluded by `.gitignore`. This prevents ordinary `git add .` accidents; it does not substitute for checking sensitive content, and `git add -f` can override ignore.
+- No real tokens/email/cookies/SQLite credential data or full process command lines in output ZIP. Only a strict allowlist of diagnostic report files, with local ZIP integrity checks and script SHA-256 validation.
+- User confirmed Standalone restarted and opened after CP-31 binary patch. CP-34 previously confirmed a model response and quota UI before that restart. Model response **after** restart was not separately reported.
