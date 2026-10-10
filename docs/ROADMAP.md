@@ -30,7 +30,7 @@ RAI Fabric — среда разработки экосистемы `KAT9I_OS`, 
 - [ ] Реальный транспорт Codex App Server по JSON-RPC: обмен с процессом, разрешения, отмена, остановка и evidence.
 - [x] Codex App Server: реальный Windows handshake и `thread/start` в отдельном workspace, без inference; подтверждено пользовательским host-result 09.9-D.
 - [x] **10.0-B: первый разрешённый подписной Codex turn на Windows.** `codex-app` задача SQLite → `turn/start` → завершённый ответ → `arithmetic.py` → 3/3 локальных теста PASS → SHA-256 checkpoint. Один turn, без автоматического повтора и платного API fallback; отчёт `RAI_FABRIC_10_0B_FIRST_LIVE_TURN_WINDOWS_VERIFIED_2026-10-10_R1.json`.
-- [ ] **10.1:** управляемая разработка в изолированном Git worktree: pin исходного SHA, проверка diff, разрешённый набор файлов, тесты, проверка/откат, без автоматического merge. Следующий реальный модельный turn — только с новым явным согласием.
+- [x] **10.1 (офлайн):** работа с изолированным Git worktree, pin SHA, проверка diff/allowlist и bounded Git; Windows 10.2C R5 и PR #4 подтверждены 428/428 тестами. Автоматический живой цикл разработки и повторный real model turn остаются отдельными непроверенными этапами.
 - [x] Офлайн-подготовка авторизации ChatGPT: PKCE S256, одноразовый state/nonce, точный loopback callback, валидация ответов без секретов. GitHub-hosted Windows 3.11/3.13 — run `38000714409`, 94 теста в каждом задании.
 - [x] Офлайн-криптографическая проверка ID-токена по доверенному JWKS (`RS256`, `iss`, `aud`, `nonce`, `exp`, `iat`) и fail-closed тесты; Windows DPAPI — синтетический прототип (GitHub-hosted Windows 3.11/3.13, run 38001948018, 116/116 PASS).
 - [x] Подготовлены офлайн-контракты code exchange/refresh и межпроцессная блокировка ротации; тесты с синтетическими токенами, без HTTP и аккаунта (этап 09.6).
@@ -45,7 +45,7 @@ RAI Fabric — среда разработки экосистемы `KAT9I_OS`, 
 
 - [x] По `MTD 011011` внутренне утверждено направление: собственный пул профилей, native read-only наблюдение, Child Respawn / loopback proxy как проектируемые механизмы.
 - [ ] Проверка provider eligibility, условий использования и допустимого OAuth-контракта до эксплуатационной автоматизации.
-- [x] `DOC_SCOPE_INTERNAL_RECONCILED`: текст `AGENTS.md`, `PRODUCT_SCOPE.md`, RFC и дорожная карта согласованы в интеграционном **кандидате PR**, не изменяя authority внешних поставщиков.
+- [x] `DOC_SCOPE_INTERNAL_RECONCILED`: проектные документы согласованы по директиве владельца и объединены PR #4 в `main` 10.3; внешняя authority провайдера этим не изменена.
 - [ ] CP54C1 rollback и CP54D continuity: синтетика пройдена, но реальное восстановление сессии ещё не подтверждено.
 - [ ] Реальные переключения, in-flight replay, бесшовность и задержки не считать подтверждёнными до отдельного live gate.
 
@@ -54,6 +54,15 @@ RAI Fabric — среда разработки экосистемы `KAT9I_OS`, 
 - [ ] Read-only карта текущих authority и разрешённых workspace для `KAT9I_OS`, `CKS`, `RULESHUB`, `ANTIGRAVITYDATA`, `CONTROL TOWER`.
 - [ ] Единая задача разработки: проект, pin SHA, diff, результаты тестов, evidence, provenance, checkpoint/cursor.
 - [ ] Проверка отсутствия прямой записи в CKS Canon, глобальные правила и CONTROL TOWER без gate.
+
+## 10.3–10.6 — от интеграционного дерева к устойчивой Windows-фабрике
+
+- [x] **10.3:** PR #4 merged в `main@8dc6ee32...`, GitHub-hosted Windows CI #38049976872 **428/428 PASS**, очередь и Codex-mock PASS.
+- [x] **W1 изолированный Windows source:** 428/428 PASS на точном дереве `main`; исходный каталог C: с 134 tracked WIP не изменялся (по отчёту W1).
+- [ ] **W1 final acceptance:** два отдельные mock-smoke и after-test Git clean readback; ранний блокер относился к проверке поля `task_id` вместо `id` в тестовом harness, не к доказанной ошибке SQLite.
+- [ ] **10.4:** перенести BIGWAVE02 из `AG_pather@975c61a5...` — 3 новых файла + обновлённая `continuity.py` — с 28 negative tests; независимое CI точного PR и отдельный owner merge-gate.
+- [ ] **10.5:** foreground durable Windows-worker, cancellation, bounded child process и fail-closed UNKNOWN_OUTCOME после сбоя.
+- [ ] **10.6:** офлайн цикл development task → isolated diff → tests → independent review → PR, с явно закрытым owner gate.
 
 ## R0.3 — локальный GPU и экономная диспетчеризация
 
