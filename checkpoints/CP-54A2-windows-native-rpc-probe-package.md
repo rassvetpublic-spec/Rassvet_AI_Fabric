@@ -10,7 +10,7 @@
 
 ## Комплект
 - `RAiF_AG_CP54A2_LocalRpcReadOnly.zip`, SHA-256 `69B2EFA1536317FA3ED8FEB6464F27588073F3AF0FF4DD24AF43645437A73840`; 3774 bytes; строго `probe.ps1` + `README.txt`; CRC pass.
-- `RAiF_AG_CP54A2_Run.ps1`, SHA-256 `E2F95AD28E466F806835EECD33922304DA943492E4DD6177C82E0849704B1113`; ASCII-only; pinned ZIP SHA-256 проверяется до извлечения.
+- `RAiF_AG_CP54A2_Run.ps1`, SHA-256 `B60E92B7690777E65959EF4226F2DF27FBE6E7DA384D5F505237F023195D92BF`; ASCII-only; pinned ZIP SHA-256 проверяется до извлечения.
 - `pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "D:\ЗАГРУЗКИ\RAiF_AG_CP54A2_Run.ps1"`
 - Staging `C:\GIT\Rassvet_AI_Fabric\_RAIF_RUNTIME\CP54A2_<id>`; конечный результат **непосредственно в корне** `C:\GIT\Rassvet_AI_Fabric\RAiF_AG_CP54A2_RESULT_<id>.zip`.
 
@@ -35,3 +35,8 @@
 
 ## Параллельная ветка RAI-FABRIC/10.1A
 - GitHub trees readback: `10.1A` включает `10.1` и оба FF относительно `main`; дополнительные пути 10.1A не пересекаются с изменёнными AG_pather. Между main и AG_pather четыре общих изменённых файла, а не только три: `.gitignore`, ROADMAP, demo, run-tests. Никаких merge/push main. Далее отдельный временный worktree + Windows QA.
+
+
+### Статическое уточнение перед доставкой
+
+В запускаторе исправлена маска поиска ZIP: ожидается `RAiF_AG_CP54A2_LocalRpcReadOnly.zip` (либо с браузерным суффиксом `(N)`). Новый PS1 SHA-256 закреплён выше. Проверены ZIP CRC, pinned SHA-256, совпадение protocol, состав allowlisted RESULT ZIP и отсутствие записывающих credential/process операций. Это исправление **не тестировалось** в реальном PowerShell 7: статус остаётся WINDOWS_RUNTIME_PENDING.
