@@ -24,3 +24,10 @@ Issue: https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/1
 - CP-53B: refresh AG-tools access-token cache through supported AG-tools controls after current QA work finishes; then re-audit counts. Do not retry CP-53 Live with 0 fresh profiles. CP-54 actual switching remains separate and needs explicit user opt-in.
 
 CURSOR: AG_pather / ISSUE_1_TEST_COLLISION_FIXED_PENDING_CI → CP-53B AGTOOLS_REFRESH_CACHE → CP-54 CONTROLLED_LIVE_SWITCH.
+
+## Validation after code fix
+- Code commit: `d88e764d6340993314f1d1012948601ee0e8a5ef`.
+- Windows GitHub Actions: https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38021738781 — status completed, conclusion SUCCESS (run #28).
+- Conflict file was renamed at the Git tree level in one atomic commit, preserving its blob hash and test cases.
+- Main branch has NOT been merged. Other potential merge conflicts and the actual PowerShell behavior on the user's local Windows are outside this CI result.
+- Issue #1 remains open until broader review is completed; optional architecture RFCs are not implemented.
