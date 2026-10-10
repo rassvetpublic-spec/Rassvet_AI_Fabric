@@ -1,0 +1,40 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.8-CODEX_APP_SERVER_NONINFERENCE_HANDSHAKE",
+  "verdict": "READY_NOT_RUN",
+  "language": "ru-RU",
+  "reference_main_before_delivery": "e4d26b201803c8b9a8f372ef26bb7d0ff52d8cdf",
+  "local_artifacts": {
+    "zip_name": "RAiF-Codex-Handshake-09_8.zip",
+    "zip_sha256": "7f02ed85b3c6afdfe44ce013a95f290a560558f82185bce1f56fe696e8e663b1",
+    "launcher_name": "Start-RAiF-Codex-09_8.ps1",
+    "launcher_sha256": "0be87894b03d82e3864bc573a5cacd2ac89fad28754a60dde45dbe6eb1dd5876",
+    "ps7_probe_sha256": "12550b552ab79bdc437cc54fb65745a2f7dc87b8fa2936413bbc38e04ca2fd88"
+  },
+  "delivery": {
+    "downloads": "D:\\ЗАГРУЗКИ",
+    "host_root": "C:\\GIT\\Rassvet_AI_Fabric",
+    "host_result_zip": "C:\\GIT\\Rassvet_AI_Fabric\\RAiF-Windows-RESULT-CODEX-*.zip",
+    "target": "Windows PowerShell 7"
+  },
+  "static_verification": {
+    "zip_crc": "PASS",
+    "source_file_count": 2,
+    "manifest_hashes": "PASS",
+    "powershell_brace_quote_balance": "PASS",
+    "real_windows_handshake": "NOT_RUN",
+    "github_ci_runs": 0,
+    "linux_ci_jobs": 0
+  },
+  "safety": {
+    "oauth": false,
+    "model_calls_initiated": 0,
+    "existing_codex_home_read": false,
+    "existing_codex_desktop_processes_modified": false,
+    "bpr40_mutated": false,
+    "personal_process_commandlines_exported": false
+  },
+  "next_cursor": "RAI-FABRIC/09.8-B-HOST_HANDSHAKE_RESULT_REVIEW",
+  "next_action_ru": "Получить от пользователя результирующий ZIP, проверить реальный ответ App Server и схему JSONL, затем перейти к MVP реального исполнителя без платного fallback"
+}
