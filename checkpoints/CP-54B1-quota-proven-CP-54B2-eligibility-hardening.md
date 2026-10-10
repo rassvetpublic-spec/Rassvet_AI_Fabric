@@ -37,3 +37,21 @@
 - Windows hosted CI used only synthetic fixtures; neither native RPC nor Google accounts were called from CI.
 - No new run needed just to prove raw quota percentages; CP54B1 Windows evidence already serves that purpose.
 - The next unresolved task is account attribution/provenance, not transport or synthetic parser success.
+
+## CP-54B2 — UI cross-check of real native quota (2026-10-10)
+
+- User submitted a screenshot comparing the previously reported RAiF CP-54B1 quota values (left) with native Antigravity `Settings → Models & Usage` (right).
+- Uploaded screenshot PNG (local-only; **not committed to public GitHub**): SHA-256 `87868bc96183baa1b05814e739dbf77b738b02e7645ce570e01817c367e2b795`; image size 1512×1034.
+- Gemini **5h**: RAiF raw `remainingFraction=0.6866705` (68.66705%) versus native UI **69%**; round-to-nearest integer MATCH.
+- Gemini **weekly**: RAiF raw `remainingFraction=0.6757333` (67.57333%) versus native UI **68%**; round-to-nearest integer MATCH.
+- Claude/GPT **5h**: RAiF 100% versus UI 100%; MATCH.
+- Claude/GPT **weekly**: RAiF 100% versus UI 100%; MATCH.
+- Native UI additionally displays plan `Google AI Pro`, approx. 3h21m to the five-hour limit refresh, and 2d21h to weekly refresh. The CP54B1 sanitized result did **not** include reset timestamps, so these reset times have no independently corroborated RPC equivalent.
+- Conclusion: **4/4 displayed remaining-percentage values agree at UI precision**. Evidence class `UI_CROSSCHECKED_QUOTA_DISPLAY`; native HTTPS quota extraction is useful without AG-tools.
+- Limitations: the screenshot does not establish that both panels were sampled simultaneously, does not expose a verified Google account identity or bind data to one of the nine RAiF opaque handles, and does not prove provider access for future requests. `disabled=null` in RPC stays `UNKNOWN`, not `false`; UI gauges must not silently change the AccountPool eligibility state.
+- `GetUserStatus=RESPONSE_TOO_LARGE` is separate; identity proof remains unfulfilled. `CP-54B3` should use bounded parsing and in-memory redaction if this interface is technically and contractually supported, or an approved identity observer. Avoid redundant CP54B1 quota re-runs.
+- No credential, process, repository core, Tower or BPR40 mutation was requested by the screenshot.
+
+**Gate update:** `G2_NATIVE_QUOTA_DISPLAY_UI_CROSSCHECK = PASS (4/4)`; `G2_ACCOUNT_IDENTITY = UNKNOWN`; `G2_POOL_ELIGIBILITY = UNKNOWN`; `HOT_SWAP = NOT_TESTED`.
+
+**Cursor:** `AG_pather → CP-54B3 / BOUNDED_ACTIVE_IDENTITY_EVIDENCE → CP-54C / USER_CONTROLLED_HANDOFF_GATE`.
