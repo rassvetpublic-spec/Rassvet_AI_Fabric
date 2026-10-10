@@ -233,3 +233,15 @@ STEPS.jsonl: utc, monotonic_elapsed_ms, component, stage, state, safe_error_code
 - docs/PRODUCT_SCOPE.md
 
 Конкретные функции, сроки и сторонние API, для которых нет оснований в этих документах, обозначены выше как **предлагаемая архитектура**, а не подтверждённые возможности.
+
+## 11. Решение после статического аудита реального language_server.exe (2026-10-10)
+
+Подробный подтверждённый разбор: [CP-54A-native-language-server-rpc-binary-findings.md](CP-54A-native-language-server-rpc-binary-findings.md).
+
+**Приоритет MASTER PLAN изменён:** не разрабатывать тяжёлый `SessionAdapter` и новый Google OAuth Manager до проверки встроенного интерфейса. Пропатченный действующий Windows LS (SHA-256 `b23c730a3b23953a7e46851593a5013bc888c524c8965cbb21618fc51122d81e`) содержит protobuf `LanguageServerService` с 324 методами и `HostBridgeService` с `GetOAuthToken`.
+
+Встроенные `GetAuthStatus`, `HasAuthToken`, `GetUserStatus`, `GetAvailableModels`, `RetrieveUserQuotaSummary` и OAuth state stream допускают исследование собственного минимального **read-only ConnectRPC observer** вместо повторения их функциональности в отдельном сервисе. В схеме `LoginRequest` нет поля передачи готового token; среди 324 RPC не выявлены точные `SwitchAccount`/`SetAuthToken`/`ReloadCredentials`. Поэтому возможность бесшовного переключения 9 аккаунтов **не подтверждена**.
+
+**Новый ближайший курсор:** `CP-54A1 / READ_ONLY_LIVE_LOCAL_RPC_PROBE → CP-54A2 / MINIMAL_CONNECT_CLIENT_IF_SUPPORTED → CP-54B / SUPPORTED_SESSION_RELOAD_PROOF → CP-54C / SAFE_TWO_THEN_FIVE_PROFILE_TEST`.
+
+Если локальный протокол не разрешён для сторонней программной автоматизации или сервер не предоставляет подходящий метод смены авторизации, RAiF остаётся независимым в статусе/квотах/задачах и применяет user-controlled handoff с checkpoint. Не перепатчивать LS и не воспроизводить неизвестный auth protocol.
