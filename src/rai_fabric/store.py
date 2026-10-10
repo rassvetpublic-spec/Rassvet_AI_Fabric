@@ -206,7 +206,8 @@ class FabricStore:
         return [self._view(r) for r in self.db.execute(
             "SELECT * FROM tasks ORDER BY created_at DESC,id DESC LIMIT ?", (limit,))]
 
-    def claim(self, owner: str, *, provider: str | None = None, lease_seconds: int = 120) -> dict[str, Any] | None:
+    def claim(self, owner: str, *, provider: str | None = None, lease_seconds: int = 120,
+              task_id: str | None = None) -> dict[str, Any] | None:
         if not owner or len(owner) > 120 or lease_seconds < 5 or lease_seconds > 3600:
             raise FabricError("Некорректный исполнитель или срок аренды (от 5 до 3600 секунд)")
         if provider and provider not in PROVIDERS:
@@ -216,12 +217,13 @@ class FabricStore:
             row = self.db.execute("""
                 SELECT * FROM tasks t WHERE t.status='QUEUED'
                 AND (? IS NULL OR t.provider=?)
+                AND (? IS NULL OR t.id=?)
                 AND NOT EXISTS (
                     SELECT 1 FROM dependencies d
                     JOIN tasks parent ON parent.id=d.depends_on
                     WHERE d.task_id=t.id AND parent.status!='COMPLETE')
                 ORDER BY t.created_at,t.id LIMIT 1
-            """, (provider, provider)).fetchone()
+            """, (provider, provider, task_id, task_id)).fetchone()
             if row is None:
                 return None
             token = secrets.token_urlsafe(32)

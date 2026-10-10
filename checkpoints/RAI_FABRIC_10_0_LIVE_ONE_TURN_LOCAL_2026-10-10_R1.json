@@ -1,0 +1,39 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/10.0-REAL_CODEX_TASK_EXECUTOR",
+  "verdict": "PARTIAL",
+  "scope_ru": "Кодовое исполнение одной реальной Codex задачи в SQLite, проверка ответа и локальные тесты. Живой модельный turn на Windows ещё не выполнялся.",
+  "evidence": {
+    "baseline_main_commit": "b0f54f1466742d202746301716f7a6425a32b1d0",
+    "local_tests_discovered": 213,
+    "local_tests_passed": 206,
+    "windows_only_skipped": 7,
+    "local_errors": 0,
+    "live_model_turns": 0,
+    "live_oauth_requests": 0,
+    "host_live_validation": "NOT_RUN",
+    "github_actions_new_linux_jobs": 0,
+    "user_windows_host_tested": false,
+    "paid_api_fallback": false
+  },
+  "delivery": {
+    "zip": "RAiF-Codex-Live-10_0.zip",
+    "zip_sha256": "ffdadfa6f68edf727a29d2ab7ae95d1efc2d428641549fb04de40118f7ffa48f",
+    "launcher": "Start-RAiF-Codex-Live-10_0.ps1",
+    "launcher_sha256": "21447615f2cadc2a158c3fa9518627f25dad7f0a203919e454874104be27a68f",
+    "download_directory": "D:\\ЗАГРУЗКИ",
+    "result_root": "C:\\GIT\\Rassvet_AI_Fabric",
+    "single_model_turn": "requires user-permitted login and one-time marker"
+  },
+  "operational_boundaries": {
+    "chatgpt_login_required": true,
+    "api_keys_injected": false,
+    "tool_approvals_auto_accepted": false,
+    "model_retries": 0,
+    "five_subsystem_write_access": false,
+    "oauth_or_model_access_in_CI": false
+  },
+  "next_cursor": "RAI-FABRIC/10.0-B-ONE_REAL_TURN_HOST_RESULT_REVIEW",
+  "tri_tower_publication": false
+}
