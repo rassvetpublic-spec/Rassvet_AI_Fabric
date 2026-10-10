@@ -1,0 +1,79 @@
+{
+  "schema": "RAIF_BIGWAVE_SOURCE_ACCEPTANCE/1",
+  "id": "RAIF_BIGWAVE_CP54C1_54D_F10_1B_WINDOWS_RESULT_ACCEPTED_2026-10-10_R1",
+  "date": "2026-10-10",
+  "owner": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "branch": "AG_pather",
+  "source_archive_sha256": "53d6aa9e5f7265663995cfa83428a8aad9ecfbce1b20b9ce883855c995350a33",
+  "result": {
+    "filename": "RAiF-BIGWAVE-RESULT_20261010_080311_c4f3d96c.zip",
+    "sha256": "692658196fd42031633c4ba56c3c4e906a9f9ef63e12e78291df2a5efc7854b4",
+    "run_id": "20261010_080311_c4f3d96c",
+    "zip_crc": "PASS",
+    "allowlist_files": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "receipt_protocol": "RAIF_BIGWAVE_SYNTHETIC_R1",
+    "status": "SUCCESS",
+    "verdict": "WINDOWS_BIGWAVE_SYNTHETIC_PASS_WITH_SCOPE",
+    "steps_passed": 8,
+    "steps_total": 8,
+    "synthetic_tests_passed": 47,
+    "synthetic_tests_total": 47,
+    "tests_failures": 0,
+    "tests_errors": 0,
+    "tests_skipped": 0,
+    "exit_code": 0,
+    "fabric_preflight": "HOST_CLONE_READ_FAILED",
+    "fabric_targeted_tests_executed": false,
+    "fabric_full_host_acceptance_verified": false,
+    "source_clone_read": true,
+    "live_rpc_attempts": 0,
+    "native_credentials_read": false,
+    "account_switches": 0,
+    "authority_changes": 0
+  },
+  "bundled_python_sources_count": 10,
+  "bundled_python_hashes_checked": true,
+  "source_content_matches_accepted_archive": true,
+  "source_publish_mode": "ONE_SOURCE_TEST_CHECKPOINT_COMMIT; CI VIA_STANDARD_WINDOWS_PUSH",
+  "conclusion": {
+    "cp54c1_rollback": "WINDOWS_SYNTHETIC_ONLY_NO_REAL_RESTORE",
+    "cp54d_continuity": "WINDOWS_SYNTHETIC_ONLY_NO_ACTUAL_TASK_REPLAY",
+    "fabric10_1b": "NOT_ACCEPTED_HOST_CLONE_READ_FAILED",
+    "g2_identity": "CLOSED_IDENTITY_UNVERIFIED",
+    "hot_swap": "NOT_TESTED",
+    "inflight_resume": "NOT_TESTED"
+  },
+  "policy": {
+    "no_agtools_dependency": true,
+    "no_replay_of_codex_turn_10_0b": true,
+    "main_merge": false,
+    "authority_changes": 0,
+    "tower_pr29": "OPEN_DRAFT_NONCANON",
+    "no_repeat": [
+      "CP31",
+      "CP46",
+      "CP52D",
+      "CP54A5",
+      "CP54B1",
+      "CP54B2",
+      "CP54B3_V2"
+    ]
+  },
+  "next": {
+    "ag": "BIGWAVE/SOURCE_COMMIT_WINDOWS_CI_READBACK",
+    "fabric": "10.1B/READONLY_CLONE_DIAGNOSTIC_THEN_HOST_ACCEPTANCE",
+    "g2": "CP-54B3/EXPLICIT_G2_IDENTITY_READ_GATE_CLOSED",
+    "future": "CP54D/FAULT_INJECTION_EXPANDED_AFTER_SOURCE_ACCEPTANCE"
+  },
+  "host_contract": {
+    "runtime_and_result_root": "D:\\ЗАГРУЗКИ",
+    "clone_path": "C:\\GIT\\Rassvet_AI_Fabric",
+    "clone_mutations_permitted": false
+  }
+}
