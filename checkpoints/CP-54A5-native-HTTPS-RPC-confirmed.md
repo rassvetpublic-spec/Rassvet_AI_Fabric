@@ -34,3 +34,16 @@
 **CP-54B / безопасный quota observer:** использовать проверенный локальный HTTPS канал для исследования разрешённых read-only методов `GetUserStatus`, `RetrieveUserQuotaSummary`; сериализовать только группы/окна/остатки/время обновления, не email/token/project/полные ответы. Метод квот может инициировать downstream provider запрос из LS, это не обязательно офлайн; живой тест отдельным opt-in.
 
 **Cursor:** `AG_pather → CP-54A5_NATIVE_HTTPS_RPC_CONFIRMED → CP-54A5_PYTHON_CLIENT_HTTPS_CI → CP-54B_NATIVE_QUOTA_OBSERVER_DESIGN → ONE_USER_OPT_IN_WINDOWS_QUOTA_TEST`.
+
+## Code and CI acceptance
+
+- Source/test commit: [748d9f7fa003e45a1f1ae7cf33004528886e5e46](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/commit/748d9f7fa003e45a1f1ae7cf33004528886e5e46).
+- Locally replayed the exact source blobs with isolated 18/18 synthetic unittest PASS; SHA-1 Git blob IDs match the committed source/test blobs.
+- Hosted [Windows GitHub Actions run 38030732079](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38030732079) completed **SUCCESS** on the source commit.
+- Static protobuf audit of uploaded user `language_server.exe` (same CP31 SHA): `RetrieveUserQuotaSummaryRequest` contains `request` (type google.internal.cloud.code.v1internal.RetrieveUserQuotaSummaryRequest) and `force_refresh` bool; imported quota-summary request has `project` string. The response wrapper has `response`; its group messages expose `displayName` and repeated `buckets`; bucket messages expose `window`, `remainingFraction`, `disabled`, `resetTime`. Therefore existing `quota_adapter.py` parses **schema-compatible synthetic data**, but live quota payload remains untested.
+- `GetUserStatusResponse` wraps `userStatus` and `planInfo`; raw response may include personal data. Any future diagnostic must emit safe derived statuses/aggregate only.
+- All native RPCs are internal, with potential network work behind read-only-looking calls. Do not claim offline quota reads without live attestation.
+
+**Gate result:** `G1_NATIVE_READONLY_RPC = PASS_FOR_TWO_STATUS_METHODS`, `G1_ACCOUNT_SWITCH = NOT_TESTED`, `CP54B_NATIVE_QUOTA = PENDING_LIVE`.
+
+**Next cursor:** `AG_pather → CP-54B1 / NATIVE_QUOTA_SAFE_OBSERVER → SINGLE_EXPLICIT_WINDOWS_OPT_IN → CP-54B2 / QUOTA_RESULT_REVIEW`.
