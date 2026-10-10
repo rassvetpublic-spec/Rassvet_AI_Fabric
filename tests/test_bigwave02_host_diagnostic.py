@@ -129,9 +129,58 @@ class HostDiagnosticTests(unittest.TestCase):
         self.assertEqual(ignored["git_reads"], 5)
 
     def test_git_executable_path_is_checked(self):
-        with patch.object(h.shutil, "which", return_value=None):
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.root / "not-installed-git.exe"), \
+                patch.object(h.shutil, "which", return_value=None):
             report = h.inspect_clone(self.repo, windows_override_for_tests=True)
         self.assertEqual(report["verdict"], "GIT_EXECUTABLE_MISSING")
+
+    def test_pinned_windows_git_used_when_not_in_path(self):
+        probes = [h.Probe("OK", str(self.repo)),
+                  h.Probe("OK", sorted(h._ORIGINS)[0]),
+                  h.Probe("OK", h.MAIN_SHA),
+                  h.Probe("OK", ""), h.Probe("OK", ""), h.Probe("OK", h.MAIN_SHA)]
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.git), \
+                patch.object(h.shutil, "which", return_value=None) as which, \
+                patch.object(h, "_invoke_git", side_effect=probes) as invoke:
+            report = h.inspect_clone(self.repo, windows_override_for_tests=True)
+        self.assertEqual(report["verdict"], "HOST_MAIN_10_3_CLEAN_PREFLIGHT_ONLY")
+        self.assertEqual(report["git_reads"], 6)
+        which.assert_not_called()
+        self.assertEqual([c.args[1] for c in invoke.call_args_list],
+                         [str(self.git)] * 6)
+
+    def test_pinned_windows_git_preferred_over_path_match(self):
+        other = self.root / "unexpected-git.exe"
+        other.write_bytes(b"NOT_EXECUTABLE")
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.git), \
+                patch.object(h.shutil, "which", return_value=str(other)) as which, \
+                patch.object(h, "_invoke_git", return_value=h.Probe("GIT_TIMEOUT")) as invoke:
+            report = h.inspect_clone(self.repo, windows_override_for_tests=True)
+        self.assertEqual(report["verdict"], "HOST_ROOT_GIT_TIMEOUT")
+        self.assertEqual(invoke.call_args.args[1], str(self.git))
+        which.assert_not_called()
+
+    def test_pinned_windows_git_with_unsafe_reparse_is_blocked(self):
+        def unsafe(path):
+            return path == self.git
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.git), \
+                patch.object(h.shutil, "which", return_value=None), \
+                patch.object(h, "_unsafe_ancestor", side_effect=unsafe), \
+                patch.object(h, "_invoke_git") as invoke:
+            report = h.inspect_clone(self.repo, windows_override_for_tests=True)
+        self.assertEqual(report["verdict"], "GIT_EXECUTABLE_UNSAFE")
+        invoke.assert_not_called()
+
+    def test_pinned_git_inside_inspected_checkout_is_rejected(self):
+        local_git = self.repo / "bin" / "git.exe"
+        local_git.parent.mkdir()
+        local_git.write_bytes(b"NOT_EXECUTABLE")
+        with patch.object(h, "_WINDOWS_GIT_CMD", local_git), \
+                patch.object(h.shutil, "which", return_value=None), \
+                patch.object(h, "_invoke_git") as invoke:
+            report = h.inspect_clone(self.repo, windows_override_for_tests=True)
+        self.assertEqual(report["verdict"], "GIT_EXECUTABLE_UNTRUSTED")
+        invoke.assert_not_called()
 
     def test_git_command_scrubs_sensitive_env_and_never_uses_shell(self):
         class Completed:

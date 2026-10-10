@@ -59,7 +59,7 @@ RAI Fabric — среда разработки экосистемы `KAT9I_OS`, 
 
 - [x] **10.3:** PR #4 merged в `main@8dc6ee32...`, GitHub-hosted Windows CI #38049976872 **428/428 PASS**, очередь и Codex-mock PASS.
 - [x] **W1 изолированный Windows source:** 428/428 PASS на точном дереве `main`; исходный каталог C: с 134 tracked WIP не изменялся (по отчёту W1).
-- [ ] **W1 final acceptance:** два отдельные mock-smoke и after-test Git clean readback; ранний блокер относился к проверке поля `task_id` вместо `id` в тестовом harness, не к доказанной ошибке SQLite.
+- [x] **W1 final acceptance (только офлайн-ядро):** пользовательский Windows W1 428/428 PASS; отдельный W1-R2 RESULT 9/9 стадий PASS, `mock` и `codex-mock` PASS, финальный Git clean readback PASS на точном `main@8dc6ee32...`. Ранний блокер `task_id` вместо `id` устранён в изолированном тестовом harness; реальные провайдеры и power-loss не проверялись.
 - [ ] **10.4:** перенести BIGWAVE02 из `AG_pather@975c61a5...` — 3 новых файла + обновлённая `continuity.py` — с 28 negative tests; независимое CI точного PR и отдельный owner merge-gate.
 - [ ] **10.5:** foreground durable Windows-worker, cancellation, bounded child process и fail-closed UNKNOWN_OUTCOME после сбоя.
 - [ ] **10.6:** офлайн цикл development task → isolated diff → tests → independent review → PR, с явно закрытым owner gate.

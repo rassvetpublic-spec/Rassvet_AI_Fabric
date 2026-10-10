@@ -1,7 +1,7 @@
 # RAiF 10.4 — Postmerge AG Delta, read-only host and PR QA gate
 
 **Дата:** 2026-10-10. **Owner route:** `RAI-FABRIC/10.4-POSTMERGE_ISSUE_AND_BRANCH_RECONCILIATION`.
-**Статус до PR CI:** `STAGED_AG_DELTA / DOCUMENTS_RECONCILED / INDEPENDENT_WINDOWS_QA_PENDING`.
+**Статус после первого PR CI:** `WINDOWS_CI_456_PASS / PINNED_GIT_FIX_AND_REGRESSION_IN_PROGRESS / DRAFT_OWNER_MERGE_GATE_CLOSED`.
 **Разрешение:** пользовательское `>>>>` продолжает ранее согласованную волну 10.4 (PR/QA), **не** является разрешением на фактическое объединение PR в `main`.
 
 ## Точная база, provenance и границы
@@ -15,17 +15,23 @@
 ## Новый факт W0/W1: не терять пользовательские изменения
 
 - Проверенный W0B: `C:\GIT\Rassvet_AI_Fabric` содержит **134 tracked modified WIP**, локальный HEAD `b18f31cb...`, исторический `origin/main`. Не выполнять `checkout, pull, reset, stash, clean` или связанную worktree запись в этот .git.
-- Новый D:-checkout `main@8dc6ee32...` уже дал **428/428 Windows PASS** (W1). Smoke `mock` и `codex-mock` остались не приняты в пользовательском W1 из-за ошибки harness (`task_id` вместо `id`); это не означает ошибки SQLite.
-- Дальнейший пакет 10.4 создаёт НОВЫЙ каталог под `D:\ЗАГРУЗКИ`, не удаляет предыдущие D:-runtime/RESULT, и выполняет полную проверку только нового PR SHA + два mock-smoke с правильным контрактом.
+- Новый D:-checkout `main@8dc6ee32...` уже дал **428/428 Windows PASS** (W1). Пользовательский W1-R2 RESULT `RAiF-W1R2-RESULT_20261010_140155_51222991.zip` (SHA-256 `500b99cc558a4fe10a2dcfcd04b34a51e544e95281c4c3e1d344992ccc29031c`) подтвердил оба `mock`/`codex-mock`, 9/9 стадий и чистый Git postcheck. Итог `W1_OFFLINE_CORE_ACCEPTED_COMPOSITE`; старый дефект `task_id` вместо `id` относился к тестовому harness.
+- PR #5 включает исправление поиска `git.exe`: приоритет точного пути `C:\Program Files\Git\cmd\git.exe` на Windows, fallback в PATH, сохранение fail-closed проверки reparse/абсолютного пути и отказа от запуска Git внутри проверяемого checkout. Новые отрицательные тесты входят в общую Windows CI. Проверка точного PR SHA обязательна; пользовательские D:-runtime/RESULT сохраняются, 134 tracked WIP на C: не меняются.
 - Указанные GitHub CI и host W1 результаты **разных** source pins. Не суммировать `428 + 265`, не объявлять PASS 10.4 до точного readback CI/RESULT.
 
 ## -- == ++ gates
 
 - `--`: проверить 134 WIP, линейность source, отсутствие перемещения оригинального HEAD и исторические статусы Issue #1/#3; не рассматривать source Git object SHA как независимую подпись.
-- `==`: через отдельный PR с тремя добавленными и одним изменённым Python-файлом доказать объединённую регрессию на Windows и две mock-проверки, без секретов и live RPC. Подтвердить финальный PR tree/blob.
+- `==`: на точном HEAD PR #5 проверить объединённую Windows регрессию, новые Git fallback negative tests и два mock, затем прочитать финальные Git SHA/blob. Подтверждение новых тестов не заменяет независимый review.
 - `++`: после QA/PR принять владельческое решение о merge и продолжить `RAI-FABRIC/10.5-DURABLE_WINDOWS_WORKER`. `AG_pather` сохранить; Git-история AG не становится parent автоматически от snapshot integration.
 - `~~`: release route остаётся ориентированным на офлайн-fabric; AG live identity/provider eligibility, BPR5 promotion и Tower/CKS write находятся вне критического пути и за отдельными gates.
 
 **ЗАПРЕЩЕНО ЭТИМ ЭТАПОМ:** автоматический merge, установка Windows Service, новый реальный Codex turn, identity/account-switch, Credential Manager write, внешние paid API, обновление CONTROL TOWER/Router/BPR40/CKS и очистка пользовательского checkout.
 
 **Cursor:** `RAI-FABRIC/10.4-PR_INDEPENDENT_WINDOWS_QA` → `RAI-FABRIC/10.4-OWNER_MERGE_MTD_PENDING` или `10.4/BLOCKED_<EXACT_CODE>`.
+
+## R2 readback after W1-R2
+
+- Старый source blob `facaf36d6a8bf6eefc32fc27aa944ab50bd6ef1e` указан выше **только как provenance из AG_pather**, не как SHA исправленной реализации.
+- Изменения R2: исправлен Git resolver, четыре регрессионных теста, обновлены README/ROADMAP и этот checkpoint.
+- Финальная Windows CI на исправленном PR SHA должна быть прочитана отдельно. Даже при SUCCESS: статус `READY_FOR_INDEPENDENT_QA`, но **не** автоматический merge.

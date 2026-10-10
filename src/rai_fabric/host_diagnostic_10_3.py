@@ -27,6 +27,8 @@ _ORIGINS = frozenset({
 })
 _MAX_BYTES = 32 * 1024
 _REPARSE = 0x400
+# Operator-confirmed Git for Windows location. Still validate the executable before use.
+_WINDOWS_GIT_CMD = Path(r"C:\Program Files\Git\cmd\git.exe")
 
 
 @dataclass(frozen=True)
@@ -108,6 +110,18 @@ def _unsafe_ancestor(path: Path) -> bool:
         current = current.parent
 
 
+def _resolve_git_executable(*, windows_override_for_tests: bool = False) -> str | None:
+    """Prefer the operator-confirmed installation before PATH (no PATH mutation).
+
+    PATH fallback permits other legitimate installations. The caller retains
+    the absolute-path, source-containment and reparse checks before execution.
+    """
+    is_windows = sys.platform == "win32" or windows_override_for_tests
+    if is_windows and _WINDOWS_GIT_CMD.is_file():
+        return str(_WINDOWS_GIT_CMD)
+    return shutil.which("git.exe" if is_windows else "git")
+
+
 def _pin_class(sha: str) -> str:
     if sha == MAIN_SHA:
         return "MAIN_10_3_EXACT"
@@ -139,7 +153,7 @@ def inspect_clone(source: Path, *, windows_override_for_tests: bool = False) -> 
         return _report("HOST_GIT_CONFIG_REPARSE_BLOCKED", stage="PATH")
     if not (gitdir / "config").is_file():
         return _report("HOST_GIT_CONFIG_MISSING", stage="PATH")
-    git_exe = shutil.which("git.exe" if sys.platform == "win32" else "git")
+    git_exe = _resolve_git_executable(windows_override_for_tests=windows_override_for_tests)
     if not git_exe:
         return _report("GIT_EXECUTABLE_MISSING", stage="GIT")
     executable = Path(git_exe)
