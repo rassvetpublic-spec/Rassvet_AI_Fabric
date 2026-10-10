@@ -57,7 +57,7 @@ class CliTests(unittest.TestCase):
                            json.dumps({'jsonrpc':'2.0','id':2,'method':'tools/list'})])+'\n'
         p=subprocess.run([sys.executable,'-m','rai_fabric','--db',str(self.state),'mcp',
                           '--workspace',str(self.root)],input=payload,capture_output=True,
-                         text=True,encoding='utf-8',env=env,timeout=10)
+                         text=True,encoding='utf-8',errors='replace',env=env,timeout=10)
         self.assertEqual(p.returncode,0,p.stderr)
         lines=[json.loads(x) for x in p.stdout.splitlines()]
         self.assertEqual(len(lines),2)

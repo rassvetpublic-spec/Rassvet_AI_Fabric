@@ -1,13 +1,15 @@
-﻿# Запуск автоматических тестов в отдельном процессе Python.
+# Run tests with a verified Python runtime; never rely on WindowsApps aliases.
 $ErrorActionPreference = 'Stop'
-$env:PYTHONPATH = Join-Path (Split-Path $PSScriptRoot -Parent) 'src'
-if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3 -m unittest discover -s (Join-Path (Split-Path $PSScriptRoot -Parent) 'tests') -v
-} else {
-    & python -m unittest discover -s (Join-Path (Split-Path $PSScriptRoot -Parent) 'tests') -v
-}
-
+. (Join-Path $PSScriptRoot 'resolve-python.ps1')
+$selection = Resolve-RAiFPython
+$exe = $selection.FilePath
+$prefix = @($selection.Prefix)
+$root = Split-Path $PSScriptRoot -Parent
+$env:PYTHONPATH = Join-Path $root 'src'
+$env:PYTHONUTF8 = '1'
+$env:PYTHONIOENCODING = 'utf-8'
+& $exe @prefix -m unittest discover -s (Join-Path $root 'tests') -v
 if ($LASTEXITCODE -ne 0) {
-    throw "Ошибка тестирования: Python вернул код $LASTEXITCODE"
+    throw "Python tests failed: exit code $LASTEXITCODE"
 }
-Write-Host 'Автоматические тесты успешно завершены.'
+Write-Host 'Windows Python tests passed.'

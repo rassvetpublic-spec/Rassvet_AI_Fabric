@@ -1,8 +1,11 @@
 ﻿# Однократная локальная демонстрация в отдельном каталоге. Без облачных моделей и изменений профилей Codex/BPR40.
 $ErrorActionPreference = 'Stop'
-$python = (Get-Command py -ErrorAction SilentlyContinue)
-if ($python) { $exe = 'py'; $prefix = @('-3') }
-else { $exe = 'python'; $prefix = @() }
+. (Join-Path $PSScriptRoot 'resolve-python.ps1')
+$selection = Resolve-RAiFPython
+$exe = $selection.FilePath
+$prefix = @($selection.Prefix)
+$env:PYTHONUTF8 = '1'
+$env:PYTHONIOENCODING = 'utf-8'
 $root = Join-Path $env:TEMP ('rai-fabric-demo-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $root | Out-Null
 $db = Join-Path $root 'state.sqlite3'
