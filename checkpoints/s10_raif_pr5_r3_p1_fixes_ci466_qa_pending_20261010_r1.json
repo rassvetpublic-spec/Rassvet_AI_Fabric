@@ -1,0 +1,68 @@
+{
+  "schema": "RAIF_PR5_R3_QA_GATE_CHECKPOINT/1",
+  "id": "RAIF_PR5_R3_P1_FIXES_WINDOWS_CI466_QA_PENDING_20261010_R1",
+  "date": "2026-10-10",
+  "owner": {
+    "repo": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "branch": "AG_pather",
+    "old_head": "4323a1a57a6b6ba435af7d01e1e2235135fd5ad1"
+  },
+  "pr": {
+    "number": 5,
+    "url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/5",
+    "base": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "r2_sha": "4b371105bcbcb9df02aec8f26fd3c4e26dc92c19",
+    "r3_sha": "112cff5fae434dce3384b8d484ecf33a70ed20cb",
+    "r3_tree": "d18587bdba2b0850bdb2962926b646730e792ffa",
+    "state": "OPEN_DRAFT_NO_MERGE"
+  },
+  "qa": {
+    "r2_verdict": "QA_BLOCKED_3_P1",
+    "r2_review": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/5#pullrequestreview-5480276024",
+    "r3_request": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/5#issuecomment-6100886371",
+    "r3_status": "INDEPENDENT_DELTA_QA_PENDING",
+    "host_R3": "NOT_RUN"
+  },
+  "fixes": [
+    {
+      "id": "P1-01",
+      "code_blob": "d7450e2fc90abf7c345edccbd2950cccc0f849d9",
+      "action": "Concurrent bounded stdout/stderr <=32768 bytes each; kill/reap on overflow or timeout"
+    },
+    {
+      "id": "P1-02",
+      "code_blob": "d7450e2fc90abf7c345edccbd2950cccc0f849d9",
+      "action": "Remove arbitrary Windows PATH fallback; owner-confirmed executable path and SHA256 required",
+      "approved_git_sha256": "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f"
+    },
+    {
+      "id": "P1-03",
+      "code_blob": "7d26a93bfa148a031d3e8b9295ab051c25dac3bf",
+      "action": "Do not transition previous PENDING/UNKNOWN/COMMITTED effect to another state without separate review"
+    }
+  ],
+  "windows_ci": {
+    "run_id": 38076414820,
+    "head": "112cff5fae434dce3384b8d484ecf33a70ed20cb",
+    "status": "COMPLETED_SUCCESS",
+    "unittest": "466/466_PASS",
+    "preflight": "PASS",
+    "queue_mock": "PASS",
+    "codex_mock": "PASS",
+    "new_tests_included": true
+  },
+  "limits": {
+    "CI_is_not_independent_QA": true,
+    "CI_is_not_user_host_QA": true,
+    "real_rollback": "NOT_VERIFIED",
+    "real_powerloss": "NOT_VERIFIED",
+    "target_effect_ledger": "NOT_IMPLEMENTED",
+    "local_C_repo_WIP_134": "PRESERVE",
+    "no_main_merge": true,
+    "no_tower_write": true,
+    "G2": "CLOSED"
+  },
+  "next_cursor": "RAIF/10.4-PR5_R3_INDEPENDENT_DELTA_QA",
+  "after_qa_pass": "SEPARATE_OWNER_MTD_EXACT_PR5_SHA",
+  "after_qa_blocked": "PR5_R4_DELTA_FIX"
+}
