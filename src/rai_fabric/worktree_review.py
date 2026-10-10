@@ -13,6 +13,9 @@ import hashlib
 import json
 import os
 import re
+import queue
+import threading
+import time
 import stat
 import subprocess
 import sys
@@ -116,31 +119,96 @@ def _allowed(values: list[str]) -> list[str]:
 
 
 def _git(repo: Path, *args: str, timeout: int = 25, hooks: Path | None = None) -> bytes:
+    """Git execution with a hard pre-capture output bound and elapsed deadline.
+
+    This hardened candidate is NOT the published pinned-source version until
+    a new commit, Windows regression and explicit integration gate.
+    """
     env = os.environ.copy()
-    # Do not inherit caller-supplied Git config, trace, external diff or command hooks.
     for key in list(env):
         if key.upper().startswith("GIT_"):
             env.pop(key)
     env.update({"GIT_TERMINAL_PROMPT": "0", "GCM_INTERACTIVE": "never",
                 "GIT_LFS_SKIP_SMUDGE": "1", "GIT_NO_LAZY_FETCH": "1",
-                "GIT_CONFIG_NOSYSTEM": "1",
-                "GIT_CONFIG_GLOBAL": os.devnull})
+                "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull})
     flags = ["-c", "core.fsmonitor=false", "-c", "core.sparseCheckout=false",
              "-c", "core.untrackedCache=false"]
     if hooks is not None:
         flags.extend(["-c", f"core.hooksPath={hooks}"])
+    limit = MAX_PATCH_BYTES + 64 * 1024
+    pieces: bytearray = bytearray()
+    pending: queue.Queue[bytes | None] = queue.Queue(maxsize=4)
+    stop_reader = threading.Event()
+    process = None
+    worker = None
+    def read_stdout() -> None:
+        try:
+            assert process is not None and process.stdout is not None
+            while not stop_reader.is_set():
+                chunk = process.stdout.read(32768)
+                while not stop_reader.is_set():
+                    try:
+                        pending.put(chunk, timeout=0.1)
+                        break
+                    except queue.Full:
+                        continue
+                if not chunk:
+                    break
+        except (OSError, ValueError):
+            while not stop_reader.is_set():
+                try:
+                    pending.put(None, timeout=0.1)
+                    break
+                except queue.Full:
+                    continue
 
     try:
-        done = subprocess.run(["git", *flags, "-C", str(repo), *args], stdout=subprocess.PIPE,
-                              stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
-                              shell=False, timeout=timeout, env=env, check=False)
+        process = subprocess.Popen(
+            ["git", *flags, "-C", str(repo), *args], stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, shell=False,
+            env=env, bufsize=0)
+        worker = threading.Thread(target=read_stdout, name="raif-git-bounded-reader", daemon=True)
+        worker.start()
+        deadline = time.monotonic() + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ReviewBlocked("GIT_NOT_AVAILABLE_OR_TIMEOUT")
+            try:
+                block = pending.get(timeout=min(0.2, remaining))
+            except queue.Empty:
+                continue
+            if block is None:
+                raise ReviewBlocked("GIT_STREAM_READ_FAILED")
+            if not block:
+                break
+            if len(pieces) + len(block) > limit:
+                raise ReviewBlocked("GIT_OUTPUT_LIMIT")
+            pieces.extend(block)
+        if process.wait(timeout=max(0.001, deadline - time.monotonic())) != 0:
+            raise ReviewBlocked("GIT_COMMAND_REJECTED")
+        return bytes(pieces)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ReviewBlocked("GIT_NOT_AVAILABLE_OR_TIMEOUT") from exc
-    if done.returncode != 0:
-        raise ReviewBlocked("GIT_COMMAND_REJECTED")
-    if len(done.stdout) > MAX_PATCH_BYTES + 64 * 1024:
-        raise ReviewBlocked("GIT_OUTPUT_LIMIT")
-    return done.stdout
+    finally:
+        stop_reader.set()
+        if process is not None:
+            if process.poll() is None:
+                try:
+                    process.kill()
+                except OSError:
+                    pass
+            try:
+                process.wait(timeout=3)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            if process.stdout is not None:
+                try:
+                    process.stdout.close()
+                except OSError:
+                    pass
+        if worker is not None:
+            worker.join(timeout=1)
 
 
 def _utc() -> str:
