@@ -1,0 +1,32 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.9-REAL_CODEX_THREAD_LIFECYCLE_ADAPTER",
+  "verdict": "PASS_WITH_SCOPE",
+  "passed_scope_ru": "Реальный Codex stdio-адаптер, проверенный синтетическим App Server на Windows; создание потока на пользовательском компьютере еще не подтверждено",
+  "evidence": {
+    "source_commit": "4e85a3c3452d7172568c9c001a106f13e8adb5f5",
+    "source_tree": "f5caab535a38c3015aa6615a21101647cda10dbe",
+    "ci_run_id": 38018442197,
+    "ci_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38018442197",
+    "ci_conclusion": "success",
+    "runner": "windows-latest",
+    "python": "3.11",
+    "tests_discovered": 191,
+    "tests_passed": 191,
+    "tests_skipped": 0,
+    "real_codex_handshake_from_prior_host": true,
+    "real_thread_on_user_host": "NOT_RUN",
+    "live_model_turns": 0,
+    "approval_automatic": false,
+    "isolation_private_codex_home": true,
+    "github_linux_jobs_added": 0,
+    "source_zip_sha256": "d173a4baeac6628cf473e5efa052b539f799edd7b61f32953f1e8966f3bdf69a",
+    "one_ps1_sha256": "31c1d39ba3734efd6fd500cb825a12f4e34b3af53fa98f42014c64e04873ee21"
+  },
+  "limitations_ru": "Thread/start в реальном Codex пока не подтверждён. Дочерний Codex может загружать метаданные; наличие модельного доступа и отсутствие любой фоновой сети этим этапом не доказаны. Реальные OAuth, запросы модели и изменение пяти проектов не выполнялись.",
+  "ci_cost_policy": "Один Windows запуск для значимого кодового коммита; чекпойнт публикуется отдельно без повторного CI.",
+  "next_cursor": "RAI-FABRIC/09.9-B-REAL_THREAD_HOST_RESULT_REVIEW",
+  "next_action_ru": "Пользователь скачивает ZIP и один PS1, запускает через pwsh7; результат ZIP в корне C:\\GIT\\Rassvet_AI_Fabric; провести readback и двигаться к первым явно разрешённым модельным заданиям",
+  "tri_tower_publication": false
+}
