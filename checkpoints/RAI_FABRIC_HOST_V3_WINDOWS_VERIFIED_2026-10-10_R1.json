@@ -1,0 +1,64 @@
+{
+  "schema": "RAI_FABRIC_HOST_VALIDATION_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.7-HOST_V3_RESULT_REVIEW",
+  "verdict": "PASS_WITH_SCOPE",
+  "official_language": "ru-RU",
+  "source": {
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "commit": "0a41a338fe9c866206fe206381e213eb5460b456",
+    "tree": "3d33f72a797e1c8aabf1365972206ff1f5986751",
+    "files_verified": 95,
+    "sha256_manifest_entries": 94
+  },
+  "host_evidence": {
+    "source": "Пользовательский архив результатов локального Windows-запуска; не независимая удалённая аттестация",
+    "archive_name": "RAiF-Windows-RESULT-20261010_044215_c7f2a29c.zip",
+    "archive_sha256": "3a818f3f1502822e22fbd50f510730875764a9d6f98fd868d40f0e6988cb0c8e",
+    "zip_integrity": "PASS",
+    "archive_entries": 24,
+    "reported_archive_location": "C:\\GIT\\Rassvet_AI_Fabric\\RAiF-Windows-RESULT-20261010_044215_c7f2a29c.zip",
+    "windows_build": "10.0.26220",
+    "powershell_version": "5.1.26100.9587",
+    "python": "3.13.14 x64",
+    "venv": "PASS",
+    "preflight": "PASS",
+    "test_suite": {
+      "passed": 176,
+      "failed": 0,
+      "skipped": 0
+    },
+    "mock_task": "PASS",
+    "codex_mock_task": "PASS",
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 5070 Ti",
+      "vram_mib": 16303,
+      "driver": "617.42"
+    },
+    "observed_commands_on_path": {
+      "git": false,
+      "codex": false,
+      "agy": false,
+      "nvidia-smi": true
+    },
+    "note_ru": "git/codex/agy не обнаружены через PATH процесса; установка приложений этим не опровергнута"
+  },
+  "restrictions": {
+    "oauth_live": false,
+    "subscription_access_verified": false,
+    "real_codex_invoked": false,
+    "real_antigravity_invoked": false,
+    "gpu_inference": false,
+    "external_model_calls": 0,
+    "bpr40_changed": false,
+    "control_tower_changed": false,
+    "personal_logs_committed_to_public_git": false
+  },
+  "publication": {
+    "location": "GitHub Rassvet_AI_Fabric, checkpoints only",
+    "github_ci_runs_triggered": 0,
+    "tri_tower": false
+  },
+  "next_cursor": "RAI-FABRIC/09.7-B-WINDOWS_PROVIDER_DISCOVERY_READONLY",
+  "next_action_ru": "Прочитать только метаданные установок Codex/Git/Antigravity и диагностировать официальный поддерживаемый канал; не читать профили авторизации и не запускать модели"
+}
