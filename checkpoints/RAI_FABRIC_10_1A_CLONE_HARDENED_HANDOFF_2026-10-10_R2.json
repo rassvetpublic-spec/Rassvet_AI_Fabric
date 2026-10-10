@@ -1,0 +1,78 @@
+{
+  "artifacts_sha256": {
+    "Clone-RaiF-10_1-Safe-R2.ps1": "45a12693a7413ffe69242b4231832fab46a5dd374d8c931a19ce6485da84cb51",
+    "PLAN_RAI_FABRIC_10_1A_QA_CLONE_BPR_PP_MM_R2.md": "afaa4a506b52dc788fbfb33cff777f2448f64db30b7712260228bdac87a1a82c",
+    "QA-Clone-RaiF-10_1-Static-R2.ps1": "65359ff99a0c3ca1c202eabde56d78595eb2d58f760db5991c59a8ab80ad1eef",
+    "STATIC_QA_EVIDENCE_R2.json": "fa7373269a6fdbe28a65211b9ca3af05d7085766acefe3ba156483d5528a1858"
+  },
+  "created_utc": "2026-10-10T04:38:59.707450+00:00",
+  "current_cursor": "RAI-FABRIC/10.1A-CLONE_PREFLIGHT_AND_QA_RECONCILIATION",
+  "date": "2026-10-10",
+  "guards": {
+    "no_CI_manual_dispatch": true,
+    "no_account_quota_rotation": true,
+    "no_ag_pather_mutations": true,
+    "no_bpr40_authority_mutations": true,
+    "no_codex_turn_repeat": true,
+    "no_existing_C_git_target_mutations": true,
+    "no_main_mutations": true,
+    "no_pull_request_or_merge": true,
+    "windows_only_run": true
+  },
+  "handoff": {
+    "branch": "raif-10-1a-clone-handoff-20261010",
+    "branch_is_separate_from_target": true,
+    "github_commit": "SEE_FINAL_READBACK",
+    "source_target_branch_must_remain_at_pin": true
+  },
+  "host_observations": {
+    "desktop_commander": "PAUSED_MONTHLY_USAGE_LIMIT",
+    "local_clone_performed": false,
+    "local_inspect_performed": false,
+    "local_target": "UNVERIFIED",
+    "reason": "Cannot run Desktop Commander on user Windows host; tool instructed not to retry while monthly limit persists.",
+    "windows_test_count_executed": 0
+  },
+  "mode": "BPR:PLAN++--",
+  "next_action": "Run R2 read-only inspect then -Apply only with absent target; collect redacted CHECKPOINT.json and STAGES.jsonl for Windows QA.",
+  "next_cursor_if_existing_conflict": "RAI-FABRIC/10.1A-EXISTING_TARGET_RECONCILIATION",
+  "next_cursor_if_win_clone_verified": "RAI-FABRIC/10.1B-WINDOWS_HOST_ACCEPTANCE",
+  "r2_changes": [
+    "Assert Git ignored/untracked entries before accepting an existing clone",
+    "Inspect reparse points for .git and config",
+    "Pre-checkout Git tree safety, symlinks/gitlinks, case-fold and reserved names",
+    "Check live branch pin again before staging promotion",
+    "Atomic checkpoint/cursor writes and write-through event append",
+    "Redact user profile path and capture interrupted staging attempts",
+    "Keep bootstrap changes separate from pinned source branch"
+  ],
+  "schema": "RAI_FABRIC_10_1A_HANDOFF_CHECKPOINT/2",
+  "source": {
+    "base_commit": "b18f31cb39bd655c7fd7e50466069f23d29c957a",
+    "pinned_branch": "raif-10-1-worktree-offline-20261010",
+    "pinned_commit": "a0daf08375b70d202b3dc7b5ab51f894e87d9ae0",
+    "qa_issue": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/1",
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric"
+  },
+  "stage": "RAI-FABRIC/10.1A-CLONE_SCRIPT_HARDENING",
+  "stage_status": {
+    "10.1A.0_SOURCE_AND_QA_READBACK": "PASS_WITH_SCOPE",
+    "10.1A.1_CLONE_LAUNCHER_STATIC_HARDENING": "PASS_STATIC_ONLY",
+    "10.1A.2_GITHUB_HANDOFF_PUBLISH": "PENDING_REMOTE_READBACK",
+    "10.1A.3_WINDOWS_INSPECT": "NOT_RUN",
+    "10.1A.4_WINDOWS_CLONE": "NOT_RUN",
+    "10.1B_TARGETED_UNITTTESTS": "NOT_RUN",
+    "10.1C_NEGATIVE_TESTS": "NOT_RUN",
+    "10.1D_INDEPENDENT_QA": "NOT_RUN"
+  },
+  "static_qa": {
+    "checks_passed": 36,
+    "checks_total": 36,
+    "evidence": "STATIC_QA_EVIDENCE_R2.json",
+    "host_ps51_parser": "NOT_RUN",
+    "source_tree_case_collisions": 0,
+    "source_tree_regular_files": 142,
+    "source_tree_unsafe_modes": 0
+  },
+  "verdict": "PASS_STATIC_ONLY / HOST_NOT_RUN"
+}

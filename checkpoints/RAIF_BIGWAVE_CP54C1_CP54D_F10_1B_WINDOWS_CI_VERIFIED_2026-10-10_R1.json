@@ -1,0 +1,90 @@
+{
+  "schema": "RAIF_BIGWAVE_RESULT_AND_CI_HANDOFF/1",
+  "checkpoint_id": "RAIF_BIGWAVE_CP54C1_CP54D_F10_1B_WINDOWS_CI_VERIFIED_2026-10-10_R1",
+  "date": "2026-10-10",
+  "owner_repo": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "owner_branch": "AG_pather",
+  "source_commit": "4e801c6e8a6ef1c854f3f2df9f81bbe678070d2e",
+  "parent_checkpoint": "RAIF_BIGWAVE_CP54C1_54D_F10_1B_WINDOWS_RESULT_ACCEPTED_2026-10-10_R1",
+  "host_result": {
+    "name": "RAiF-BIGWAVE-RESULT_20261010_080311_c4f3d96c.zip",
+    "sha256": "692658196fd42031633c4ba56c3c4e906a9f9ef63e12e78291df2a5efc7854b4",
+    "crc": "PASS",
+    "members": 5,
+    "steps_pass": 8,
+    "steps_total": 8,
+    "offline_tests_pass": 47,
+    "offline_tests_total": 47,
+    "status": "SUCCESS",
+    "verdict": "WINDOWS_BIGWAVE_SYNTHETIC_PASS_WITH_SCOPE",
+    "fabric_preflight": "HOST_CLONE_READ_FAILED",
+    "fabric_targeted_tests_executed": false,
+    "fabric_full_10_1b_host_qa": false
+  },
+  "published_code": {
+    "modules": 5,
+    "new_test_files": 5,
+    "git_commit": "4e801c6e8a6ef1c854f3f2df9f81bbe678070d2e",
+    "source_files_match_accepted_zip": true,
+    "existing_init_files_preserved": true
+  },
+  "windows_ci": {
+    "workflow_run_id": 38037038411,
+    "url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38037038411",
+    "head_sha": "4e801c6e8a6ef1c854f3f2df9f81bbe678070d2e",
+    "conclusion": "success",
+    "total_tests": 237,
+    "new_bigwave_tests": 47,
+    "errors": 0,
+    "failures": 0,
+    "manual_reruns": 0
+  },
+  "acceptance": {
+    "cp54c1_rollback": "WINDOWS_SYNTHETIC_PASS_ONLY",
+    "cp54d_continuity": "WINDOWS_SYNTHETIC_PASS_ONLY",
+    "fabric10_1b": "HOST_NOT_ACCEPTED_READ_FAILED",
+    "g2_identity": "CLOSED_UNVERIFIED",
+    "real_native_switch": "NOT_TESTED",
+    "actual_rollback": "NOT_TESTED",
+    "inflight_resume": "NOT_TESTED"
+  },
+  "current_heads_at_readback": {
+    "AG_pather": "4e801c6e8a6ef1c854f3f2df9f81bbe678070d2e",
+    "main": "b18f31cb39bd655c7fd7e50466069f23d29c957a",
+    "raif_10_1a": "a5c4e6d2be35588cc875ae070566e3d39baed8d5"
+  },
+  "tower": {
+    "pr29": "OPEN_DRAFT_NONCANON_POINTER_ONLY",
+    "merge": false,
+    "authority_change": false
+  },
+  "local_path_contract": {
+    "all_runtime_and_result": "D:\\ЗАГРУЗКИ",
+    "existing_clone": "C:\\GIT\\Rassvet_AI_Fabric",
+    "no_clone_reset_rebase_merge": true
+  },
+  "no_repeat": [
+    "CP31 patch",
+    "CP46 vault import",
+    "CP52D snapshot",
+    "CP54A5 RPC",
+    "CP54B1 quota",
+    "CP54B3 V2 observer",
+    "Codex 10.0B live turn",
+    "BIGWAVE R1 47 tests"
+  ],
+  "next_cursors": {
+    "ag": "BIGWAVE_02/CP54D_HARDENING_AND_GATED_RECOVERY",
+    "fabric": "10.1B/READONLY_HOST_CLONE_DIAGNOSIS_THEN_FULL_WINDOWS_QA",
+    "g2": "CP54B3/EXPLICIT_IDENTITY_READ_GATE_CLOSED",
+    "integration": "ISSUE-3/DETACHED_MERGE_REHEARSAL_AFTER_QA"
+  },
+  "guardrails": {
+    "no_live_identity_read_without_explicit_gate": true,
+    "no_account_switch": true,
+    "no_provider_requests": true,
+    "no_main_or_tower_merge": true,
+    "no_authority_mutation": true
+  },
+  "next_work": "Diagnose why read-only rev-parse of user C:\\GIT clone failed; keep source untouched; perform pinned 10.1B targeted/full/mock QA only on approved safe isolation; expand CP54D faults only via synthetic tests; require distinct G2 for any real LS call."
+}

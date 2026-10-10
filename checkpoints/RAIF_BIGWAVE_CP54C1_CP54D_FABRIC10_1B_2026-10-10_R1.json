@@ -1,0 +1,98 @@
+{
+  "schema": "RAIF_BIGWAVE_CHECKPOINT/1",
+  "id": "RAIF_BIGWAVE_CP54C1_CP54D_FABRIC10_1B_2026-10-10_R1",
+  "date": "2026-10-10",
+  "owner": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "branch": "AG_pather",
+  "head_before_checkpoint": "9fa0b5e36755a4667e22badfcfacd9ed94c0a7c1",
+  "previous_checkpoint": "RAIF_CHAT_HANDOFF_CP54B3_WINDOWS_ACCEPTED_2026-10-10_R1",
+  "rationale": "Owner requested larger safe batches instead of micro-checkpoints; no identity/authority/merge gates opened",
+  "aggregate_stages": {
+    "CP54C1_ROLLBACK_SIMULATOR": "LOCAL_OFFLINE_SYNTHETIC_PASS_ONLY",
+    "CP54D_ATOMIC_CONTINUITY": "LOCAL_OFFLINE_SYNTHETIC_PASS_ONLY",
+    "FABRIC_10_1B": "READONLY_PIN_PREFLIGHT_IMPLEMENTED_NOT_HOST_RUN",
+    "G2_IDENTITY": "CLOSED_IDENTITY_UNVERIFIED",
+    "CP54C2_REAL_TWO_ACCOUNT_SWITCH": "NOT_AUTHORIZED_NOT_TESTED",
+    "CP54C3_FIVE_ACCOUNTS_60_SECONDS": "NOT_AUTHORIZED_NOT_TESTED"
+  },
+  "source_artifacts": {
+    "delivery_zip_name": "RAiF-BIGWAVE-CP54C1-54D-F10_1B-R1.zip",
+    "delivery_zip_sha256": "53d6aa9e5f7265663995cfa83428a8aad9ecfbce1b20b9ce883855c995350a33",
+    "launcher_name": "Start-RAiF-BIGWAVE-R1.ps1",
+    "launcher_sha256": "d1697583e33087f6f0cae8ad5b893d284ff9bb0763eafc73bc27da3434f45f5d",
+    "package_members": 14,
+    "package_code_scope": [
+      "session_evidence.py",
+      "rollback_harness.py",
+      "audit.py",
+      "continuity.py",
+      "host_gate_10_1b.py"
+    ],
+    "package_tests": "test_bigwave*.py",
+    "binary_payloads": false,
+    "github_source_files_committed": false,
+    "github_source_commit_gate": "AFTER_WINDOWS_RESULT_IF_ACCEPTED",
+    "source_storage": "CONVERSATION_ARTIFACT_ONLY_UNTIL_PROJECT_IMPORT"
+  },
+  "verification": {
+    "sandbox_synthetic_tests_passed": 47,
+    "sandbox_synthetic_tests_total": 47,
+    "sandbox_errors": 0,
+    "sandbox_failures": 0,
+    "sandbox_skips": 0,
+    "source_zip_crc": "PASS",
+    "source_zip_sha256_checked": true,
+    "source_members_strict_hashes_pass": true,
+    "one_archive_one_launcher": true,
+    "windows_pwsh7_ast": "NOT_RUN",
+    "windows_host_run": "NOT_RUN",
+    "fabric_full_10_1b_host_qa": "NOT_RUN",
+    "ci_triggered_for_this_wave": false,
+    "source_prior_win_ci_run_id": 38034030604
+  },
+  "windows": {
+    "delivery_root": "D:\\ЗАГРУЗКИ",
+    "output_pattern": "D:\\ЗАГРУЗКИ\\RAiF-BIGWAVE-RESULT_<runid>.zip",
+    "runtime_pattern": "D:\\ЗАГРУЗКИ\\RAiF_BIGWAVE_RUNTIME_<runid>",
+    "run_command": "pwsh.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\\ЗАГРУЗКИ\\Start-RAiF-BIGWAVE-R1.ps1\"",
+    "result_allowlist": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "reads_existing_clone_for_pin_only": true,
+    "source_clone_mutations": 0,
+    "refresh_fetch_or_clone": false,
+    "model_calls": 0,
+    "live_rpc_calls": 0,
+    "oauth_calls": 0,
+    "account_switches": 0,
+    "native_credential_writes": 0,
+    "authority_changes": 0
+  },
+  "protected": {
+    "tower_pr_29": "DRAFT_NONCANON_POINTER_ONLY",
+    "main_merge": false,
+    "tower_merge": false,
+    "account_identity_verified": false,
+    "original_standalone_restoration_verified": false,
+    "inflight_continuity_verified": false
+  },
+  "next_cursor": {
+    "owner": "AG_pather/BIGWAVE_WINDOWS_RESULT_READBACK",
+    "after_host_pass": "AG_pather/CP54C1_CPD_FAULT_AUDIT_AND_G2_IDENTITY_GATE_REVIEW",
+    "fabric_parallel": "RAI-FABRIC/10.1B-WINDOWS_HOST_ACCEPTANCE",
+    "no_live_without_gate": "CP-54B3/EXPLICIT_G2_IDENTITY_READ_GATE"
+  },
+  "no_repeat": [
+    "CP31 patch",
+    "CP46 nine account import",
+    "CP52D snapshot",
+    "CP54A5 transport",
+    "CP54B1 quota",
+    "CP54B3 Windows 11/11",
+    "Codex turn 10.0B"
+  ]
+}
