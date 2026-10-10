@@ -1,0 +1,146 @@
+{
+  "schema": "RAIF_BIGWAVE02_CHECKPOINT/1",
+  "checkpoint_id": "RAIF_BIGWAVE02_CP54D_FABRIC10_3_SAFE_DIAGNOSTIC_20261010_R1",
+  "date": "2026-10-10",
+  "owner_repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "owner_branch": "AG_pather",
+  "source_base": "4032b73bcdbc2e355898953439194e7a077d90e0",
+  "source_commit": "975c61a5b77ca69a674df994fbcab0d372c62ac9",
+  "source_tree": "4f58f8262c84e56bf74deee2264a12eeca08106a",
+  "main_ref_at_build": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+  "tower_github_ref_at_build": "6a498073a507ce9a1836231937c908c08f75b212",
+  "prior_checkpoint": "RAIF_10_3_POST_MERGE_TOWER_BPR5_READBACK_20261010_R1",
+  "work_scope": [
+    "FABRIC_10_3_SAFE_READONLY_LOCAL_GIT_DIAGNOSTIC",
+    "CP54D_CHECKPOINT_FAULT_NEGATIVE_TESTS",
+    "SOURCE_LINEAGE_WITH_10_3_MERGE_READBACK"
+  ],
+  "source_paths": [
+    "src/rai_fabric/host_diagnostic_10_3.py",
+    "src/raif_ag_supervisor/continuity.py",
+    "tests/test_bigwave02_host_diagnostic.py",
+    "tests/test_bigwave02_continuity_faults.py"
+  ],
+  "evidence": {
+    "local_py_offline_new_tests": {
+      "passed": 28,
+      "run": 28,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0
+    },
+    "local_py_combined_regressions": {
+      "passed": 75,
+      "run": 75
+    },
+    "github_ci": {
+      "run_id": 38051697374,
+      "commit_sha": "975c61a5b77ca69a674df994fbcab0d372c62ac9",
+      "status": "completed",
+      "conclusion": "success",
+      "tests": 265,
+      "errors": 0,
+      "failures": 0,
+      "platform": "windows-latest",
+      "run_attempt": 1
+    },
+    "original_r5_10_3_ci": {
+      "run_id": 38049455516,
+      "passed": 428,
+      "source_commit": "8bbe06dcd3bc14447a6a5c5077f100fc005ed5c2",
+      "merge_tree_matches_pr_head": true
+    },
+    "code_static_validation": "PASS",
+    "new_zip_crc": "PASS",
+    "bundle_manifest_sha_checks": "PASS",
+    "ps1_windows_ast_and_host_execution": "NOT_RUN"
+  },
+  "handoff_artifacts": {
+    "zip": "RAiF-BIGWAVE02-CP54D-F10_3-R1.zip",
+    "zip_sha256": "519711f07b5575e6da40ea175a459bb36cd806d7802212f20aa1373d4c8d03b8",
+    "launcher": "Start-RAiF-BIGWAVE02-R2.ps1",
+    "launcher_sha256": "5a91bedd743f66bc355c93d9c81a13aba5f9a7fac4994ab41b4decc684097b26",
+    "obsolete_preflight_launcher": "Start-RAiF-BIGWAVE02-R1.ps1",
+    "required_directory": "D:\\ЗАГРУЗКИ",
+    "run_command": "pwsh.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\\ЗАГРУЗКИ\\Start-RAiF-BIGWAVE02-R2.ps1\"",
+    "result_name": "RAiF-BIGWAVE02-RESULT_<run_id>.zip",
+    "result_files": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "expected_scope_status": "PARTIAL_IF_NEW_28_SYNTHETIC_AND_READONLY_DIAGNOSTIC_EXECUTE",
+    "expected_test_count": 28,
+    "cannot_claim_host_qa": true
+  },
+  "diagnostics": {
+    "previous_code": "HOST_CLONE_READ_FAILED",
+    "previous_root_cause": "UNKNOWN",
+    "fixed_code_categories": [
+      "GIT_SAFE_DIRECTORY_REJECTED",
+      "GIT_ACCESS_DENIED",
+      "GIT_NOT_REPOSITORY",
+      "HOST_ROOT_MISMATCH",
+      "HOST_ORIGIN_UNEXPECTED",
+      "HOST_HEAD_NOT_KNOWN",
+      "HOST_WORKTREE_NOT_CLEAN",
+      "HOST_IGNORED_FILES_PRESENT",
+      "HOST_HEAD_MOVED_DURING_PROBE",
+      "HOST_REPARSE_OR_PERMISSION_BLOCKED"
+    ],
+    "clone_can_be_read_without_mutation": "TO_BE_OBSERVED_ON_HOST",
+    "live_git_network_operations": 0,
+    "clone_repair_operations": 0,
+    "execute_code_from_inspected_clone": false,
+    "successful_diagnostic_does_not_approve_merge": true
+  },
+  "continuity": {
+    "statuses": [
+      "PASS_SYNTHETIC_ONLY",
+      "REAL_ROLLBACK_NOT_TESTED",
+      "POWERLOSS_DURABILITY_NOT_ATTESTED",
+      "HASH_NOT_SIGNATURE"
+    ],
+    "hardening": [
+      "reject_nan_and_infinity",
+      "reject_ancestor_reparse_and_junction",
+      "no_pending_effect_replay",
+      "stale_lock_fail_closed",
+      "lineage_generation_guard"
+    ],
+    "live_credentials_read": false,
+    "provider_identity_verified": false
+  },
+  "authority": {
+    "user_governs_tower_gdrive": true,
+    "tower_github_production_sync": false,
+    "tower_pr29": "OPEN_DRAFT_NONCANON",
+    "bpr5": "CANDIDATE_HARDENED_IN_FLIGHT_NO_PROMOTION",
+    "main_merge_from_this_stage": false,
+    "previous_pr4_merge_authorization": "UNVERIFIED_FROM_GITHUB_RECORDS",
+    "requires_separate_gate_for_live_identity": true,
+    "G2": "CLOSED"
+  },
+  "stage_status": "BIGWAVE02_SOURCE_AND_WINDOWS_CI_PASS_HOST_PACKAGE_PENDING",
+  "no_repeat": [
+    "CP31 binary patch",
+    "CP46 import",
+    "CP52D snapshot",
+    "CP54A5 RPC",
+    "CP54B1 quota",
+    "CP54B3 observer",
+    "Codex 10.0B live turn",
+    "BIGWAVE R1 host 47 tests",
+    "Fabric 10.3 R5 full 428 tests"
+  ],
+  "next": {
+    "ag": "BIGWAVE_02/WINDOWS_READONLY_DIAGNOSTIC_RESULT_READBACK",
+    "fabric": "10.3/POST_MERGE_HOST_STATE_AND_PERMISSION_RECONCILIATION",
+    "g2": "CLOSED",
+    "tower": "NONCANON_POINTER_HOLD",
+    "after_host_if_needed": "CP54D/CONSENTED_REAL_RECOVERY_GATE_AFTER_SEPARATE_PROOF"
+  },
+  "notes": "Project-owned checkpoint; does not authorize main merge, account rotation, OAuth, external provider replay or authority changes."
+}
