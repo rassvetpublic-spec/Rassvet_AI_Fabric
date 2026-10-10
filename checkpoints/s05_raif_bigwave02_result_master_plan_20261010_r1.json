@@ -1,0 +1,139 @@
+{
+  "schema": "RAIF_MASTER_EXECUTION_HANDOFF/1",
+  "id": "RAIF_BIGWAVE02_WINDOWS_RESULT_AND_MASTER_EXECUTION_PLAN_20261010_R1",
+  "date": "2026-10-10",
+  "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "project_owner_branch": "AG_pather",
+  "branch_pre_checkpoint": "7dc61a2c67c5d4553ca57d39e25b8153a1c5fe14",
+  "plan_path": "design/d01_raif_fabric_10_3_to_release_master_plan_20261010_r1.md",
+  "source_checkpoints": [
+    "checkpoints/s04_raif_bigwave02_safe_diagnostics_20261010_r1.json",
+    "checkpoints/s03_raif_postmerge_tower_bpr5_readback_20261010_r1.json"
+  ],
+  "evidence": {
+    "host_result": "RAiF-BIGWAVE02-RESULT_20261010_123437_e29e2e6a.zip",
+    "host_result_sha256": "32919eb281db90c5462c98723c7b94348935b66545bd0167adce5fa706700634",
+    "archive_crc_pass": true,
+    "report_status": "PARTIAL",
+    "report_verdict": "SUCCESS_SYNTHETIC_HOST_DIAGNOSTIC_ONLY",
+    "synthetic_tests": "28/28 PASS",
+    "result_stage_sequence": [
+      "SOURCE_PINNED/PASS",
+      "SYNTHETIC_28_OFFLINE/PASS",
+      "FABRIC_CLONE_DIAG_READONLY/PASS_WITH_SCOPE"
+    ],
+    "git_tool_verdict": "GIT_EXECUTABLE_MISSING",
+    "git_reads": 0,
+    "source_class": "UNKNOWN",
+    "host_qa_verified": false,
+    "live_rpc_attempts": 0,
+    "account_switches": 0,
+    "authority_mutations": 0,
+    "git_merges": 0,
+    "ag_code_commit": "975c61a5b77ca69a674df994fbcab0d372c62ac9",
+    "ag_ci": {
+      "id": 38051697374,
+      "tests": "265/265",
+      "status": "SUCCESS"
+    },
+    "main_sha": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "main_ci_run": 38049976872,
+    "pr_head_ci": {
+      "id": 38049455516,
+      "tests": "428/428",
+      "status": "SUCCESS"
+    },
+    "source_tree_equal_pr": true,
+    "tower_github_sha_at_plan": "6a498073a507ce9a1836231937c908c08f75b212",
+    "tower_drive_authority": "1d3boKYmIGgOqLEZB3nlHTt-sTl8i9QnW",
+    "tower_github_production_sync": false,
+    "bpr5": "CANDIDATE_HARDENED_IN_FLIGHT_NOT_SEALED"
+  },
+  "critical_path": [
+    {
+      "wave": "W0",
+      "code": "GIT_TOOLCHAIN_AND_CLONE_READONLY",
+      "depends_on": [],
+      "evidence_gate": "F0",
+      "status": "NEXT"
+    },
+    {
+      "wave": "W1",
+      "code": "FABRIC_10_3_WINDOWS_HOST_ACCEPTANCE",
+      "depends_on": [
+        "F0"
+      ],
+      "evidence_gate": "F1",
+      "status": "NOT_RUN"
+    },
+    {
+      "wave": "W2",
+      "code": "FABRIC_10_4_CP54D_DURABLE_RECOVERY",
+      "depends_on": [
+        "F1"
+      ],
+      "evidence_gate": "F2",
+      "status": "PLANNED"
+    },
+    {
+      "wave": "W3",
+      "code": "FABRIC_10_5_EXECUTOR_MANUAL_AG_HANDOFF",
+      "depends_on": [
+        "F2"
+      ],
+      "evidence_gate": "F3",
+      "status": "PLANNED"
+    },
+    {
+      "wave": "W4",
+      "code": "FABRIC_10_6_FIVE_DOMAIN_READONLY",
+      "depends_on": [
+        "F3"
+      ],
+      "evidence_gate": "F4",
+      "status": "PLANNED"
+    },
+    {
+      "wave": "W5",
+      "code": "FABRIC_10_7_WINDOWS_RELEASE_QA",
+      "depends_on": [
+        "F4"
+      ],
+      "evidence_gate": "F5",
+      "status": "PLANNED"
+    }
+  ],
+  "parallel_ag": {
+    "gate": "G2_IDENTITY_CLOSED",
+    "next": "CP54B3/EXPLICIT_PERMISSION_READ_GATE",
+    "fallback": "MANUAL_HANDOFF_ONLY",
+    "two_then_five": "NOT_AUTHORIZED"
+  },
+  "authority_risk": {
+    "fabric_pr4_merged": true,
+    "owner_mtd_separate_merge_evidence": "UNVERIFIED_FROM_GITHUB_RECORDS",
+    "status": "AUDIT_ONLY_NOT_AUTOMATIC_UNAUTHORIZED"
+  },
+  "next_cursor": "BIGWAVE_03/W0_GIT_EXECUTABLE_DISCOVERY_AND_EXISTING_CLONE_READONLY_PREFLIGHT",
+  "later_cursor": "RAI_FABRIC/10.3_POST_MERGE_WINDOWS_HOST_ACCEPTANCE",
+  "boundary": {
+    "no_merge": true,
+    "no_account_switch": true,
+    "no_authority_update": true,
+    "no_ci_for_plan": true,
+    "runtime_result_root": "D:\\ЗАГРУЗКИ",
+    "existing_clone_mutations": false
+  },
+  "do_not_repeat": [
+    "CP31",
+    "CP46",
+    "CP52D",
+    "CP54A5",
+    "CP54B1",
+    "CP54B3",
+    "Codex10.0B",
+    "BIGWAVE02_WIN_SYNTHETIC_28",
+    "AG_WIN_CI_265",
+    "PR4_WIN_CI_428"
+  ]
+}
