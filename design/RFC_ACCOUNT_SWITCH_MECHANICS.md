@@ -1,9 +1,11 @@
 # RFC: Сравнительный аудит 6 доноров решений и выбор механики переключения Google-аккаунтов без перезапуска Antigravity
 
-* **Статус**: APPROVED FOR IMPLEMENTATION  
+* **Статус**: APPROVED FOR IMPLEMENTATION — внутреннее направление владельца; provider eligibility и live acceptance открыты  
 * **Дата**: 2026-10-10  
 * **Область**: `raif_ag_supervisor` / Windows Antigravity Standalone 2.22.0.0  
 * **Целевой Issue**: [#2](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/2)  
+
+**Граница доказательств, MTD 011011:** архитектуры Child Respawn и Reverse Proxy утверждены для проектирования и изолированной проверки; описанные ниже времена `1.5–1.8 с`, `<100 мс`, «0 секунд простоя» и бесшовный SSE replay — **целевые гипотезы**, не результаты подтверждённых live-испытаний. `403` не всегда означает quota; нужен provider reason. Работа с реальными сессиями и токенами допускается только через проверенный провайдером интерфейс и отдельный пользовательский gate.
 
 ---
 
