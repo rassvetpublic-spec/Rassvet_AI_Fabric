@@ -1,5 +1,8 @@
 """New BIGWAVE 02 negative coverage: no model, network, credentials or Git writes."""
 import subprocess
+import hashlib
+import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,9 +21,14 @@ class HostDiagnosticTests(unittest.TestCase):
         (self.repo / ".git" / "config").write_text("[core]\n", encoding="ascii")
         self.git = self.root / "git.exe"
         self.git.write_bytes(b"MOCK_EXECUTABLE_NOT_RUN")
+        self.mock_sha = hashlib.sha256(self.git.read_bytes()).hexdigest()
+        sha_patch = patch.object(h, "_WINDOWS_GIT_SHA256", self.mock_sha)
+        sha_patch.start()
+        self.addCleanup(sha_patch.stop)
 
     def inspect_mock(self, probes):
-        with patch.object(h.shutil, "which", return_value=str(self.git)), \
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.git), \
+                patch.object(h.shutil, "which", return_value=str(self.git)), \
                 patch.object(h, "_invoke_git", side_effect=probes) as invoke:
             report = h.inspect_clone(self.repo, windows_override_for_tests=True)
         self.assertEqual(report["git_reads"], invoke.call_count)
@@ -183,38 +191,60 @@ class HostDiagnosticTests(unittest.TestCase):
         invoke.assert_not_called()
 
     def test_git_command_scrubs_sensitive_env_and_never_uses_shell(self):
-        class Completed:
-            returncode = 1
-            stdout = b""
-            stderr = b"fatal: detected dubious ownership in repository C:/Users/secret\n"
-        def capture(argv, **kwargs):
-            self.assertEqual(kwargs["stdin"], subprocess.DEVNULL)
-            self.assertFalse(kwargs["shell"])
-            self.assertEqual(kwargs["env"]["GIT_OPTIONAL_LOCKS"], "0")
-            self.assertEqual(kwargs["env"]["GIT_TERMINAL_PROMPT"], "0")
-            self.assertEqual(kwargs["env"]["GIT_CONFIG_NOSYSTEM"], "1")
-            self.assertEqual(kwargs["env"]["GIT_LFS_SKIP_SMUDGE"], "1")
-            self.assertNotIn("GIT_TRACE", kwargs["env"])
+        def capture(argv, env, timeout_seconds=8.0):
+            self.assertEqual(env["GIT_OPTIONAL_LOCKS"], "0")
+            self.assertEqual(env["GIT_TERMINAL_PROMPT"], "0")
+            self.assertEqual(env["GIT_CONFIG_NOSYSTEM"], "1")
+            self.assertEqual(env["GIT_LFS_SKIP_SMUDGE"], "1")
+            self.assertNotIn("GIT_TRACE", env)
             self.assertIn("credential.helper=", argv)
             self.assertIn("protocol.ext.allow=never", argv)
             self.assertEqual(argv[-2:], ["rev-parse", "--show-toplevel"])
-            return Completed()
+            self.assertEqual(argv[0], str(self.git))
+            return h.Probe("GIT_SAFE_DIRECTORY_REJECTED")
         with patch.dict(h.os.environ, {"GIT_TRACE": "1", "SECRET_ENV": "DO_NOT_PRINT"}), \
-                patch.object(h.subprocess, "run", side_effect=capture):
-            p = h._invoke_git(self.repo, str(self.git), ("rev-parse", "--show-toplevel"))
-        self.assertEqual(p.status, "GIT_SAFE_DIRECTORY_REJECTED")
-        self.assertNotIn("secret", repr(p))
+                patch.object(h, "_capture_bounded", side_effect=capture):
+            result = h._invoke_git(self.repo, str(self.git), ("rev-parse", "--show-toplevel"))
+        self.assertEqual(result.status, "GIT_SAFE_DIRECTORY_REJECTED")
+        self.assertNotIn("secret", repr(result))
 
-    def test_git_timeout_and_output_cap(self):
-        with patch.object(h.subprocess, "run", side_effect=subprocess.TimeoutExpired("git", 8)):
-            self.assertEqual(h._invoke_git(self.repo, str(self.git), ("status",)).status, "GIT_TIMEOUT")
-        class Completed:
-            returncode = 0
-            stdout = b"x" * (h._MAX_BYTES + 1)
-            stderr = b""
-        with patch.object(h.subprocess, "run", return_value=Completed()):
-            self.assertEqual(h._invoke_git(self.repo, str(self.git), ("status",)).status,
-                             "GIT_OUTPUT_BOUNDED_ABORT")
+    def test_actual_bounded_pipe_overflow_stops_4mb_child(self):
+        command = [sys.executable, "-I", "-B", "-c",
+                   "import sys;sys.stdout.buffer.write(b'X'*4194304);sys.stdout.flush()"]
+        result = h._capture_bounded(command, os.environ.copy(), timeout_seconds=5)
+        self.assertEqual(result.status, "GIT_OUTPUT_BOUNDED_ABORT")
+        self.assertNotIn("X" * 256, repr(result))
+
+    def test_actual_bounded_pipe_timeout(self):
+        command = [sys.executable, "-I", "-B", "-c", "import time;time.sleep(4)"]
+        result = h._capture_bounded(command, os.environ.copy(), timeout_seconds=0.15)
+        self.assertEqual(result.status, "GIT_TIMEOUT")
+
+    def test_actual_bounded_nonzero_child_error_redacted(self):
+        command = [sys.executable, "-I", "-B", "-c",
+                   "import sys;sys.stderr.write('SECRET_PRIVATE_VALUE');sys.exit(2)"]
+        result = h._capture_bounded(command, os.environ.copy(), timeout_seconds=5)
+        self.assertEqual(result.status, "GIT_COMMAND_REJECTED")
+        self.assertNotIn("SECRET_PRIVATE_VALUE", repr(result))
+
+    def test_fake_git_on_path_never_executed(self):
+        fake = self.root / "untrusted-git.exe"
+        fake.write_bytes(b"NO_TRUST")
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.root / "missing-git.exe"), \
+                patch.object(h.shutil, "which", return_value=str(fake)) as which, \
+                patch.object(h, "_invoke_git") as invoke:
+            result = h.inspect_clone(self.repo, windows_override_for_tests=True)
+        self.assertEqual(result["verdict"], "GIT_EXECUTABLE_MISSING")
+        which.assert_not_called()
+        invoke.assert_not_called()
+
+    def test_wrong_pinned_git_hash_never_executed(self):
+        with patch.object(h, "_WINDOWS_GIT_CMD", self.git), \
+                patch.object(h, "_WINDOWS_GIT_SHA256", "0" * 64), \
+                patch.object(h, "_invoke_git") as invoke:
+            result = h.inspect_clone(self.repo, windows_override_for_tests=True)
+        self.assertEqual(result["verdict"], "GIT_EXECUTABLE_HASH_MISMATCH")
+        invoke.assert_not_called()
 
     def test_reparse_source_fails_before_git(self):
         with patch.object(h, "_unsafe_ancestor", return_value=True), \

@@ -188,6 +188,10 @@ def persist_checkpoint(directory: Path, record: ContinuityRecord) -> None:
                 raise ContinuityError("CHECKPOINT_LINEAGE_MISMATCH")
             if record.generation <= prior.generation:
                 raise ContinuityError("CHECKPOINT_GENERATION_NOT_MONOTONIC")
+            # A checksum is not a review receipt. Once external effects are
+            # possible, changing their state could launder a blocked task.
+            if prior.effect is not SideEffect.NONE and record.effect is not prior.effect:
+                raise ContinuityError("CHECKPOINT_EFFECT_TRANSITION_REQUIRES_REVIEW")
         raw = serialize_checkpoint(record)
         try:
             with temporary.open("xb") as stream:

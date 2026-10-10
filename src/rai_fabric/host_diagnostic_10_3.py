@@ -8,11 +8,15 @@ A positive result is only a Git source preflight, not Fabric host QA.
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
 import os
 import re
 import shutil
 import stat
 import subprocess
+import threading
+import time
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,6 +33,10 @@ _MAX_BYTES = 32 * 1024
 _REPARSE = 0x400
 # Operator-confirmed Git for Windows location. Still validate the executable before use.
 _WINDOWS_GIT_CMD = Path(r"C:\Program Files\Git\cmd\git.exe")
+# SHA-256 independently reported by owner's W0 fixed-path readback.
+# A changed installation requires an explicit new trust decision.
+_WINDOWS_GIT_SHA256 = "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f"
+_READ_CHUNK = 4096
 
 
 @dataclass(frozen=True)
@@ -61,8 +69,89 @@ def _classify_git_stderr(body: bytes) -> str:
     return "GIT_COMMAND_REJECTED"
 
 
+def _capture_bounded(argv: list[str], env: dict[str, str], *,
+                     timeout_seconds: float = 8.0) -> Probe:
+    """Capture two child streams with bounded resident buffers on Windows.
+
+    Both pipes are drained concurrently; a limit violation terminates the
+    owned child. No stdout/stderr text is logged or forwarded to the caller.
+    """
+    try:
+        child = subprocess.Popen(
+            argv, env=env, stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False,
+        )
+    except OSError:
+        return Probe("GIT_EXEC_FAILURE")
+    assert child.stdout is not None and child.stderr is not None
+    parts = [bytearray(), bytearray()]
+    overflow = threading.Event()
+    reader_error = threading.Event()
+
+    def drain(stream, target: bytearray) -> None:
+        try:
+            while not overflow.is_set():
+                # Read at most one byte beyond the limit, never all child output.
+                remaining = _MAX_BYTES + 1 - len(target)
+                chunk = os.read(stream.fileno(), min(_READ_CHUNK, remaining))
+                if not chunk:
+                    return
+                space = _MAX_BYTES - len(target)
+                if len(chunk) > space:
+                    target.extend(chunk[:space])
+                    overflow.set()
+                    return
+                target.extend(chunk)
+        except (OSError, ValueError):
+            reader_error.set()
+
+    readers = [
+        threading.Thread(target=drain, args=(child.stdout, parts[0]), daemon=True),
+        threading.Thread(target=drain, args=(child.stderr, parts[1]), daemon=True),
+    ]
+    for thread in readers:
+        thread.start()
+    deadline = time.monotonic() + timeout_seconds
+    try:
+        while True:
+            if overflow.is_set():
+                return Probe("GIT_OUTPUT_BOUNDED_ABORT")
+            if reader_error.is_set():
+                return Probe("GIT_EXEC_FAILURE")
+            if child.poll() is not None and not any(x.is_alive() for x in readers):
+                break
+            if time.monotonic() >= deadline:
+                return Probe("GIT_TIMEOUT")
+            time.sleep(0.015)
+        if child.returncode:
+            return Probe(_classify_git_stderr(bytes(parts[1])))
+        try:
+            return Probe("OK", bytes(parts[0]).decode("utf-8", "strict").strip())
+        except UnicodeDecodeError:
+            return Probe("GIT_OUTPUT_ENCODING_BLOCKED")
+    finally:
+        # Only the child created above is killed/reaped; never a foreign PID.
+        try:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=1)
+        except (OSError, subprocess.TimeoutExpired):
+            try:
+                child.kill()
+                child.wait(timeout=1)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        for pipe in (child.stdout, child.stderr):
+            try:
+                pipe.close()
+            except OSError:
+                pass
+        for thread in readers:
+            thread.join(timeout=1)
+
+
 def _invoke_git(source: Path, git_exe: str, args: tuple[str, ...]) -> Probe:
-    """Read local metadata only. Does not log or return stderr/credentials."""
+    """Read local Git metadata without accumulating untrusted pipe output."""
     env = os.environ.copy()
     for key in tuple(env):
         if key.upper().startswith("GIT_") or key == "GCM_INTERACTIVE":
@@ -75,22 +164,7 @@ def _invoke_git(source: Path, git_exe: str, args: tuple[str, ...]) -> Probe:
             "-c", "core.fsmonitor=false", "-c", "core.hooksPath=NUL",
             "-c", "submodule.recurse=false", "-c", "protocol.ext.allow=never",
             "-C", str(source), *args]
-    try:
-        proc = subprocess.run(argv, env=env, stdin=subprocess.DEVNULL,
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              shell=False, timeout=8, check=False)
-    except subprocess.TimeoutExpired:
-        return Probe("GIT_TIMEOUT")
-    except OSError:
-        return Probe("GIT_EXEC_FAILURE")
-    if len(proc.stdout) > _MAX_BYTES or len(proc.stderr) > _MAX_BYTES:
-        return Probe("GIT_OUTPUT_BOUNDED_ABORT")
-    if proc.returncode:
-        return Probe(_classify_git_stderr(proc.stderr))
-    try:
-        return Probe("OK", proc.stdout.decode("utf-8", "strict").strip())
-    except UnicodeDecodeError:
-        return Probe("GIT_OUTPUT_ENCODING_BLOCKED")
+    return _capture_bounded(argv, env)
 
 
 def _unsafe_ancestor(path: Path) -> bool:
@@ -117,9 +191,11 @@ def _resolve_git_executable(*, windows_override_for_tests: bool = False) -> str 
     the absolute-path, source-containment and reparse checks before execution.
     """
     is_windows = sys.platform == "win32" or windows_override_for_tests
-    if is_windows and _WINDOWS_GIT_CMD.is_file():
-        return str(_WINDOWS_GIT_CMD)
-    return shutil.which("git.exe" if is_windows else "git")
+    if is_windows:
+        # An arbitrary PATH candidate has no owner-attested publisher/hash.
+        # Fail closed if the only approved Windows executable is unavailable.
+        return str(_WINDOWS_GIT_CMD) if _WINDOWS_GIT_CMD.is_file() else None
+    return shutil.which("git")
 
 
 def _pin_class(sha: str) -> str:
@@ -163,6 +239,17 @@ def inspect_clone(source: Path, *, windows_override_for_tests: bool = False) -> 
         return _report("GIT_EXECUTABLE_UNTRUSTED", stage="GIT")
     if _unsafe_ancestor(executable):
         return _report("GIT_EXECUTABLE_UNSAFE", stage="GIT")
+    if sys.platform == "win32" or windows_override_for_tests:
+        # The path is explicitly owner-confirmed, but its bytes may change.
+        try:
+            if executable.stat().st_size > 64 * 1024 * 1024:
+                return _report("GIT_EXECUTABLE_UNTRUSTED", stage="GIT")
+            with executable.open("rb") as stream:
+                actual_sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
+        except OSError:
+            return _report("GIT_EXECUTABLE_UNTRUSTED", stage="GIT")
+        if not hmac.compare_digest(actual_sha256, _WINDOWS_GIT_SHA256):
+            return _report("GIT_EXECUTABLE_HASH_MISMATCH", stage="GIT")
     steps = (("ROOT", ("rev-parse", "--show-toplevel")),
              ("ORIGIN", ("remote", "get-url", "origin")),
              ("HEAD", ("rev-parse", "HEAD")),

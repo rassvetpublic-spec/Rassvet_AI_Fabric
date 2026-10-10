@@ -110,6 +110,34 @@ class ContinuityFaultsTests(unittest.TestCase):
             self.assertEqual(exc.exception.code, "CHECKPOINT_JSON_INVALID")
             self.assertEqual((root / "TASK_CHECKPOINT.json").read_bytes(), b"NOT_JSON")
 
+    def test_effect_state_downgrade_and_cross_transition_blocked(self):
+        # A later generation must not erase PENDING/UNKNOWN/COMMITTED evidence.
+        for earlier in (c.SideEffect.PENDING, c.SideEffect.UNKNOWN, c.SideEffect.COMMITTED):
+            for later in c.SideEffect:
+                if later is earlier:
+                    continue
+                with self.subTest(earlier=earlier, later=later), tempfile.TemporaryDirectory() as d:
+                    root = Path(d)
+                    first = self.record(0, earlier)
+                    c.persist_checkpoint(root, first)
+                    before = (root / "TASK_CHECKPOINT.json").read_bytes()
+                    with self.assertRaises(c.ContinuityError) as exc:
+                        c.persist_checkpoint(root, self.record(1, later))
+                    self.assertEqual(exc.exception.code, "CHECKPOINT_EFFECT_TRANSITION_REQUIRES_REVIEW")
+                    self.assertEqual((root / "TASK_CHECKPOINT.json").read_bytes(), before)
+                    after = c.load_checkpoint(root)
+                    self.assertEqual(after, first)
+                    self.assertEqual(c.plan_resume(after, operator_approved=True)["verdict"],
+                                     "BLOCKED_PENDING_REVIEW")
+
+    def test_same_effect_higher_generation_still_allowed(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            c.persist_checkpoint(root, self.record(0, c.SideEffect.UNKNOWN))
+            second = self.record(1, c.SideEffect.UNKNOWN)
+            c.persist_checkpoint(root, second)
+            self.assertEqual(c.load_checkpoint(root), second)
+
     def test_lineage_replaced_by_new_task_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
