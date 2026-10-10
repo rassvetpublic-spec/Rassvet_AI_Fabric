@@ -1,0 +1,109 @@
+{
+  "schema_version": "RAIF_CHAT_HANDOFF_V1",
+  "checkpoint_id": "RAIF_CHAT_HANDOFF_CP54B3_WINDOWS_ACCEPTED_2026-10-10_R1",
+  "timestamp_utc": "2026-10-10T07:39:34Z",
+  "project": "Rassvet AI Fabric",
+  "owner_repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "owner_branch": "AG_pather",
+  "previous_project_checkpoint": "RAIF_CHAT_HANDOFF_CP54B3_V2_2026-10-10_R1",
+  "previous_branch_head": "a264c56c8cbee1143b3534d1ccd5aba0f56d6775",
+  "implementation_commit": "fd02aed65d04022160518faf4f857865ab3aa59f",
+  "status": "CP54B3_WINDOWS_HOST_OFFLINE_SYNTHETIC_PASS_IDENTITY_UNVERIFIED",
+  "primary_evidence": {
+    "user_supplied_result": "RAiF-CP54B3-v2-RESULT_20261010_073934_473160ca.zip",
+    "result_sha256": "9795331adc20e533483f4cf53ed60bac63dd08a5a5ea98700609aeca665bd9c2",
+    "result_zip_crc": "PASS",
+    "result_members": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "result_run_id": "20261010_073934_473160ca",
+    "receipt_protocol": "RAIF_CP54B3_SYNTHETIC_V2",
+    "receipt_source_commit": "fd02aed65d04022160518faf4f857865ab3aa59f",
+    "receipt_source_branch": "AG_pather",
+    "receipt_source_dependency": "BUNDLED_PINNED_NATIVE_RPC_NO_CLONE_READ",
+    "report_verdict": "WINDOWS_HOST_SYNTHETIC_PASS_ONLY",
+    "report_status": "SUCCESS",
+    "stage_events": 7,
+    "all_stage_events_pass": true,
+    "synthetic_tests_reported": 11,
+    "synthetic_tests_expected": 11,
+    "tests_failures": 0,
+    "tests_errors": 0,
+    "tests_skipped": 0,
+    "tests_exit_code": 0,
+    "source_zip_sha256": "08ab715f3e94ffadd59d60655f7af51cacb2cb4fd82b3052fab2d75e728bbd68",
+    "source_zip_sha256_independently_verified_from_local_copy": true,
+    "launcher_sha256": "6a36308680c6b42b38aa9bffc01c11095ab3217c50017c300153c3ee53c2fca2",
+    "launcher_sha256_independently_verified_from_local_copy": true,
+    "stage_sequence": [
+      "CREATE_RUNTIME",
+      "HOST_GATE",
+      "SOURCE_ZIP_SHA256",
+      "ZIP_STRICT_ALLOWLIST_AND_EXTRACT",
+      "PAYLOAD_SHA256",
+      "PYTHON_RESOLVE",
+      "SYNTHETIC_11_OFFLINE"
+    ]
+  },
+  "bounded_safety_observations": {
+    "live_rpc_attempts_reported": 0,
+    "native_credentials_read_reported": false,
+    "account_switches_reported": 0,
+    "authority_changes_reported": 0,
+    "source_clone_read_reported": false,
+    "account_identity_verified": false,
+    "matched_account_id": null,
+    "eligible_for_pool": false,
+    "provider_access_verified": false,
+    "hot_swap_verified": false,
+    "inflight_continuity_verified": false
+  },
+  "interpretation": {
+    "acceptance_level": "LOCAL_WINDOWS_SELF_REPORTED_SANITIZED_RESULT_CONTRACT_VERIFIED",
+    "independent_host_attestation": false,
+    "report_is_not_identity_proof": true,
+    "previous_v1_safe_fail_history_preserved": true,
+    "stage_success_does_not_override_identity_gate": true,
+    "authority_inheritance_from_artifact": false
+  },
+  "ci": {
+    "source_ci_run": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38034030604",
+    "source_ci_passed": "190/190",
+    "ci_rerun_for_checkpoint": false
+  },
+  "boundaries": {
+    "runtime_delivery_root": "D:\\ЗАГРУЗКИ",
+    "existing_clone_read_only": "C:\\GIT\\Rassvet_AI_Fabric",
+    "tower_pr_29": "OPEN_DRAFT_NONCANON_POINTER_ONLY",
+    "merge_allowed": false,
+    "live_get_user_status_allowed_without_separate_gate": false,
+    "switch_account_allowed": false,
+    "authority_change_allowed": false,
+    "no_repeat": [
+      "CP31",
+      "CP46",
+      "CP52D",
+      "CP54A5",
+      "CP54B1",
+      "CP54B2",
+      "Codex 10.0B"
+    ]
+  },
+  "cursors": {
+    "ag_completed": "CP-54B3/V2_WINDOWS_HOST_OFFLINE_SYNTHETIC_PASS",
+    "ag_next": "CP-54B3/EXPLICIT_G2_IDENTITY_READ_GATE",
+    "fabric_parallel": "10.1B/WINDOWS_HOST_ACCEPTANCE",
+    "merge_coordination": "ISSUE-3/DETACHED_MERGE_REHEARSAL_AFTER_QA",
+    "tower": "NONCANON_POINTER_ONLY"
+  },
+  "next_actions": [
+    "Preserve CP54B3 V1 SAFE_FAIL and V2 PASS as separate scoped observations.",
+    "Prepare bounded identity-read permission review, without executing any live RPC before user explicitly opens G2.",
+    "After a separately granted G2, test no more than one owned LS and only safe fixed-schema evidence; if independent local binding unavailable, report IDENTITY_UNVERIFIED/UNSUPPORTED.",
+    "Keep Fabric 10.1B HOST_NOT_RUN and Tower main unchanged."
+  ]
+}
