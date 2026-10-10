@@ -1,0 +1,123 @@
+{
+  "schema": "RAIF_PROJECT_TOWER_REPO_READBACK/1",
+  "checkpoint_id": "RAIF_10_3_POST_MERGE_TOWER_BPR5_READBACK_20261010_R1",
+  "checkpoint_date": "2026-10-10",
+  "scope": "SOURCE_READBACK_PROJECT_OWNED_NON_AUTHORITY",
+  "owner": {
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "branch": "AG_pather",
+    "branch_head_before_checkpoint": "5e6ef89e5aa9f5799d1a078d9fb3f0e45ba82520"
+  },
+  "refs": {
+    "fabric_main": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "fabric_ag_pather": "5e6ef89e5aa9f5799d1a078d9fb3f0e45ba82520",
+    "fabric_10_1a": "a5c4e6d2be35588cc875ae070566e3d39baed8d5",
+    "tower_github_main": "6a498073a507ce9a1836231937c908c08f75b212",
+    "fabric_merge_pr_head": "8bbe06dcd3bc14447a6a5c5077f100fc005ed5c2",
+    "fabric_main_tree": "8d2a0d0c195a3ffbb64cf26ba46e906936261894",
+    "fabric_pr_head_tree": "8d2a0d0c195a3ffbb64cf26ba46e906936261894"
+  },
+  "fabric": {
+    "pr4": {
+      "url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/4",
+      "merged": true,
+      "merged_at_utc": "2026-10-10T11:53:01Z",
+      "merged_by": "rassvetpublic-spec",
+      "exact_tree_equals_CI_head": true,
+      "windows_ci_run_id": 38049455516,
+      "windows_ci_conclusion": "success",
+      "windows_ci_test_count": 428,
+      "owner_gate": "MTD 011011",
+      "gate_conflict": "PR body and stored checkpoint grant staging+PR only, explicitly forbid merge; no distinct merge grant located in visible PR issues/events",
+      "authorization_verdict": "UNVERIFIED_FROM_GITHUB_RECORDS_NOT_ASSERTED_UNAUTHORIZED"
+    },
+    "branch_relationship": {
+      "AG_pather_vs_main": "DIVERGED",
+      "main_ahead_by_from_ag": 38,
+      "main_behind_by_from_ag": 146,
+      "history_merge_of_ag": false
+    },
+    "open_issues": [
+      1,
+      2,
+      3
+    ],
+    "main_10_3_source_integrated": true,
+    "provider_identity_hot_swap_stream_continuity": "NOT_VERIFIED",
+    "existing_bigwave_source_ci": {
+      "run_id": 38037038411,
+      "tests_pass": 237,
+      "commit": "4e801c6e8a6ef1c854f3f2df9f81bbe678070d2e"
+    }
+  },
+  "tower": {
+    "current_gdrive_folder_id": "1d3boKYmIGgOqLEZB3nlHTt-sTl8i9QnW",
+    "drive_authority": "ACTIVE_BY_USER_DECISION",
+    "ultimate_responsible": "USER",
+    "github_role": "EXECUTION_REPLICA_NOT_AUTHORITY",
+    "github_production_sync": false,
+    "github_merge_requires": "MTD",
+    "github_pr28": "OPEN_NOT_MERGED",
+    "github_pr29": "OPEN_DRAFT_POINTER_NONCANON",
+    "github_issue30": "OPEN_BPR5_POLEMICS",
+    "github_new_work": "BPR5 contract validator, JSON schemas, SQLite BEGIN IMMEDIATE CAS, docs moves 3/4/5",
+    "bpr5_status": "CANDIDATE_HARDENED_IN_FLIGHT_NOT_SEALED",
+    "github_main_bpr5_r7_change": "a1580a43560999f08c36d7162e7f390f3ac4be5a",
+    "github_latest_bpr5_move5": "6a498073a507ce9a1836231937c908c08f75b212",
+    "independent_real_target_host_e2e": "NOT_VERIFIED",
+    "legacy_kat9i_tower_folder_id": "1YpG7pUlav2OdLAdoO046vbhfs8y6rfxn",
+    "legacy_is_authority": false,
+    "latest_heartbeat": {
+      "time_utc": "2026-10-10T04:58:45.737881+00:00",
+      "ssd": 436,
+      "bpr40": 436,
+      "gdrive": 436,
+      "live_parity_after_new_commits": "UNKNOWN"
+    },
+    "drive_raet_metrics": {
+      "created_on": "2026-10-10",
+      "checkpoint_time_utc": "2026-10-10T11:32:00Z",
+      "scope": "RAET_CKS231_EXPERIMENT_NOT_BPR5_PROMOTION"
+    },
+    "exact_github_drive_current_semantics": "BOTH_STATE_SAME_AUTHORITY_BOUNDARY",
+    "exact_github_drive_revision_parity": "NOT_VERIFIED"
+  },
+  "bpr40": {
+    "router_version": 18,
+    "package_version": "4.0.3",
+    "manifest_package_status": "RELEASED",
+    "router_sha256": "e9d8cae1c371ba6cbac6904bda8d8070b86b7db76dab9d8486418ae639352cbd",
+    "bootstrap_sha256": "c1357cfba33b7f253f74f2e6b3bbb360465d427bc01f944c5410376df7865197",
+    "manifest_sha256": "e5dad90670ab57206d944baafe51f66a06fa60deb439fbc648667fdb2229fcfc",
+    "core_sha256": "fbe51e299c4100bf2cf86d58d47849bdc794c8fd562185e2a82166cb21b4d10c",
+    "new_bpr5_does_not_promote_bpr40": true
+  },
+  "invariants": {
+    "github_mutations_this_stage": "DOCUMENTATION_ONLY_PROJECT_CHECKPOINT",
+    "fabric_main_mutations": 0,
+    "tower_mutations": 0,
+    "drive_authority_mutations": 0,
+    "merge_operations": 0,
+    "ci_runs_triggered": 0,
+    "account_switches": 0,
+    "no_replay": [
+      "Codex 10.0B",
+      "CP31 binary patch",
+      "CP46 account import",
+      "CP52D native DPAPI snapshot",
+      "CP54A5 HTTPS proof",
+      "CP54B1 quota",
+      "CP54B3 observer",
+      "BIGWAVE 47 offline tests"
+    ]
+  },
+  "cursors": {
+    "main": "RAI_FABRIC/10.3_POST_MERGE_PERMISSION_QA_RECONCILIATION",
+    "ag_pather": "BIGWAVE_02/SOURCE_LINEAGE_REVIEW_BEFORE_CLONE_DIAG_AND_CP54D_HARDENING",
+    "tower": "BPR5_R8/EXTERNAL_AUTHORITY_AND_REAL_TARGET_ATOMICITY_GATE",
+    "tower_pointer": "PR28_PR29_TOWER_SYNC_PREFLIGHT_THEN_USER_MTD",
+    "account_identity": "G2_IDENTITY_GATE_CLOSED",
+    "next": "VERIFY_SEPARATE_MERGE_MTD_EVIDENCE_OR_RECORD_UNVERIFIED; NO_ADDITIONAL_MERGE"
+  },
+  "interpretation": "Point-in-time source readback; not a fresh tri-tower parity seal or production promotion."
+}
