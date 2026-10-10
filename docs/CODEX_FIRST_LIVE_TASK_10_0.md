@@ -1,6 +1,6 @@
 # RAiF 10.0 — первая разрешённая модельная задача через SQLite
 
-**Статус:** исходный код и тесты подготовлены; результат на компьютере владельца — NOT_RUN.
+**Статус на 10.10.2026:** `HOST_PASS_WITH_SCOPE`. Первый реальный Codex turn на Windows завершён; 3/3 теста PASS. См. чекпойнт `RAI_FABRIC_10_0B_FIRST_LIVE_TURN_WINDOWS_VERIFIED_2026-10-10_R1.json`. Вся остальная автономия — не проверена.
 
 ## Цель и безопасные границы
 
@@ -30,4 +30,17 @@
 
 Новые Linux/macOS jobs не создавать; один контрольный Windows CI при изменении кода. Не включать донорские решения в README. Обязательные источники: [Codex App Server](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server) и [Preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations).
 
-**Следующий курсор:** `RAI-FABRIC/10.0-B-ONE_REAL_TURN_HOST_RESULT_REVIEW`.
+## Фактический host-result от 10.10.2026
+
+- Локальный ZIP `RAiF-Windows-RESULT-CODEX-LIVE-20261010_063500_b123dc17.zip`: SHA-256 `7b7ec56d67f44ed9cd7bfef571153937c83050b91380d811974af211aebeda3d`, ZIP CRC PASS. Повторно присланная копия побайтно совпадает.
+- Протокол: `initialize`, `initialized`, `thread/start`, один `turn/start`; по очищенному отчёту `model_turn_started=true`, `model_turn_completed=true`, `simulation=false`, `tool_actions_seen=false`, `child_cleanup=GRACEFUL_OR_EXITED`.
+- SQLite-задача `COMPLETE`, checkpoint `PASS`, указатель `REVIEW_GENERATED_CODE`. `source_sha256=ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772`, `test_sha256=5ec06b837fd70e0e252a89c7fb92dba96e288e4301d5347116ba35405e74bf5f`; оба хеша независимо пересчитаны по файлам из ZIP.
+- `STAGES.jsonl`: 20 событий, 10 этапов PASS, ошибок нет. CLI сообщает `CHATGPT_PLAN_CLI_SIGNED_IN`, выключенный API-key fallback и одноразовое резервирование согласия. Эти показатели **подтверждены локальным отчётом**, а не независимой оценкой поставщика.
+- Один модельный turn не равен одному внутреннему HTTP-запросу; реальный остаток квоты и денежный биллинг не измерялись. Нельзя изолированную задачу `arithmetic.py` считать автономной разработкой пяти подсистем.
+- Один успешный вызов исчерпал разрешение на испытание этапа 10.0: **не запускать повторно старый PS1 и не удалять one-turn marker**. Следующий модельный запрос — отдельное явное разрешение.
+
+## Следующий продуктовый этап 10.1
+
+Реализовать **без обращения к модели**: изолированный Git worktree из pin SHA, файловую allowlist, безопасный diff, независимые тесты и отказ от автоматического merge; сохранить checkpoint и audit, протестировать fail-closed на Windows. Только затем согласовать новую модельную задачу в демо-репозитории. Не изменять CKS Canon, RULESHUB, CONTROL TOWER и BPR40 без отдельного gate.
+
+**Следующий курсор:** `RAI-FABRIC/10.1-SAFE_WORKTREE_DIFF_REVIEW_OFFLINE`.
