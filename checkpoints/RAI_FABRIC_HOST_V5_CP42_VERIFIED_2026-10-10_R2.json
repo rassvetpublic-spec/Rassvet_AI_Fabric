@@ -1,0 +1,79 @@
+{
+  "schema": "RAI_FABRIC_HOST_EVIDENCE/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.7-E-HOST_V5_AND_AG_CP42_RESULT_REVIEW",
+  "verdict": "PASS_WITH_SCOPE",
+  "official_language": "ru-RU",
+  "windows_discovery": {
+    "archive_name": "RAiF-Windows-RESULT-DISCOVERY-20261010_050932_db782da1(1).zip",
+    "archive_sha256": "1dea191375f57982a8af025ee1f708e388b4696cc700dfdf84aa978460af803e",
+    "zip_crc": "PASS",
+    "entries": 7,
+    "checkpoint_verdict": "PASS",
+    "host_powershell": "7.6.6",
+    "inspected_processes": 304,
+    "matching_processes": {
+      "codex": 26,
+      "antigravity": 7
+    },
+    "note_ru": "Число совпадений включает вспомогательные дочерние процессы и не равно числу AI-сеансов",
+    "installed": {
+      "codex_appx": "26.1007.2314.0",
+      "antigravity": "2.22.0",
+      "antigravity_tools": "4.9.7-beta.4",
+      "git": "2.55.0.windows.5",
+      "chrome": "154.0.8037.98"
+    },
+    "paths": {
+      "codex_runtime": "%LOCALAPPDATA%\\OpenAI\\Codex\\bin\\<build>\\codex.exe",
+      "git": "%PROGRAMFILES%\\Git\\cmd\\git.exe"
+    },
+    "git_on_process_path": false,
+    "nvidia_gpu": "GeForce RTX 5070 Ti",
+    "errors": 0,
+    "full_process_command_lines_exported": false,
+    "oauth_requests": 0,
+    "model_calls": 0
+  },
+  "antigravity_cp42": {
+    "archive_name": "RAiF_AG_CP42_RESULT_20261010_050807_7734c2cc(1).zip",
+    "archive_sha256": "8f6dcd6668597a894544319d8e1cb5891ba99221a9df754ce132b3af717fc71c",
+    "zip_crc": "PASS",
+    "entries": 5,
+    "status": "SUCCESS",
+    "exit_code": 0,
+    "logged_events": 40,
+    "event_states": {
+      "start": 19,
+      "ok": 21
+    },
+    "runtime_powershell_major": 7,
+    "antigravity_processes": 6,
+    "language_server_processes": 1,
+    "language_server_sha256": "b23c730a3b23953a7e46851593a5013bc888c524c8965cbb21618fc51122d81e",
+    "native_credential_target_present": true,
+    "isolated_rai_fabric_credential_target_count": 0,
+    "checked_account_manifest_present": false,
+    "account_manifest_scope_ru": "Проверено только место, указанное в CP42, не все аккаунты и каталоги пользователя",
+    "isolated_rai_fabric_registry_present": false,
+    "credential_changes": false,
+    "process_changes": false,
+    "provider_requests": false,
+    "live_account_switch": false,
+    "refer_to_branch": "AG_pather / CP-44-cp42-and-windows-discovery-review.md"
+  },
+  "integrity": {
+    "both_zip_crc_valid": true,
+    "raw_logs_published_to_github": false,
+    "known_token_patterns_found_in_archives": 0
+  },
+  "limitations_ru": "Отчёты сформированы локальными скриптами и прочитаны из загруженных архивов; это не независимая аттестация Windows и не подтверждение доступности подписных вызовов.",
+  "decision_ru": "Повторная диагностика установок не нужна. Проверять поддерживаемый режим Codex App Server без обращения к модели; Antigravity использовать как самостоятельный IDE/CLI в разрешённых границах. Действующие аккаунты и конфигурации не менять.",
+  "github_actions_new_runs": 0,
+  "linux_ci": false,
+  "bpr40_mutations": false,
+  "control_tower_mutations": false,
+  "tri_tower_publication": false,
+  "next_cursor": "RAI-FABRIC/09.8-CODEX_APP_SERVER_NONINFERENCE_HANDSHAKE",
+  "related_ag_cursor": "AG_pather/CP-45-LOCAL_MANIFEST_PREVIEW_OPT_IN"
+}
