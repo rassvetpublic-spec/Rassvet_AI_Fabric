@@ -1,0 +1,32 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.9-REAL_CODEX_THREAD_LIFECYCLE_ADAPTER",
+  "verdict": "PARTIAL",
+  "description_ru": "Оригинальный stdio-транспорт Codex app-server и безопасный thread/start, без turn/start, OAuth и пользовательских файлов",
+  "evidence": {
+    "local_tests_discovered": 191,
+    "local_tests_executed": 184,
+    "local_tests_passed": 184,
+    "windows_only_skipped": 7,
+    "local_failures": 0,
+    "live_windows_new_probe": "NOT_RUN",
+    "real_codex_09_8_initialize_proven": true,
+    "real_thread_start": "NOT_TESTED",
+    "model_calls_initiated": 0,
+    "linux_github_actions_runs": 0,
+    "user_authorization_accessed": false,
+    "zip_sha256": "d173a4baeac6628cf473e5efa052b539f799edd7b61f32953f1e8966f3bdf69a",
+    "launcher_sha256": "31c1d39ba3734efd6fd500cb825a12f4e34b3af53fa98f42014c64e04873ee21"
+  },
+  "restrictions": {
+    "actual_model_turn": false,
+    "oauth_performed": false,
+    "real_ag_worker": false,
+    "bpr40_modified": false,
+    "control_tower_modified": false,
+    "checkpoint_published_three_towers": false
+  },
+  "next_cursor": "RAI-FABRIC/09.9-B-REAL_THREAD_HOST_RESULT_REVIEW",
+  "next_action_ru": "Проверить один Windows CI и один локальный ZIP/PS1 на настоящем Codex; не отправлять turn/start до отдельного разрешения"
+}
