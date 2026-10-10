@@ -10,7 +10,7 @@
 
 1. Только заранее проверенный `codex.exe` (путь и SHA-256), `app-server --listen stdio://`, в отдельном `CODEX_HOME`.
 2. `initialize`, ожидание результата с `id=1`, затем `initialized`.
-3. В режиме `thread` — `thread/start` с `model=null`, `cwd` изолированного тестового workspace, `approvalPolicy=never`, `sandbox=readOnly`, `ephemeral=true`; ожидание результата с `id=2`.
+3. В режиме `thread` — `thread/start` с `model=null`, `cwd` изолированного тестового workspace, `approvalPolicy=never`, `sandbox=read-only`, `ephemeral=true`; ожидание результата с `id=2`.
 4. **`turn/start` отсутствует в исходном коде транспорта.** Приходящий запрос разрешения или чужой `id` блокирует обработку.
 5. Завершение собственного дочернего процесса, контроль timeout/EOF и очистка собственного дерева Windows при необходимости. Статус `CLEANUP_NOT_VERIFIED` не может дать PASS.
 6. Результат содержит только статусы, названия отправленных методов, длительность и сокращённый SHA-256 идентификатора потока. Сырой stdout/stderr, пути и токены не возвращаются.

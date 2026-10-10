@@ -20,8 +20,8 @@ class CodexProtocolTests(unittest.TestCase):
     def thread(self):
         self.initialize()
         start = self.driver.thread_start(model='модель-для-мока', cwd=r'C:\TEST\repo')
-        self.assertEqual(start['params']['sandbox'], 'readOnly')
-        self.assertEqual(start['params']['approvalPolicy'], 'unlessTrusted')
+        self.assertEqual(start['params']['sandbox'], 'read-only')
+        self.assertEqual(start['params']['approvalPolicy'], 'on-request')
         result = self.driver.consume({'id': start['id'], 'result': {'thread': {'id': 'thread-1'}}})
         self.assertEqual(result['thread_id'], 'thread-1')
 

@@ -44,9 +44,18 @@ class RealTransportTests(unittest.TestCase):
   self.assertEqual(self.run_server('bad_json')['code'],'INVALID_JSONL_FRAME')
 
  def test_rpc_error_not_exposed(self):
-  text=str(self.run_server('rpc_error'))
-  self.assertIn('RPC_ERROR_FROM_SERVER',text)
-  self.assertNotIn('sensitive diagnostic',text)
+  report=self.run_server('rpc_error')
+  self.assertEqual(report['code'],'RPC_ERROR_FROM_SERVER')
+  self.assertEqual(report['rpc_error_code'],-32603)
+  self.assertNotIn('sensitive diagnostic',str(report))
+
+ def test_thread_invalid_params_numeric_diagnostic(self):
+  report=self.run_server('thread_rpc_error')
+  self.assertEqual(report['status'],'BLOCKED')
+  self.assertEqual(report['stage'],'thread_start')
+  self.assertEqual(report['rpc_error_code'],-32602)
+  self.assertNotIn('sensitive token example',str(report))
+  self.assertTrue(report['no_turn_start_sent'])
 
  def test_oversize_blocked(self):
   self.assertEqual(self.run_server('oversize')['code'],'OVERSIZED_OR_PARTIAL_FRAME')

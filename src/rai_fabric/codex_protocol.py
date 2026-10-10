@@ -81,8 +81,8 @@ class CodexAppProtocol:
             raise CodexProtocolError("Рабочий каталог не указан")
         # readOnly исключает запись до проверки отдельного контракта разрешений.
         return self._request("thread/start", {
-            "model": model, "cwd": cwd, "approvalPolicy": "unlessTrusted",
-            "sandbox": "readOnly", "serviceName": "rassvet_ai_fabric"
+            "model": model, "cwd": cwd, "approvalPolicy": "on-request",
+            "sandbox": "read-only", "serviceName": "rassvet_ai_fabric"
         }, "WAIT_THREAD")
 
     def turn_start(self, prompt: str) -> dict[str, Any]:

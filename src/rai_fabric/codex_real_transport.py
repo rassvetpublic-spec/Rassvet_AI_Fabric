@@ -131,6 +131,7 @@ def _drive_app_server(*, command: list[str], cwd: str, mode: str,
         "thread_created": False, "thread_id_sha256_prefix": None,
         "method_names_sent": [], "notification_count": 0, "frames_received": 0,
         "no_turn_start_sent": True, "no_oauth_performed": True,
+        "rpc_error_code": None,  # Только ограниченный числовой код, не сообщение сервера.
         "no_api_key_in_child_env": not any(k.upper().endswith("API_KEY") for k in env),
         "child_cleanup": "NOT_STARTED", "duration_ms": None,
     }
@@ -177,6 +178,12 @@ def _drive_app_server(*, command: list[str], cwd: str, mode: str,
             if type(msg["id"]) is not int or msg["id"] != rpc_id:
                 raise SafeProtocolError("UNEXPECTED_RPC_ID")
             if "error" in msg:
+                rpc_error = msg["error"]
+                numeric = rpc_error.get("code") if isinstance(rpc_error, dict) else None
+                # Сохраняем только ограниченный числовой код; исключаем bool и
+                # любые произвольные строки/error.data из публичной диагностики.
+                if type(numeric) is int and -1000000 <= numeric <= 1000000:
+                    report["rpc_error_code"] = numeric
                 raise SafeProtocolError("RPC_ERROR_FROM_SERVER")
             result = msg.get("result")
             if not isinstance(result, dict):
@@ -228,7 +235,7 @@ def _drive_app_server(*, command: list[str], cwd: str, mode: str,
             report["stage"] = "thread_start"
             send({"method": "thread/start", "id": 2, "params": {
                 "model": None, "cwd": str(allowed_workspace),
-                "sandbox": "readOnly", "approvalPolicy": "never",
+                "sandbox": "read-only", "approvalPolicy": "never",
                 "ephemeral": True, "serviceName": "rassvet_ai_fabric"}})
             response = consume(2)
             thread_obj = response.get("thread")

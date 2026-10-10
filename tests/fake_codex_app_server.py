@@ -28,10 +28,11 @@ if scenario=='init_only':sys.exit(0)
 thread=read()
 if scenario=='missing_thread':send({'id':2,'result':{'thread':{}}});sys.exit(0)
 assert thread.get('method')=='thread/start'
-assert thread['params']['sandbox']=='readOnly'
+assert thread['params']['sandbox']=='read-only'
 assert thread['params']['approvalPolicy']=='never'
 assert thread['params']['ephemeral'] is True
 assert thread['params']['model'] is None
+if scenario=='thread_rpc_error':send({'id':2,'error':{'code':-32602,'message':'sensitive token example'}});sys.exit(0)
 send({'id':2,'result':{'thread':{'id':'fake-thread-123'}}})
 # If turn/start is accidentally sent, fail.  The client must instead close stdin.
 try:

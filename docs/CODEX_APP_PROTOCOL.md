@@ -10,7 +10,7 @@
 
 1. `initialize` с постоянным `clientInfo.name=rassvet_ai_fabric` и русским именем клиента.
 2. Только после успешного ответа — уведомление `initialized`.
-3. `thread/start` с явно выбранной моделью и отдельным каталогом. Контракт по умолчанию требует `sandbox=readOnly` и `approvalPolicy=unlessTrusted`.
+3. `thread/start` с явно выбранной моделью и отдельным каталогом. Контракт по умолчанию требует `sandbox=read-only` и `approvalPolicy=on-request`.
 4. Только после подтверждённого `thread.id` — `turn/start` с текстовым элементом `input`.
 5. Запись `turn.id`, сбор ограниченного потока `item/agentMessage/delta`, проверка принадлежности событий правильным `threadId`/`turnId`.
 6. **Только** `turn/completed` и `turn.status=completed` дают транспортный `PASS`. При этом курсор — `REVIEW_EVIDENCE`, а не приёмка результата в BPR40.
