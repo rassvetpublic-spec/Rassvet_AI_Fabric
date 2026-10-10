@@ -1,0 +1,108 @@
+{
+  "schema": "RAIF_BIGWAVE03_W0_RESULT_HANDOFF/1",
+  "checkpoint_id": "RAIF_W0_DIRTY_SOURCE_RECONCILIATION_2026_10_10_R1",
+  "date": "2026-10-10",
+  "owner": {
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "branch": "AG_pather",
+    "parent_head": "edee65158c384ac65c4c27051f545d5dfcb16ee7"
+  },
+  "source_evidence": {
+    "file": "RAiF-W0-RESULT_20261010_130242_acf64a51.zip",
+    "sha256": "72a5951a824d65b34e279d44c812e769269ae5a26b348fb2e04bb2e28fbc5d64",
+    "zip_crc": "PASS",
+    "required_files": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "receipt_schema": "RAIF_W0_READONLY_RECEIPT/1",
+    "report_schema": "RAIF_W0_GIT_PIN_READONLY_REPORT/1",
+    "run_id": "20261010_130242_acf64a51",
+    "stages": {
+      "pass": 5,
+      "blocked": 1
+    },
+    "receipt_status": "PARTIAL",
+    "reason": "SOURCE_WORKTREE_DIRTY",
+    "git_reads": 9,
+    "source_mutations_reported": 0,
+    "network_operations_reported": 0,
+    "provider_calls_reported": 0,
+    "model_turns_reported": 0,
+    "account_switches_reported": 0
+  },
+  "observations": {
+    "git_executable": "C:\\Program Files\\Git\\cmd\\git.exe",
+    "git_binary_sha256": "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f",
+    "git_executable_present": true,
+    "git_version_verified": true,
+    "clone_location": "C:\\GIT\\Rassvet_AI_Fabric",
+    "clone_is_normal_git_repository": true,
+    "origin_allowed": true,
+    "local_head": "b18f31cb39bd655c7fd7e50466069f23d29c957a",
+    "local_head_class": "HISTORIC_MAIN_10_0",
+    "source_head_double_readback_equal": true,
+    "local_worktree_clean": false,
+    "ignored_files_absent": true,
+    "hidden_index_flags_absent": true,
+    "target_fabric_10_3_main_sha": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "exact_main_10_3_pin_ready": false,
+    "git_status_file_categories": "UNKNOWN_UNTIL_W0_RECONCILIATION",
+    "host_acceptance_10_3": "NOT_RUN"
+  },
+  "current_remote_refs_at_checkpoint": {
+    "ag": "edee65158c384ac65c4c27051f545d5dfcb16ee7",
+    "main": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "tower": "6a498073a507ce9a1836231937c908c08f75b212"
+  },
+  "master_plan": "design/d01_raif_fabric_10_3_to_release_master_plan_20261010_r1.md",
+  "runner": {
+    "filename": "Start-RAiF-BIGWAVE03-Reconcile-R1.ps1",
+    "sha256": "94ef4280550087c66eed6c6cb29698bdea922ee0e7734204ad8ed4aaed15adf2",
+    "environment": "Windows PowerShell 7+",
+    "path": "D:\\ЗАГРУЗКИ",
+    "run_command": "pwsh.exe -NoProfile -ExecutionPolicy Bypass -File \"D:\\ЗАГРУЗКИ\\Start-RAiF-BIGWAVE03-Reconcile-R1.ps1\"",
+    "output_pattern": "RAiF-W0B-RESULT_<runid>.zip",
+    "expected_files": [
+      "STEPS.jsonl",
+      "RECEIPT.json",
+      "STATUS.txt",
+      "SUMMARY.txt",
+      "report.json"
+    ],
+    "test_attestation": "STATIC_ONLY_NOT_RUN_ON_WINDOWS",
+    "script_behavior": "ABSOLUTE_PINNED_GIT_PATH_STATUS_COUNTS_NO_FILENAMES_NO_NETWORK_NO_CLONE_MUTATION",
+    "required_user_actions": "NO_WIP_MUTATION; EXECUTE_READONLY_DIAGNOSTIC"
+  },
+  "gates": {
+    "F0_toolchain": "PASS_WITH_SCOPE",
+    "F0_source_clean": "BLOCKED_DIRTY",
+    "W1_integrated_host_qa": "NOT_RUN",
+    "G2_account_identity": "CLOSED",
+    "CP54D_real_rollback": "NOT_VERIFIED",
+    "Tower_sync": "NOT_CLAIMED",
+    "Fabric_PR4_merge_authorization_evidence": "UNVERIFIED_FROM_GITHUB_RECORDS"
+  },
+  "next_cursor": "BIGWAVE03/W0_RECONCILE_DIRTY_SOURCE_AND_CHECK_MAIN_OBJECT",
+  "after_readback": "IF_WIP_PRESERVED_SELECT_EXPLICIT_ISOLATED_PINNED_MAIN_10_3_STAGING_OR_OPERATOR_RECONCILIATION",
+  "do_not_repeat": [
+    "BIGWAVE_R1_47",
+    "BIGWAVE_R2_28",
+    "AG_CI_265",
+    "PR4_CI_428",
+    "Codex10.0B",
+    "CP31",
+    "CP46",
+    "CP52D",
+    "CP54A5"
+  ],
+  "boundaries": {
+    "no_clone_reset_clean_stash_pull_checkout_merge_in_user_source": true,
+    "existing_source_mutations": 0,
+    "authority_mutations": 0,
+    "new_ci_runs": 0
+  }
+}
