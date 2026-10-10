@@ -1,0 +1,46 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/09.9-C-THREAD_START_WIRE_CONTRACT_FIX",
+  "verdict": "PASS_WITH_SCOPE",
+  "scope_ru": "Исправление wire-параметров, отрицательные тесты и изолированный транспорт; создание потока на пользовательском Windows ещё не подтверждено",
+  "evidence": {
+    "source_commit": "427ee398c7257d779a81674ca8cade4086483c93",
+    "ci_run_id": 38019266708,
+    "ci_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38019266708",
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "runner": "windows-latest",
+    "python": "3.11",
+    "tests_discovered": 192,
+    "tests_passed": 192,
+    "tests_skipped": 0,
+    "negative_rpc_thread_start_test": "PASS",
+    "reference_host_result_sha256": "21bdbc542898f7164fcba86d9efa03ab8cfb1c93f0831ba0c1536178d1a3868b",
+    "reference_host_result_verdict": "BLOCKED_RPC_ERROR_FROM_SERVER",
+    "corrected_host_retest": "NOT_RUN",
+    "new_linux_ci_jobs": 0,
+    "model_requests": 0,
+    "oauth_requests": 0,
+    "api_key_requests": 0,
+    "bpr40_changed": false,
+    "control_tower_changed": false
+  },
+  "correction": {
+    "thread_start_sandbox_wire": "read-only",
+    "offline_approvalPolicy": "on-request",
+    "raw_error_payload_in_report": false,
+    "numeric_error_code_allowed": true
+  },
+  "delivery": {
+    "zip": "RAiF-Codex-Thread-09_9C.zip",
+    "zip_sha256": "35ea93400c314777383880490942e85e55daa694025b24ca94921a5f0a510a98",
+    "launcher": "Start-RAiF-Codex-Thread-09_9C.ps1",
+    "launcher_sha256": "cc682d4f2423981fbe0d35520fd634a73d1f76e5b49b978a3210663d9f3307c6",
+    "download_directory": "D:\\ЗАГРУЗКИ",
+    "result_glob": "C:\\GIT\\Rassvet_AI_Fabric\\RAiF-Windows-RESULT-CODEX-THREAD-09_9C-*.zip"
+  },
+  "next_cursor": "RAI-FABRIC/09.9-D-HOST_THREAD_START_RETEST",
+  "next_action_ru": "Повторить один non-inference thread/start на личном Windows. При BLOCKED вернуть только обезличенный RESULT ZIP с rpc_error_code, без токенов или сырых ответов.",
+  "tri_tower_publication": false
+}
