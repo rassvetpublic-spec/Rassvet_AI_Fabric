@@ -1,0 +1,49 @@
+{
+  "schema": "RAI_FABRIC_CHECKPOINT/1",
+  "date": "2026-10-10",
+  "stage": "RAI-FABRIC/10.0-ONE_REAL_TURN_WINDOWS_CI",
+  "verdict": "PASS_WITH_SCOPE",
+  "passed_scope_ru": "Реальный Codex App Server обработчик одной задачи через SQLite, безопасная фикстура без inference в CI; первое модельное испытание на личном Windows ещё не выполнено.",
+  "source": {
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "tested_source_commit": "1348e8ae9cea462c7ad8a289e8ec9db25b1e7ab6",
+    "initial_code_commit": "1f61ad218fd2258d018ef0cc5ff1c0da064d11d8"
+  },
+  "ci": {
+    "first_run_id": 38020686577,
+    "first_result": "FAILED_TEST_FIXTURE_PATH",
+    "corrected_run_id": 38020829006,
+    "corrected_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38020829006",
+    "corrected_status": "completed",
+    "corrected_result": "success",
+    "runner": "windows-latest",
+    "python": "3.11",
+    "tests_discovered": 213,
+    "passed": 213,
+    "skipped": 0,
+    "failed": 0,
+    "new_linux_jobs": 0,
+    "paid_model_calls_in_ci": 0
+  },
+  "delivery": {
+    "zip": "RAiF-Codex-Live-10_0.zip",
+    "zip_sha256": "ffdadfa6f68edf727a29d2ab7ae95d1efc2d428641549fb04de40118f7ffa48f",
+    "launcher": "Start-RAiF-Codex-Live-10_0.ps1",
+    "launcher_sha256": "21447615f2cadc2a158c3fa9518627f25dad7f0a203919e454874104be27a68f",
+    "downloads": "D:\\ЗАГРУЗКИ",
+    "result_root": "C:\\GIT\\Rassvet_AI_Fabric",
+    "live_host_run": "NOT_RUN"
+  },
+  "invariants": {
+    "one_model_turn_with_user_permission": true,
+    "automatic_retries": 0,
+    "explicit_ChatGPT_CLI_login": true,
+    "api_key_fallback": false,
+    "tool_approval_autogrant": false,
+    "five_project_mutations": false,
+    "BPR40_mutations": false,
+    "raw_auth_published": false
+  },
+  "next_cursor": "RAI-FABRIC/10.0-B-ONE_REAL_TURN_HOST_RESULT_REVIEW",
+  "tri_tower_publication": false
+}
