@@ -1,0 +1,106 @@
+{
+  "schema": "RAIF_W1_COMPOSITE_ACCEPTANCE_AND_W2_GATE/1",
+  "checkpoint_id": "RAIF_W1R2_COMPOSITE_OFFLINE_CORE_ACCEPTED_20261010_R1",
+  "date": "2026-10-10",
+  "project": {
+    "owner_repo": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "checkpoint_branch": "AG_pather",
+    "branch_before_checkpoint": "307909001ab826149f9ce9a9a67a286e18bfdb3a"
+  },
+  "provenance": {
+    "original_host_result": {
+      "name": "RAiF-W1-RESULT_20261010_134700_872266a9.zip",
+      "sha256": "61535dd5ec1622d985e9ded2c321a21f0191c742dcf5ae77fa8b0bb4fb5d795a",
+      "crc": "PASS",
+      "members": 5,
+      "status": "BLOCKED_AT_OLD_HARNESS_FIELD",
+      "unit_tests_total": 428,
+      "unit_tests_passed": 428,
+      "worktree_tests_included": 20,
+      "skipped": 0,
+      "source_commit": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+      "source_tree": "8d2a0d0c195a3ffbb64cf26ba46e906936261894"
+    },
+    "resume_host_result": {
+      "name": "RAiF-W1R2-RESULT_20261010_140155_51222991.zip",
+      "sha256": "500b99cc558a4fe10a2dcfcd04b34a51e544e95281c4c3e1d344992ccc29031c",
+      "crc": "PASS",
+      "members": 5,
+      "run_id": "20261010_140155_51222991",
+      "steps_pass": 9,
+      "steps_total": 9,
+      "reason_code": "W1_OFFLINE_CORE_ACCEPTED_COMPOSITE",
+      "schema": "RAIF_W1_R2_SMOKE_RESUME/1",
+      "prior_archive_sha_matches": true,
+      "prior_unittest_source_receipt_validated": true,
+      "prior_unittest_reexecuted": false,
+      "mock_queue": "PASS",
+      "codex_mock": "PASS",
+      "postcheck_source_clean": true,
+      "source_clone_operations": 0,
+      "source_mutations": 0,
+      "user_original_c_clone_accessed": false,
+      "model_calls": 0,
+      "account_switches": 0,
+      "authority_changes": 0
+    }
+  },
+  "verification": {
+    "method": "DIRECT_EXACT_TWO_ZIP_CRC_HASH_JSON_SCHEMAS_AND_CROSS_RECEIPT",
+    "status": "PASS_COMPOSITE_OFFLINE_CORE_ONLY",
+    "w1_gate": "F1_ACCEPTED",
+    "excluded": [
+      "LIVE_CODEX_PROVIDER",
+      "LIVE_GOOGLE_ANTIGRAVITY_ACCOUNT_IDENTITY",
+      "REAL_ROLLBACK",
+      "POWERLOSS_DURABILITY",
+      "EXTERNAL_AUTHORITY_PROMOTION",
+      "REAL_PROVIDER_QUOTA_SWITCH"
+    ]
+  },
+  "git": {
+    "integrated_main_commit": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "main_tree": "8d2a0d0c195a3ffbb64cf26ba46e906936261894",
+    "tower_github_main_at_review": "ccf077d4e1c26526acc7cb007a347cddc525c9ce",
+    "baseline_core_store_blob": "0a30bba8ac8aee0c380b29d8599f4e4ec3d9b8ae",
+    "baseline_ag_store_blob": "6608e39cdb70c03dd8ea5c5a74c05714534e2644",
+    "differences": "AG_pather diverges from integrated main; main has codex-mock/live transport; do not build core 10.4 on diverged AG branch directly"
+  },
+  "next": {
+    "cursor": "W2/10_4_DURABLE_RECOVERY_EXACT_MAIN_BASELINE_IMPLEMENTATION_PLAN",
+    "implementation_base": "8dc6ee32eabd3334012763bac8e641f682e478c6",
+    "isolated_candidate_branch_proposed": "raif-10-4-durable-recovery-w2-20261010",
+    "design_path": "design/d02_raif_10_4_durable_recovery_w2_20261010_r1.md",
+    "source_work": "NOT_STARTED",
+    "required_gate": "W2_INDEPENDENT_WINDOWS_FAULT_QA",
+    "post_w2": "W3/10_5_EXECUTOR_MANUAL_AG_HANDOFF"
+  },
+  "guards": {
+    "original_windows_clone": "C:\\GIT\\Rassvet_AI_Fabric",
+    "preserve_tracked_wip_134": true,
+    "download_runtime": "D:\\ЗАГРУЗКИ",
+    "no_new_live_model_calls": true,
+    "G2_identity": "CLOSED",
+    "tower_drive_authority": "1d3boKYmIGgOqLEZB3nlHTt-sTl8i9QnW",
+    "tower_github_production_sync": false,
+    "no_main_merge": true,
+    "no_tower_mutations": true,
+    "documentation_commit_only": true
+  },
+  "no_repeat": [
+    "BIGWAVE R1 47 synthetic",
+    "BIGWAVE02 28 synthetic",
+    "W1 428 Windows tests without source changes",
+    "Codex 10.0B live turn",
+    "CP31",
+    "CP46",
+    "CP52D",
+    "CP54A5"
+  ],
+  "invalid_claims": [
+    "SHA256_IS_SIGNATURE",
+    "RECEIPT_IS_INDEPENDENT_AUTHORITY",
+    "HOST_COMPOSITE_IS_POWERLOSS_E2E",
+    "AG_ACCOUNT_IS_VERIFIED"
+  ]
+}
