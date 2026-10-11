@@ -6,6 +6,8 @@ change it. Only returns bounded fixed status codes, not local user paths.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import os
 import re
 import stat

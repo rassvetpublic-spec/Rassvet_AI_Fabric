@@ -1,0 +1,535 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "store",
+  "name": "Store",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Транзакционное состояние задач; не использует код OMX или Superpowers.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "canonical": {
+      "fn_id": "store.canonical",
+      "description": "Функция canonical",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "checksum": {
+      "fn_id": "store.checksum",
+      "description": "Функция checksum",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.close": {
+      "fn_id": "store.FabricStore.close",
+      "description": "Функция FabricStore.close",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.atomic": {
+      "fn_id": "store.FabricStore.atomic",
+      "description": "Функция FabricStore.atomic",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Iterator[None]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.submit": {
+      "fn_id": "store.FabricStore.submit",
+      "description": "Функция FabricStore.submit",
+      "args": [
+        "objective",
+        "provider",
+        "workspace",
+        "task_id",
+        "depends_on"
+      ],
+      "inputs": {
+        "objective": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "provider": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "workspace": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        },
+        "depends_on": {
+          "type": "list[str] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.get": {
+      "fn_id": "store.FabricStore.get",
+      "description": "Функция FabricStore.get",
+      "args": [
+        "task_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.list": {
+      "fn_id": "store.FabricStore.list",
+      "description": "Функция FabricStore.list",
+      "args": [
+        "limit"
+      ],
+      "inputs": {
+        "limit": {
+          "type": "int",
+          "required": false,
+          "default": "50"
+        }
+      },
+      "outputs": {
+        "return_type": "list[dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.claim": {
+      "fn_id": "store.FabricStore.claim",
+      "description": "Функция FabricStore.claim",
+      "args": [
+        "owner",
+        "provider",
+        "lease_seconds",
+        "task_id"
+      ],
+      "inputs": {
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "provider": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        },
+        "lease_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "120"
+        },
+        "task_id": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any] | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.heartbeat": {
+      "fn_id": "store.FabricStore.heartbeat",
+      "description": "Функция FabricStore.heartbeat",
+      "args": [
+        "task_id",
+        "owner",
+        "token",
+        "lease_seconds"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "lease_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "120"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.checkpoint": {
+      "fn_id": "store.FabricStore.checkpoint",
+      "description": "Функция FabricStore.checkpoint",
+      "args": [
+        "task_id",
+        "owner",
+        "token",
+        "stage",
+        "cursor",
+        "evidence",
+        "verdict"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "stage": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "cursor": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "evidence": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "verdict": {
+          "type": "str",
+          "required": false,
+          "default": "'PARTIAL'"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.finish": {
+      "fn_id": "store.FabricStore.finish",
+      "description": "Функция FabricStore.finish",
+      "args": [
+        "task_id",
+        "owner",
+        "token",
+        "verdict",
+        "response",
+        "evidence",
+        "cursor",
+        "external_run_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "verdict": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "response": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "evidence": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "cursor": {
+          "type": "str",
+          "required": false,
+          "default": "'REVIEW'"
+        },
+        "external_run_id": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.latest_checkpoint": {
+      "fn_id": "store.FabricStore.latest_checkpoint",
+      "description": "Функция FabricStore.latest_checkpoint",
+      "args": [
+        "task_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any] | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.result": {
+      "fn_id": "store.FabricStore.result",
+      "description": "Функция FabricStore.result",
+      "args": [
+        "task_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any] | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.recover": {
+      "fn_id": "store.FabricStore.recover",
+      "description": "Функция FabricStore.recover",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "list[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.requeue": {
+      "fn_id": "store.FabricStore.requeue",
+      "description": "Функция FabricStore.requeue",
+      "args": [
+        "task_id",
+        "acknowledgement"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "acknowledgement": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.request_cancel": {
+      "fn_id": "store.FabricStore.request_cancel",
+      "description": "Функция FabricStore.request_cancel",
+      "args": [
+        "task_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.confirm_cancel": {
+      "fn_id": "store.FabricStore.confirm_cancel",
+      "description": "Функция FabricStore.confirm_cancel",
+      "args": [
+        "task_id",
+        "owner",
+        "token"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FabricStore.events": {
+      "fn_id": "store.FabricStore.events",
+      "description": "Функция FabricStore.events",
+      "args": [
+        "task_id",
+        "limit"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "limit": {
+          "type": "int",
+          "required": false,
+          "default": "100"
+        }
+      },
+      "outputs": {
+        "return_type": "list[dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

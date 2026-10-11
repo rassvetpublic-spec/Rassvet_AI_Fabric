@@ -6,6 +6,8 @@ AccountPool registration or switching, no raw HTTP bodies in results.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import math
 from typing import Callable
 

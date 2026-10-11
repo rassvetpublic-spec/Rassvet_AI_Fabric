@@ -1,0 +1,109 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "host_gate_10_1b",
+  "name": "Host Gate 10 1B",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "quality_gates",
+  "description": "Read-only Windows host preflight for Fabric 10.1B pinned-source acceptance.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_result": {
+      "fn_id": "host_gate_10_1b._result",
+      "description": "Функция _result",
+      "args": [
+        "verdict"
+      ],
+      "inputs": {
+        "verdict": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_git": {
+      "fn_id": "host_gate_10_1b._git",
+      "description": "Функция _git",
+      "args": [
+        "source"
+      ],
+      "inputs": {
+        "source": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_unsafe_path": {
+      "fn_id": "host_gate_10_1b._unsafe_path",
+      "description": "Функция _unsafe_path",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "inspect_fabric_clone": {
+      "fn_id": "host_gate_10_1b.inspect_fabric_clone",
+      "description": "Inspect one existing checkout only; never download or change its ref.",
+      "args": [
+        "path",
+        "windows_override_for_tests"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "windows_override_for_tests": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "transaction",
+  "name": "Transaction",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Transactional import into a user-controlled credential vault.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "WritableVault.put": {
+      "fn_id": "transaction.WritableVault.put",
+      "description": "Функция WritableVault.put",
+      "args": [
+        "account_id",
+        "secret"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "secret": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WritableVault.has": {
+      "fn_id": "transaction.WritableVault.has",
+      "description": "Функция WritableVault.has",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WritableVault.delete": {
+      "fn_id": "transaction.WritableVault.delete",
+      "description": "Функция WritableVault.delete",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "import_into_vault": {
+      "fn_id": "transaction.import_into_vault",
+      "description": "Validate the whole manifest, then import under generated, opaque IDs.",
+      "args": [
+        "raw_manifest",
+        "vault"
+      ],
+      "inputs": {
+        "raw_manifest": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "vault": {
+          "type": "WritableVault",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[ImportedAccount]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

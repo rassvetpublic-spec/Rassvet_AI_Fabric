@@ -1,6 +1,8 @@
 """Транзакционное состояние задач; не использует код OMX или Superpowers."""
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import hashlib
 import hmac
 import json

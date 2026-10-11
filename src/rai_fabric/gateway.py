@@ -1,6 +1,8 @@
 """Локальный шлюз инструментов только для чтения, без произвольных shell-команд."""
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import shutil
 import subprocess

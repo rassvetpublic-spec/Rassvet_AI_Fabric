@@ -1,0 +1,148 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "codex_protocol",
+  "name": "Codex Protocol",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Офлайн-контракт обмена с Codex App Server: не запускает процессы и модели.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "CodexAppProtocol.decode_line": {
+      "fn_id": "codex_protocol.CodexAppProtocol.decode_line",
+      "description": "Принимает одну строку JSON в UTF-8 и ограничивает размер пакета.",
+      "args": [
+        "raw"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CodexAppProtocol.initialize": {
+      "fn_id": "codex_protocol.CodexAppProtocol.initialize",
+      "description": "Функция CodexAppProtocol.initialize",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CodexAppProtocol.initialized": {
+      "fn_id": "codex_protocol.CodexAppProtocol.initialized",
+      "description": "Функция CodexAppProtocol.initialized",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CodexAppProtocol.thread_start": {
+      "fn_id": "codex_protocol.CodexAppProtocol.thread_start",
+      "description": "Функция CodexAppProtocol.thread_start",
+      "args": [
+        "model",
+        "cwd"
+      ],
+      "inputs": {
+        "model": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "cwd": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CodexAppProtocol.turn_start": {
+      "fn_id": "codex_protocol.CodexAppProtocol.turn_start",
+      "description": "Функция CodexAppProtocol.turn_start",
+      "args": [
+        "prompt"
+      ],
+      "inputs": {
+        "prompt": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CodexAppProtocol.consume": {
+      "fn_id": "codex_protocol.CodexAppProtocol.consume",
+      "description": "Нормализует ответ/событие. Никогда не выдаёт автоматическое одобрение.",
+      "args": [
+        "message"
+      ],
+      "inputs": {
+        "message": {
+          "type": "dict[str, Any] | bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any] | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CodexAppProtocol.result": {
+      "fn_id": "codex_protocol.CodexAppProtocol.result",
+      "description": "Функция CodexAppProtocol.result",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

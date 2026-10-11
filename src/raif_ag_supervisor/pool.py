@@ -6,6 +6,8 @@ Only a trusted source may later supply quota observations / 429 events.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import math
 import re

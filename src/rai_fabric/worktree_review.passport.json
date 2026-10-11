@@ -1,0 +1,594 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "worktree_review",
+  "name": "Worktree Review",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "RAiF 10.1: Windows-only, offline, fail-closed Git worktree diff review.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "sha256": {
+      "fn_id": "worktree_review.sha256",
+      "description": "Функция sha256",
+      "args": [
+        "data"
+      ],
+      "inputs": {
+        "data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_windows_only": {
+      "fn_id": "worktree_review._windows_only",
+      "description": "Функция _windows_only",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_is_reparse": {
+      "fn_id": "worktree_review._is_reparse",
+      "description": "Функция _is_reparse",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_assert_local_volume": {
+      "fn_id": "worktree_review._assert_local_volume",
+      "description": "Block UNC and mapped SMB drives; offline means no network filesystem.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_assert_no_reparse": {
+      "fn_id": "worktree_review._assert_no_reparse",
+      "description": "Функция _assert_no_reparse",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_strict_path": {
+      "fn_id": "worktree_review._strict_path",
+      "description": "Функция _strict_path",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_allowed": {
+      "fn_id": "worktree_review._allowed",
+      "description": "Функция _allowed",
+      "args": [
+        "values"
+      ],
+      "inputs": {
+        "values": {
+          "type": "list[str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_git": {
+      "fn_id": "worktree_review._git",
+      "description": "Git execution with a hard pre-capture output bound and elapsed deadline.",
+      "args": [
+        "repo",
+        "timeout",
+        "hooks"
+      ],
+      "inputs": {
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "timeout": {
+          "type": "int",
+          "required": false,
+          "default": "25"
+        },
+        "hooks": {
+          "type": "Path | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_utc": {
+      "fn_id": "worktree_review._utc",
+      "description": "Функция _utc",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_write_atomic": {
+      "fn_id": "worktree_review._write_atomic",
+      "description": "Функция _write_atomic",
+      "args": [
+        "path",
+        "value"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "value": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_json": {
+      "fn_id": "worktree_review._json",
+      "description": "Функция _json",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "dict",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_log": {
+      "fn_id": "worktree_review._log",
+      "description": "Функция _log",
+      "args": [
+        "run",
+        "stage",
+        "verdict",
+        "code"
+      ],
+      "inputs": {
+        "run": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "stage": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "verdict": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "code": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_checkpoint": {
+      "fn_id": "worktree_review._checkpoint",
+      "description": "Функция _checkpoint",
+      "args": [
+        "run",
+        "stage",
+        "verdict",
+        "cursor",
+        "evidence"
+      ],
+      "inputs": {
+        "run": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "stage": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "verdict": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "cursor": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "evidence": {
+          "type": "dict",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_reject_duplicate_json_fields": {
+      "fn_id": "worktree_review._reject_duplicate_json_fields",
+      "description": "Функция _reject_duplicate_json_fields",
+      "args": [
+        "pairs"
+      ],
+      "inputs": {
+        "pairs": {
+          "type": "list[tuple[str, object]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_manifest": {
+      "fn_id": "worktree_review._manifest",
+      "description": "Функция _manifest",
+      "args": [
+        "run"
+      ],
+      "inputs": {
+        "run": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_source_repository": {
+      "fn_id": "worktree_review._source_repository",
+      "description": "Функция _source_repository",
+      "args": [
+        "repo",
+        "pin"
+      ],
+      "inputs": {
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "pin": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "prepare": {
+      "fn_id": "worktree_review.prepare",
+      "description": "Create a fresh detached Git worktree at a verified local commit, no fetch.",
+      "args": [
+        "repo",
+        "pin",
+        "output_root",
+        "allowlist"
+      ],
+      "inputs": {
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "pin": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "output_root": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "allowlist": {
+          "type": "list[str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_changed": {
+      "fn_id": "worktree_review._changed",
+      "description": "Функция _changed",
+      "args": [
+        "repo"
+      ],
+      "inputs": {
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_safe_text": {
+      "fn_id": "worktree_review._safe_text",
+      "description": "Функция _safe_text",
+      "args": [
+        "data"
+      ],
+      "inputs": {
+        "data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_verify_mock": {
+      "fn_id": "worktree_review._verify_mock",
+      "description": "Функция _verify_mock",
+      "args": [
+        "run",
+        "files"
+      ],
+      "inputs": {
+        "run": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "files": {
+          "type": "dict[str, bytes]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "review": {
+      "fn_id": "worktree_review.review",
+      "description": "Reject unsafe changes; write reviewable local patch without committing anything.",
+      "args": [
+        "run",
+        "run_mock_tests"
+      ],
+      "inputs": {
+        "run": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "run_mock_tests": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "offline_demo": {
+      "fn_id": "worktree_review.offline_demo",
+      "description": "Функция offline_demo",
+      "args": [
+        "repo",
+        "pin",
+        "root"
+      ],
+      "inputs": {
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "pin": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "root": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "worktree_review.main",
+      "description": "Функция main",
+      "args": [
+        "argv"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "list[str] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

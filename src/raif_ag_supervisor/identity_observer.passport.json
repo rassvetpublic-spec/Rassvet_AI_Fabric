@@ -1,0 +1,112 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "identity_observer",
+  "name": "Identity Observer",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "CP-54B3: bounded, opt-in, local-only active-session evidence observer.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_verdict": {
+      "fn_id": "identity_observer._verdict",
+      "description": "Fixed-schema report. No user-controlled strings or opaque IDs escape.",
+      "args": [
+        "code",
+        "status",
+        "plan"
+      ],
+      "inputs": {
+        "code": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "status": {
+          "type": "bool | None",
+          "required": false,
+          "default": "None"
+        },
+        "plan": {
+          "type": "bool | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "summarize_active_identity": {
+      "fn_id": "identity_observer.summarize_active_identity",
+      "description": "Only schema-presence booleans; deliberately does not extract email.",
+      "args": [
+        "payload"
+      ],
+      "inputs": {
+        "payload": {
+          "type": "object",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "collect_active_identity": {
+      "fn_id": "identity_observer.collect_active_identity",
+      "description": "One opt-in GetUserStatus on a verified live loopback LS; no discovery.",
+      "args": [
+        "target",
+        "allow_identity_read",
+        "ownership_verified",
+        "sender"
+      ],
+      "inputs": {
+        "target": {
+          "type": "LocalRpcTarget",
+          "required": true,
+          "default": null
+        },
+        "allow_identity_read": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        },
+        "ownership_verified": {
+          "type": "Callable[[], bool] | None",
+          "required": false,
+          "default": "None"
+        },
+        "sender": {
+          "type": "Callable[[LocalRpcTarget], dict] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

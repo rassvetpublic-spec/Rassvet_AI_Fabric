@@ -1,0 +1,59 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "codex_mock_transport",
+  "name": "Codex Mock Transport",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Офлайн-stdio транспорт к подставному процессу Codex App Server.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_safe_mock_environment": {
+      "fn_id": "codex_mock_transport._safe_mock_environment",
+      "description": "Дочерний процесс получает только необходимую среду без секретов.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "run_codex_mock": {
+      "fn_id": "codex_mock_transport.run_codex_mock",
+      "description": "Исполняет полный протокол через stdio локального имитатора, без подписки.",
+      "args": [
+        "scenario",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "scenario": {
+          "type": "str",
+          "required": false,
+          "default": "'success'"
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "5.0"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

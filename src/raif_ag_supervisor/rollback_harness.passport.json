@@ -1,0 +1,53 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "rollback_harness",
+  "name": "Rollback Harness",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "CP-54C1 offline-only rollback fault harness.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "SyntheticRollbackReport.safe_dict": {
+      "fn_id": "rollback_harness.SyntheticRollbackReport.safe_dict",
+      "description": "Функция SyntheticRollbackReport.safe_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "simulate_rollback": {
+      "fn_id": "rollback_harness.simulate_rollback",
+      "description": "Exercise bounded synthetic failures without accepting caller secret data.",
+      "args": [
+        "fault"
+      ],
+      "inputs": {
+        "fault": {
+          "type": "SyntheticFault",
+          "required": false,
+          "default": "SyntheticFault.NONE"
+        }
+      },
+      "outputs": {
+        "return_type": "SyntheticRollbackReport"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

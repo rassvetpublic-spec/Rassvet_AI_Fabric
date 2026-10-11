@@ -4,6 +4,8 @@ A running process does not prove that it refreshed its authorization state.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import csv
 import io
 import locale

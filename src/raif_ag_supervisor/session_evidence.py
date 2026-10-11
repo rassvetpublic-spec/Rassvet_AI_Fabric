@@ -5,6 +5,8 @@ This module never obtains account handles, credentials or identity attributes.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import re
 from dataclasses import dataclass
 

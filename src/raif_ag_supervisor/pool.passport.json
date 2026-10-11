@@ -1,0 +1,327 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "pool",
+  "name": "Pool",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Quota-aware account-pool planner for Windows Antigravity Standalone.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_timestamp": {
+      "fn_id": "pool._timestamp",
+      "description": "Функция _timestamp",
+      "args": [
+        "value",
+        "name"
+      ],
+      "inputs": {
+        "value": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "float"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_group": {
+      "fn_id": "pool._group",
+      "description": "Функция _group",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "ModelGroup",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ModelGroup"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_account": {
+      "fn_id": "pool._account",
+      "description": "Функция _account",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "QuotaWindow.status": {
+      "fn_id": "pool.QuotaWindow.status",
+      "description": "Функция QuotaWindow.status",
+      "args": [
+        "now",
+        "max_age"
+      ],
+      "inputs": {
+        "now": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "max_age": {
+          "type": "float",
+          "required": false,
+          "default": "_MAX_SNAPSHOT_AGE"
+        }
+      },
+      "outputs": {
+        "return_type": "QuotaStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "GroupQuota.score": {
+      "fn_id": "pool.GroupQuota.score",
+      "description": "Функция GroupQuota.score",
+      "args": [
+        "now",
+        "max_age"
+      ],
+      "inputs": {
+        "now": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "max_age": {
+          "type": "float",
+          "required": false,
+          "default": "_MAX_SNAPSHOT_AGE"
+        }
+      },
+      "outputs": {
+        "return_type": "float | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HandoffPlan.safe_summary": {
+      "fn_id": "pool.HandoffPlan.safe_summary",
+      "description": "Output never includes account handles, names or credentials.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AccountPool.record_quota": {
+      "fn_id": "pool.AccountPool.record_quota",
+      "description": "Функция AccountPool.record_quota",
+      "args": [
+        "handle",
+        "group",
+        "snapshot"
+      ],
+      "inputs": {
+        "handle": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "group": {
+          "type": "ModelGroup",
+          "required": true,
+          "default": null
+        },
+        "snapshot": {
+          "type": "GroupQuota",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AccountPool.enable": {
+      "fn_id": "pool.AccountPool.enable",
+      "description": "Функция AccountPool.enable",
+      "args": [
+        "handle",
+        "enabled"
+      ],
+      "inputs": {
+        "handle": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "enabled": {
+          "type": "bool",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AccountPool.record_http_error": {
+      "fn_id": "pool.AccountPool.record_http_error",
+      "description": "Функция AccountPool.record_http_error",
+      "args": [
+        "handle",
+        "group",
+        "status",
+        "observed_at"
+      ],
+      "inputs": {
+        "handle": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "group": {
+          "type": "ModelGroup",
+          "required": true,
+          "default": null
+        },
+        "status": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "observed_at": {
+          "type": "float",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AccountPool.propose_after_429": {
+      "fn_id": "pool.AccountPool.propose_after_429",
+      "description": "Функция AccountPool.propose_after_429",
+      "args": [
+        "active_handle",
+        "group",
+        "now"
+      ],
+      "inputs": {
+        "active_handle": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "group": {
+          "type": "ModelGroup",
+          "required": true,
+          "default": null
+        },
+        "now": {
+          "type": "float",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "HandoffPlan | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AccountPool.safe_summary": {
+      "fn_id": "pool.AccountPool.safe_summary",
+      "description": "Функция AccountPool.safe_summary",
+      "args": [
+        "group",
+        "now"
+      ],
+      "inputs": {
+        "group": {
+          "type": "ModelGroup",
+          "required": true,
+          "default": null
+        },
+        "now": {
+          "type": "float",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "synthetic_demo": {
+      "fn_id": "pool.synthetic_demo",
+      "description": "Safe demonstration with invented handles and no real vault access.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

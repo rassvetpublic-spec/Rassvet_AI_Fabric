@@ -1,0 +1,67 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "mcp_server",
+  "name": "Mcp Server",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "MCP-сервер по stdio: только чтение, согласование протокола 2025-11-25.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "MCPStdioServer.handle": {
+      "fn_id": "mcp_server.MCPStdioServer.handle",
+      "description": "Функция MCPStdioServer.handle",
+      "args": [
+        "msg"
+      ],
+      "inputs": {
+        "msg": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any] | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MCPStdioServer.serve": {
+      "fn_id": "mcp_server.MCPStdioServer.serve",
+      "description": "Функция MCPStdioServer.serve",
+      "args": [
+        "input_stream",
+        "output_stream"
+      ],
+      "inputs": {
+        "input_stream": {
+          "type": "TextIO | None",
+          "required": false,
+          "default": "None"
+        },
+        "output_stream": {
+          "type": "TextIO | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

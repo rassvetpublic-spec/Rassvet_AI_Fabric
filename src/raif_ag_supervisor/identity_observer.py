@@ -7,6 +7,8 @@ provider traffic inside the LS, so it requires a separate explicit runtime gate.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 from typing import Callable
 
 from .native_rpc import (

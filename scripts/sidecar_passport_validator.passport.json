@@ -1,0 +1,143 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "sidecar_passport_validator",
+  "name": "Sidecar Passport Validator",
+  "version": "1.1.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "📋 Валидатор и гейт-контроллер Sidecar-паспортов по канону Архитектора (Sidecar Passports Gate).",
+  "author": "CONTROL_TOWER_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "SidecarPassportValidator.extract_code_version": {
+      "fn_id": "sidecar_passport_validator.SidecarPassportValidator.extract_code_version",
+      "description": "Извлекает __version__ из AST и проверяет отсутствие устаревшего inline __passport__.",
+      "args": [
+        "py_path"
+      ],
+      "inputs": {
+        "py_path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[Optional[str], bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SidecarPassportValidator.validate_module": {
+      "fn_id": "sidecar_passport_validator.SidecarPassportValidator.validate_module",
+      "description": "Проводит полную валидацию связки код + sidecar JSON.",
+      "args": [
+        "py_path_str"
+      ],
+      "inputs": {
+        "py_path_str": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SidecarPassportValidator.extract_functions_from_ast": {
+      "fn_id": "sidecar_passport_validator.SidecarPassportValidator.extract_functions_from_ast",
+      "description": "Извлекает публичные функции и методы классов из AST модуля.",
+      "args": [
+        "py_path"
+      ],
+      "inputs": {
+        "py_path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SidecarPassportValidator.enrich_sidecar_with_functions": {
+      "fn_id": "sidecar_passport_validator.SidecarPassportValidator.enrich_sidecar_with_functions",
+      "description": "Обогащает существующий sidecar-паспорт модулем AST-контрактами всех функций.",
+      "args": [
+        "py_path_str"
+      ],
+      "inputs": {
+        "py_path_str": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Path]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SidecarPassportValidator.generate_sidecar_skeleton": {
+      "fn_id": "sidecar_passport_validator.SidecarPassportValidator.generate_sidecar_skeleton",
+      "description": "Генерирует заготовку sidecar-паспорта для модуля, если он отсутствует.",
+      "args": [
+        "py_path_str",
+        "default_desc"
+      ],
+      "inputs": {
+        "py_path_str": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "default_desc": {
+          "type": "str",
+          "required": false,
+          "default": "''"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Path]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "sidecar_passport_validator.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Any"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

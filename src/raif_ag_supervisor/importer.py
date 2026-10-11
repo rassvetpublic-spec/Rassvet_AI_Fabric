@@ -2,6 +2,8 @@
 
 Only use with explicitly user-authorized accounts and an approved local vault.
 """
+
+__version__ = "1.0.0"
 import json
 import re
 from dataclasses import dataclass, field

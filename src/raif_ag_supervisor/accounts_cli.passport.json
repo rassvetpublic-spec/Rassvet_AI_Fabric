@@ -1,0 +1,86 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "accounts_cli",
+  "name": "Accounts Cli",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Windows-only local account vault operations with privacy-safe output.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_reply": {
+      "fn_id": "accounts_cli._reply",
+      "description": "Функция _reply",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_load_private_file": {
+      "fn_id": "accounts_cli._load_private_file",
+      "description": "Do not put the source file into runtime, logs, Git or output archives.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "accounts_cli.main",
+      "description": "Функция main",
+      "args": [
+        "argv",
+        "vault_factory",
+        "registry_dir"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "list[str] | None",
+          "required": false,
+          "default": "None"
+        },
+        "vault_factory": {
+          "type": "Callable[[], object]",
+          "required": false,
+          "default": "WindowsCredentialVault"
+        },
+        "registry_dir": {
+          "type": "Path | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

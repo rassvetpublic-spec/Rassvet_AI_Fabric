@@ -1,0 +1,95 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "generate_catalog",
+  "name": "Generate Catalog",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Автоматический генератор каталога скриптов (CATALOG.md) по стандарту CONTROL_TOWER / BPR40.",
+  "author": "CONTROL_TOWER_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "extract_python_doc": {
+      "fn_id": "generate_catalog.extract_python_doc",
+      "description": "Извлекает краткое описание Python-скрипта из sidecar-паспорта или docstring.",
+      "args": [
+        "filepath"
+      ],
+      "inputs": {
+        "filepath": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "extract_ps1_doc": {
+      "fn_id": "generate_catalog.extract_ps1_doc",
+      "description": "Извлекает краткое описание PowerShell-скрипта из sidecar-паспорта или help-блока.",
+      "args": [
+        "filepath"
+      ],
+      "inputs": {
+        "filepath": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "generate_catalog": {
+      "fn_id": "generate_catalog.generate_catalog",
+      "description": "Генерирует CATALOG.md для указанной директории.",
+      "args": [
+        "target_dir"
+      ],
+      "inputs": {
+        "target_dir": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "generate_catalog.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Any"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
