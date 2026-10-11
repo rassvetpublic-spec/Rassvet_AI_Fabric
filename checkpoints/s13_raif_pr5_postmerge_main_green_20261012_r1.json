@@ -1,0 +1,64 @@
+{
+  "schema": "RAIF_10_4_PR5_POSTMERGE_RECEIPT/1",
+  "as_of": "2026-10-12",
+  "repo": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "main": {
+    "sha": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+    "git_tree": "c8dd1691ffc04f937a0d2f14600925f4b890b5ae",
+    "parent_shas": [
+      "9fb3d35b74915db1801f44743c22e5f79a3c979d",
+      "e9e117d22c89f6daf54783de34ac7493c4486641"
+    ]
+  },
+  "merge": {
+    "pr": 5,
+    "url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/5",
+    "merged_at": "2026-10-11T23:41:42Z",
+    "actor": "rassvetpublic-spec",
+    "commit": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+    "exact_tree_identical_to_pr": true,
+    "review_candidate": "e9e117d22c89f6daf54783de34ac7493c4486641"
+  },
+  "qa": {
+    "user_supplied_act": "RAIF-PR5-BPR40-R4-QA_RESULT/1",
+    "user_supplied_verdict": "QA_PASS_WITH_SCOPE",
+    "user_claim_evidence_sha256": "64eda573751f3ecf5de7230807ec7c1da4fc903a6f016fc572c1b01f270362b9",
+    "cited_file": "checkpoints/s12_raif_pr5_bpr40_guard_fix_20261012_r1.json",
+    "actual_file_sha256": "dac9e64222ddf209141b4c2cd4ff1f8edd3b38ca193056314e17e829c6180f25",
+    "actual_file_git_blob": "f4e2e35073350f4ad6c41d7af3fb5c647599fdb6",
+    "checksum_matches": false,
+    "actual_file_is_pre_ci_checkpoint": true,
+    "independent_r4_qa_in_pr_review": "NOT_FOUND",
+    "owner_mtd_document_in_pr": "NOT_FOUND",
+    "owner_pr_merge_action": "VERIFIED"
+  },
+  "ci": {
+    "pr_run": 38183921505,
+    "postmerge_main_run": 38185243827,
+    "postmerge_status": "SUCCESS",
+    "postmerge_sha": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+    "tests_total": 481,
+    "tests_passed": 481,
+    "unittest_seconds": 28.386,
+    "windows_preflight": "PASS",
+    "sqlite_mock": "PASS",
+    "codex_mock": "PASS"
+  },
+  "unproven": {
+    "physical_owner_host_r3": "NOT_RUN",
+    "crash_powerloss": "NOT_TESTED",
+    "target_external_effect": "NOT_ATTESTED",
+    "Windows_Job_Object_control": "NOT_IMPLEMENTED",
+    "postmerge_receipt_not_cryptographically_signed": true
+  },
+  "safeguards": {
+    "main_mutated_by_this_step": false,
+    "local_checkout_C_GIT_modified_by_this_step": false,
+    "last_reported_tracked_WIP": 134,
+    "authority_Tower_GDrive_CKS_modified": false,
+    "live_model_calls": 0
+  },
+  "next_cursor": "RAIF/W2_10_4_EFFECT_LEDGER_AND_OWNED_PROCESS_HARDENING",
+  "owner_merge_gate": "ALREADY_EXECUTED_OUTSIDE_THIS_STEP",
+  "effect_ledger_gate": "CLOSED_UNTIL_NEW_PR_QA_AND_MTD"
+}
