@@ -5,6 +5,8 @@ The report deliberately excludes usernames, emails, account IDs and paths.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import os
 from pathlib import Path
 from typing import Callable

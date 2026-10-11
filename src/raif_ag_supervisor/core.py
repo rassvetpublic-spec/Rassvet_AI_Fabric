@@ -3,6 +3,8 @@
 This initial implementation never mutates a running Antigravity session.
 It records a handoff plan; only a future validated adapter may execute one.
 """
+
+__version__ = "1.0.0"
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional

@@ -1,0 +1,78 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "audit",
+  "name": "Audit",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "CP-54C1/54D strict redact-by-construction stage audit.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "StageAudit.append": {
+      "fn_id": "audit.StageAudit.append",
+      "description": "Функция StageAudit.append",
+      "args": [
+        "stage",
+        "state",
+        "code"
+      ],
+      "inputs": {
+        "stage": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "state": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "code": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StageAudit.jsonl": {
+      "fn_id": "audit.StageAudit.jsonl",
+      "description": "Функция StageAudit.jsonl",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StageAudit.receipt": {
+      "fn_id": "audit.StageAudit.receipt",
+      "description": "Функция StageAudit.receipt",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

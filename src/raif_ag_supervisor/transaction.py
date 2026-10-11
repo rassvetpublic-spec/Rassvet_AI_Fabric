@@ -5,6 +5,8 @@ checkpoints. This module never reads the actual exported file by itself.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import secrets
 from dataclasses import dataclass, field
 from typing import Protocol

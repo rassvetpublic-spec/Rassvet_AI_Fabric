@@ -1,0 +1,134 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "cli",
+  "name": "Cli",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Явное локальное управление: задания и токены не отправляются в API без согласия.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "RAIArgumentParser.format_help": {
+      "fn_id": "cli.RAIArgumentParser.format_help",
+      "description": "Функция RAIArgumentParser.format_help",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RAIArgumentParser.error": {
+      "fn_id": "cli.RAIArgumentParser.error",
+      "description": "Функция RAIArgumentParser.error",
+      "args": [
+        "message"
+      ],
+      "inputs": {
+        "message": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "parser": {
+      "fn_id": "cli.parser",
+      "description": "Функция parser",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "argparse.ArgumentParser"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_evidence": {
+      "fn_id": "cli._evidence",
+      "description": "Функция _evidence",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_token": {
+      "fn_id": "cli._token",
+      "description": "Функция _token",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "run": {
+      "fn_id": "cli.run",
+      "description": "Функция run",
+      "args": [
+        "argv"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "list[str] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Any"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "cli.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

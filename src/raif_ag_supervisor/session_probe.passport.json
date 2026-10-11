@@ -1,0 +1,74 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "session_probe",
+  "name": "Session Probe",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Read-only Windows process discovery. No process modification or token access.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "parse_tasklist": {
+      "fn_id": "session_probe.parse_tasklist",
+      "description": "Parse tasklist /fo csv /nh without relying on localized headers.",
+      "args": [
+        "output"
+      ],
+      "inputs": {
+        "output": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "tuple[ProcessIdentity, ...]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "running_components": {
+      "fn_id": "session_probe.running_components",
+      "description": "Inspect known Antigravity process names only, without changing them.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "tuple[ProcessIdentity, ...]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "windows_process_start_marker": {
+      "fn_id": "session_probe.windows_process_start_marker",
+      "description": "Return Windows process creation FILETIME without reading process memory.",
+      "args": [
+        "pid"
+      ],
+      "inputs": {
+        "pid": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

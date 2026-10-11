@@ -1,0 +1,256 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "registry",
+  "name": "Registry",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Crash-recoverable registry of opaque account IDs, without credentials.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "RegistryVault.put": {
+      "fn_id": "registry.RegistryVault.put",
+      "description": "Функция RegistryVault.put",
+      "args": [
+        "account_id",
+        "secret"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "secret": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RegistryVault.has": {
+      "fn_id": "registry.RegistryVault.has",
+      "description": "Функция RegistryVault.has",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RegistryVault.delete": {
+      "fn_id": "registry.RegistryVault.delete",
+      "description": "Функция RegistryVault.delete",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_ids": {
+      "fn_id": "registry._validate_ids",
+      "description": "Функция _validate_ids",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "object",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_read": {
+      "fn_id": "registry._read",
+      "description": "Функция _read",
+      "args": [
+        "path",
+        "key"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "key": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_write": {
+      "fn_id": "registry._write",
+      "description": "Функция _write",
+      "args": [
+        "path",
+        "key",
+        "ids"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "key": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "ids": {
+          "type": "list[str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalAccountRegistry.registry_path": {
+      "fn_id": "registry.LocalAccountRegistry.registry_path",
+      "description": "Функция LocalAccountRegistry.registry_path",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalAccountRegistry.pending_path": {
+      "fn_id": "registry.LocalAccountRegistry.pending_path",
+      "description": "Функция LocalAccountRegistry.pending_path",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalAccountRegistry.ids": {
+      "fn_id": "registry.LocalAccountRegistry.ids",
+      "description": "Функция LocalAccountRegistry.ids",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "tuple[str, ...]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalAccountRegistry.recover": {
+      "fn_id": "registry.LocalAccountRegistry.recover",
+      "description": "Resolve an interrupted import under an OS-released write lock.",
+      "args": [
+        "vault"
+      ],
+      "inputs": {
+        "vault": {
+          "type": "RegistryVault",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalAccountRegistry.import_manifest": {
+      "fn_id": "registry.LocalAccountRegistry.import_manifest",
+      "description": "Import a validated manifest with write-ahead journal and recovery.",
+      "args": [
+        "raw",
+        "vault"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "vault": {
+          "type": "RegistryVault",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "tuple[str, ...]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

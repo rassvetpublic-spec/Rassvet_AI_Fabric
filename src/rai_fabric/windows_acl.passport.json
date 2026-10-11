@@ -1,0 +1,88 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "windows_acl",
+  "name": "Windows Acl",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Windows DACL текущего пользователя и проверка reparse points для vault.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "WindowsVaultACL.reject_reparse": {
+      "fn_id": "windows_acl.WindowsVaultACL.reject_reparse",
+      "description": "Проверяет путь и всех существующих родителей, включая junction.",
+      "args": [
+        "path",
+        "required"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "required": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsVaultACL.restrict": {
+      "fn_id": "windows_acl.WindowsVaultACL.restrict",
+      "description": "Применяет защищённую ACL и немедленно проверяет результат.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsVaultACL.verify": {
+      "fn_id": "windows_acl.WindowsVaultACL.verify",
+      "description": "Проверяет: DACL защищена, один ACE текущего SID с полным доступом.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

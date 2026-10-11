@@ -1,0 +1,197 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "native_rpc",
+  "name": "Native Rpc",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Minimal read-only observer for a running Antigravity Language Server.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_decode_reply": {
+      "fn_id": "native_rpc._decode_reply",
+      "description": "Функция _decode_reply",
+      "args": [
+        "data",
+        "max_bytes"
+      ],
+      "inputs": {
+        "data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "max_bytes": {
+          "type": "int",
+          "required": false,
+          "default": "_MAX_RESPONSE_BYTES"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_post_fixed_local_rpc": {
+      "fn_id": "native_rpc._post_fixed_local_rpc",
+      "description": "Функция _post_fixed_local_rpc",
+      "args": [
+        "target",
+        "method",
+        "body",
+        "timeout",
+        "max_bytes"
+      ],
+      "inputs": {
+        "target": {
+          "type": "LocalRpcTarget",
+          "required": true,
+          "default": null
+        },
+        "method": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "body": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "timeout": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "max_bytes": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "invoke_native_rpc": {
+      "fn_id": "native_rpc.invoke_native_rpc",
+      "description": "Only allowlisted local status reads; never accept caller-provided URLs.",
+      "args": [
+        "target",
+        "method",
+        "timeout"
+      ],
+      "inputs": {
+        "target": {
+          "type": "LocalRpcTarget",
+          "required": true,
+          "default": null
+        },
+        "method": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "2.0"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "invoke_native_quota_rpc": {
+      "fn_id": "native_rpc.invoke_native_quota_rpc",
+      "description": "Opt-in native quota read. May trigger provider traffic from the LS.",
+      "args": [
+        "target",
+        "allow_quota_read",
+        "ownership_verified",
+        "timeout"
+      ],
+      "inputs": {
+        "target": {
+          "type": "LocalRpcTarget",
+          "required": true,
+          "default": null
+        },
+        "allow_quota_read": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        },
+        "ownership_verified": {
+          "type": "Callable[[], bool] | None",
+          "required": false,
+          "default": "None"
+        },
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "2.0"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_bool_field": {
+      "fn_id": "native_rpc._bool_field",
+      "description": "Функция _bool_field",
+      "args": [
+        "payload"
+      ],
+      "inputs": {
+        "payload": {
+          "type": "dict",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NativeRpcObserver.observe": {
+      "fn_id": "native_rpc.NativeRpcObserver.observe",
+      "description": "Функция NativeRpcObserver.observe",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

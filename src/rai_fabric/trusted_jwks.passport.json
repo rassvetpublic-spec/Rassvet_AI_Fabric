@@ -1,0 +1,182 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "trusted_jwks",
+  "name": "Trusted Jwks",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Доверенное получение ключей OpenAI по OIDC Discovery с fail-closed кешем.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_decode_strict_json": {
+      "fn_id": "trusted_jwks._decode_strict_json",
+      "description": "Функция _decode_strict_json",
+      "args": [
+        "raw",
+        "limit"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "limit": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_discovery": {
+      "fn_id": "trusted_jwks._validate_discovery",
+      "description": "Функция _validate_discovery",
+      "args": [
+        "raw"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_jwks": {
+      "fn_id": "trusted_jwks._validate_jwks",
+      "description": "Функция _validate_jwks",
+      "args": [
+        "raw"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_https_get_once": {
+      "fn_id": "trusted_jwks._https_get_once",
+      "description": "TLS со стандартным доверенным CA, без proxy, cookie, редиректов.",
+      "args": [
+        "url",
+        "cap"
+      ],
+      "inputs": {
+        "url": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "cap": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TrustedOpenAIKeys.status": {
+      "fn_id": "trusted_jwks.TrustedOpenAIKeys.status",
+      "description": "Функция TrustedOpenAIKeys.status",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "KeyCacheStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TrustedOpenAIKeys.get_jwks": {
+      "fn_id": "trusted_jwks.TrustedOpenAIKeys.get_jwks",
+      "description": "Обновление при отсутствии/истечении TTL и однократно при новом kid.",
+      "args": [
+        "key_id"
+      ],
+      "inputs": {
+        "key_id": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Mapping[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TrustedOpenAIKeys.verify": {
+      "fn_id": "trusted_jwks.TrustedOpenAIKeys.verify",
+      "description": "Выбирает набор по untrusted kid, но доверяет только проверенной подписи.",
+      "args": [
+        "token",
+        "issued_client_id",
+        "expected_nonce"
+      ],
+      "inputs": {
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "issued_client_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "expected_nonce": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "VerifiedIdentity"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

@@ -1,6 +1,8 @@
 """Minimal non-destructive command line interface for RAiF AG Supervisor."""
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import argparse
 import json
 import sys

@@ -1,0 +1,59 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "diagnostics",
+  "name": "Diagnostics",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Read-only diagnostic summary for Antigravity Standalone on Windows.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "default_registry_dir": {
+      "fn_id": "diagnostics.default_registry_dir",
+      "description": "Функция default_registry_dir",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "readonly_status": {
+      "fn_id": "diagnostics.readonly_status",
+      "description": "Return only non-secret counts and known process names/PIDs.",
+      "args": [
+        "registry_dir",
+        "probe"
+      ],
+      "inputs": {
+        "registry_dir": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "probe": {
+          "type": "Callable[[], tuple[ProcessIdentity, ...]] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

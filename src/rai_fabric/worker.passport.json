@@ -1,0 +1,109 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "worker",
+  "name": "Worker",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Явно включаемые исполнители, без веб-скрейпинга и платного API fallback.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "run_one": {
+      "fn_id": "worker.run_one",
+      "description": "Функция run_one",
+      "args": [
+        "store",
+        "provider",
+        "allow_external",
+        "timeout_seconds",
+        "owner"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "provider": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "allow_external": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        },
+        "timeout_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "300"
+        },
+        "owner": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_run_antigravity": {
+      "fn_id": "worker._run_antigravity",
+      "description": "Функция _run_antigravity",
+      "args": [
+        "store",
+        "claim",
+        "owner",
+        "token",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "claim": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "tuple[str, dict[str, Any], str, str | None]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

@@ -6,6 +6,8 @@ Never log or serialize raw responses, which might contain sensitive data.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import math
 from datetime import datetime

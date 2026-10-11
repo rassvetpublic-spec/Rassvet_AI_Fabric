@@ -1,0 +1,52 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "verification",
+  "name": "Verification",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Evidence-based acceptance gate for live Standalone account switching.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "evaluate_handoff": {
+      "fn_id": "verification.evaluate_handoff",
+      "description": "Accept only same server instance + verified identity + stream continuation.",
+      "args": [
+        "before",
+        "after",
+        "target_handle"
+      ],
+      "inputs": {
+        "before": {
+          "type": "SessionEvidence",
+          "required": true,
+          "default": null
+        },
+        "after": {
+          "type": "SessionEvidence",
+          "required": true,
+          "default": null
+        },
+        "target_handle": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "SwitchAssessment"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

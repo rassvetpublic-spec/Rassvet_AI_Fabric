@@ -1,0 +1,324 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "oauth_exchange",
+  "name": "Oauth Exchange",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Офлайн-контракт OAuth code exchange и refresh для подписного ChatGPT.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "SecretTokenRequest.public_report": {
+      "fn_id": "oauth_exchange.SecretTokenRequest.public_report",
+      "description": "Функция SecretTokenRequest.public_report",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, str | bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ExchangeResult.public_report": {
+      "fn_id": "oauth_exchange.ExchangeResult.public_report",
+      "description": "Функция ExchangeResult.public_report",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, str | bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_token": {
+      "fn_id": "oauth_exchange._validate_token",
+      "description": "Функция _validate_token",
+      "args": [
+        "value",
+        "field_name"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "field_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_unique_pairs": {
+      "fn_id": "oauth_exchange._unique_pairs",
+      "description": "Функция _unique_pairs",
+      "args": [
+        "pairs"
+      ],
+      "inputs": {
+        "pairs": {
+          "type": "list[tuple[str, Any]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_reject_constant": {
+      "fn_id": "oauth_exchange._reject_constant",
+      "description": "Функция _reject_constant",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_parse_response": {
+      "fn_id": "oauth_exchange._parse_response",
+      "description": "Функция _parse_response",
+      "args": [
+        "raw",
+        "operation"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "tuple[int, bytes]",
+          "required": true,
+          "default": null
+        },
+        "operation": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ParsedTokenResponse"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "code_request": {
+      "fn_id": "oauth_exchange.code_request",
+      "description": "Функция code_request",
+      "args": [
+        "code"
+      ],
+      "inputs": {
+        "code": {
+          "type": "PrivateAuthorizationCode",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "SecretTokenRequest"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "refresh_request": {
+      "fn_id": "oauth_exchange.refresh_request",
+      "description": "Функция refresh_request",
+      "args": [
+        "credential"
+      ],
+      "inputs": {
+        "credential": {
+          "type": "Mapping[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "SecretTokenRequest"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_transport_call": {
+      "fn_id": "oauth_exchange._transport_call",
+      "description": "Функция _transport_call",
+      "args": [
+        "transport",
+        "request",
+        "operation"
+      ],
+      "inputs": {
+        "transport": {
+          "type": "TokenTransport",
+          "required": true,
+          "default": null
+        },
+        "request": {
+          "type": "SecretTokenRequest",
+          "required": true,
+          "default": null
+        },
+        "operation": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ParsedTokenResponse"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "exchange_code_offline": {
+      "fn_id": "oauth_exchange.exchange_code_offline",
+      "description": "Обмен с внедрённым тестовым транспортом, без встроенного сетевого клиента.",
+      "args": [
+        "guard",
+        "callback_url",
+        "transport",
+        "keys",
+        "vault",
+        "now",
+        "returning_identity",
+        "expected_revision"
+      ],
+      "inputs": {
+        "guard": {
+          "type": "OAuthCallbackGuard",
+          "required": true,
+          "default": null
+        },
+        "callback_url": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "transport": {
+          "type": "TokenTransport",
+          "required": true,
+          "default": null
+        },
+        "keys": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "vault": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "now": {
+          "type": "int | None",
+          "required": false,
+          "default": "None"
+        },
+        "returning_identity": {
+          "type": "VerifiedIdentity | None",
+          "required": false,
+          "default": "None"
+        },
+        "expected_revision": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "ExchangeResult"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "refresh_offline": {
+      "fn_id": "oauth_exchange.refresh_offline",
+      "description": "Один refresh под межпроцессной блокировкой НА ВРЕМЯ запроса к серверу.",
+      "args": [
+        "identity",
+        "vault",
+        "transport",
+        "now",
+        "early_seconds"
+      ],
+      "inputs": {
+        "identity": {
+          "type": "VerifiedIdentity",
+          "required": true,
+          "default": null
+        },
+        "vault": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "transport": {
+          "type": "TokenTransport",
+          "required": true,
+          "default": null
+        },
+        "now": {
+          "type": "int | None",
+          "required": false,
+          "default": "None"
+        },
+        "early_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "300"
+        }
+      },
+      "outputs": {
+        "return_type": "ExchangeResult"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

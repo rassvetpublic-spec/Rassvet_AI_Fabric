@@ -1,6 +1,8 @@
 """Явно включаемые исполнители, без веб-скрейпинга и платного API fallback."""
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import os
 import shutil

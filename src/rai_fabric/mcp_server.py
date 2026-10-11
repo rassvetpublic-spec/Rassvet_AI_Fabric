@@ -1,6 +1,8 @@
 """MCP-сервер по stdio: только чтение, согласование протокола 2025-11-25."""
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import sys
 from typing import Any, TextIO

@@ -4,6 +4,8 @@ This module does not switch accounts or read credentials. A future trusted
 Windows observer must supply process-instance, account-identity and stream
 continuity evidence. Synthetic flags alone are not runtime proof.
 """
+
+__version__ = "1.0.0"
 from dataclasses import dataclass, field
 from enum import Enum
 

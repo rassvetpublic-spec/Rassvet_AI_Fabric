@@ -1,0 +1,157 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "vault",
+  "name": "Vault",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Vault abstraction: no secrets in checkpoints, logs or account registry.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "CredentialVault.put": {
+      "fn_id": "vault.CredentialVault.put",
+      "description": "Функция CredentialVault.put",
+      "args": [
+        "account_id",
+        "secret"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "secret": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CredentialVault.has": {
+      "fn_id": "vault.CredentialVault.has",
+      "description": "Функция CredentialVault.has",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CredentialVault.delete": {
+      "fn_id": "vault.CredentialVault.delete",
+      "description": "Функция CredentialVault.delete",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "InMemoryTestVault.put": {
+      "fn_id": "vault.InMemoryTestVault.put",
+      "description": "Функция InMemoryTestVault.put",
+      "args": [
+        "account_id",
+        "secret"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "secret": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "InMemoryTestVault.has": {
+      "fn_id": "vault.InMemoryTestVault.has",
+      "description": "Функция InMemoryTestVault.has",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "InMemoryTestVault.delete": {
+      "fn_id": "vault.InMemoryTestVault.delete",
+      "description": "Функция InMemoryTestVault.delete",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "quota_observer",
+  "name": "Quota Observer",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Sanitized observations from the internal Standalone HTTPS quota RPC.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_failed": {
+      "fn_id": "quota_observer._failed",
+      "description": "Функция _failed",
+      "args": [
+        "code"
+      ],
+      "inputs": {
+        "code": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "summarize_native_quota_response": {
+      "fn_id": "quota_observer.summarize_native_quota_response",
+      "description": "Discard everything but bounded known-group quota values and statuses.",
+      "args": [
+        "payload",
+        "observed_at"
+      ],
+      "inputs": {
+        "payload": {
+          "type": "dict | bytes",
+          "required": true,
+          "default": null
+        },
+        "observed_at": {
+          "type": "float",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "collect_native_quota": {
+      "fn_id": "quota_observer.collect_native_quota",
+      "description": "Opt-in quota fetch with trusted owner recheck and safe aggregate only.",
+      "args": [
+        "target",
+        "allow_quota_read",
+        "ownership_verified",
+        "observed_at",
+        "sender"
+      ],
+      "inputs": {
+        "target": {
+          "type": "LocalRpcTarget",
+          "required": true,
+          "default": null
+        },
+        "allow_quota_read": {
+          "type": "bool",
+          "required": true,
+          "default": null
+        },
+        "ownership_verified": {
+          "type": "Callable[[], bool]",
+          "required": true,
+          "default": null
+        },
+        "observed_at": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "sender": {
+          "type": "Callable[..., dict] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

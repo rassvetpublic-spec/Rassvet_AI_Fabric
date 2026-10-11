@@ -1,0 +1,16 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "demo",
+  "name": "RAiF Integration Demo",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "scripts",
+  "description": "Интеграционный smoke-тест RAiF 10.2C с надежным разрешением Python",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "FAIL_CLOSED",
+    "WINDOWS_ONLY"
+  ]
+}

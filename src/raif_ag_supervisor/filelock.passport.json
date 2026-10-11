@@ -1,0 +1,40 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "filelock",
+  "name": "Filelock",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Advisory exclusive file locking for registry mutation.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "exclusive_file_lock": {
+      "fn_id": "filelock.exclusive_file_lock",
+      "description": "Fail closed if another process already owns the registry write lock.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Iterator[None]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
