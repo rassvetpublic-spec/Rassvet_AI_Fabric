@@ -163,13 +163,20 @@
       "fn_id": "native_rpc._bool_field",
       "description": "Функция _bool_field",
       "args": [
-        "payload"
+        "payload",
+        "*names"
       ],
       "inputs": {
         "payload": {
           "type": "dict",
           "required": true,
           "default": null
+        },
+        "names": {
+          "type": "str",
+          "required": false,
+          "default": null,
+          "kind": "VAR_POSITIONAL"
         }
       },
       "outputs": {

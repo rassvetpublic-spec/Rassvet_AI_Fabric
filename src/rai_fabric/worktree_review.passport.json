@@ -159,6 +159,7 @@
       "description": "Git execution with a hard pre-capture output bound and elapsed deadline.",
       "args": [
         "repo",
+        "*args",
         "timeout",
         "hooks"
       ],
@@ -177,6 +178,12 @@
           "type": "Path | None",
           "required": false,
           "default": "None"
+        },
+        "args": {
+          "type": "str",
+          "required": false,
+          "default": null,
+          "kind": "VAR_POSITIONAL"
         }
       },
       "outputs": {

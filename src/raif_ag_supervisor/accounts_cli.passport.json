@@ -18,8 +18,17 @@
     "_reply": {
       "fn_id": "accounts_cli._reply",
       "description": "Функция _reply",
-      "args": [],
-      "inputs": {},
+      "args": [
+        "**status"
+      ],
+      "inputs": {
+        "status": {
+          "type": "Any",
+          "required": false,
+          "default": null,
+          "kind": "VAR_KEYWORD"
+        }
+      },
       "outputs": {
         "return_type": "None"
       },
