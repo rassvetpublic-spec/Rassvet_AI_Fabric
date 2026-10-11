@@ -1,0 +1,18 @@
+# Реестр скриптов scripts/ (Script Registry)
+> *Этот файл генерируется автоматически скриптом `scripts/generate_catalog.py`*
+
+## Оформленные скрипты
+
+| Имя файла | Тип | Описание |
+|---|---|---|
+| `Clone-RaiF-10_1-Safe-R2.ps1` | PowerShell | Безопасный клон и инспекция существующего каталога на Windows |
+| `demo-codex-mock.ps1` | PowerShell | Испытание SQLite-очереди и подставного Codex по stdio без внешних вызовов |
+| `demo-worktree-review.ps1` | PowerShell | Локальная детерминированная валидация рабочих деревьев на Windows |
+| `demo.ps1` | PowerShell | Интеграционный smoke-тест RAiF 10.2C с надежным разрешением Python |
+| `QA-Clone-RaiF-10_1-Static-R2.ps1` | PowerShell | Статическая проверка запускатора клонирования штатным парсером PowerShell |
+| `resolve-python.ps1` | PowerShell | Разрешение исполняемого интерпретатора Python 3.11+ на Windows |
+| `run-tests.ps1` | PowerShell | Интегрированный запускатор тестов RAiF с настройкой окружения |
+| `sidecar_passport_validator.py` | Python | 📋 Валидатор и гейт-контроллер Sidecar-паспортов по канону Архитектора (Sidecar Passports Gate). |
+| `Test-RaiF-10_1B-Static.ps1` | PowerShell | Статическая инспекция контракта запускатора хостовой валидации |
+| `Verify-RaiF-10_1B-Windows.ps1` | PowerShell | Хостовая валидация и прогон тестов закрепленного клона на Windows |
+| `windows-preflight.ps1` | PowerShell | Проверка готовности и доступности системных компонентов Windows |

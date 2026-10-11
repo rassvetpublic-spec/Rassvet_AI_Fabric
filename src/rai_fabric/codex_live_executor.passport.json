@@ -1,0 +1,319 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "codex_live_executor",
+  "name": "Codex Live Executor",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Один разрешённый Codex App Server turn -> один файл -> локальный unittest.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_safe_env": {
+      "fn_id": "codex_live_executor._safe_env",
+      "description": "Функция _safe_env",
+      "args": [
+        "home"
+      ],
+      "inputs": {
+        "home": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_safe_json_text": {
+      "fn_id": "codex_live_executor._safe_json_text",
+      "description": "Функция _safe_json_text",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_no_duplicate_fields": {
+      "fn_id": "codex_live_executor._no_duplicate_fields",
+      "description": "Функция _no_duplicate_fields",
+      "args": [
+        "pairs"
+      ],
+      "inputs": {
+        "pairs": {
+          "type": "list[tuple[str, Any]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_parse_generated_code": {
+      "fn_id": "codex_live_executor._parse_generated_code",
+      "description": "Функция _parse_generated_code",
+      "args": [
+        "reply"
+      ],
+      "inputs": {
+        "reply": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_workspace": {
+      "fn_id": "codex_live_executor._validate_workspace",
+      "description": "Функция _validate_workspace",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_home": {
+      "fn_id": "codex_live_executor._validate_home",
+      "description": "Функция _validate_home",
+      "args": [
+        "path",
+        "workspace"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        },
+        "workspace": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_drive_single_turn": {
+      "fn_id": "codex_live_executor._drive_single_turn",
+      "description": "Только один turn/start, запрет запросов разрешения и командных инструментов.",
+      "args": [
+        "command",
+        "cwd",
+        "env",
+        "timeout_seconds",
+        "monitor"
+      ],
+      "inputs": {
+        "command": {
+          "type": "list[str]",
+          "required": true,
+          "default": null
+        },
+        "cwd": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "env": {
+          "type": "dict[str, str]",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "monitor": {
+          "type": "Callable[[], bool] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_test_generated": {
+      "fn_id": "codex_live_executor._test_generated",
+      "description": "Функция _test_generated",
+      "args": [
+        "workspace",
+        "source",
+        "python"
+      ],
+      "inputs": {
+        "workspace": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "source": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "python": {
+          "type": "str",
+          "required": false,
+          "default": "sys.executable"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "run_live_task": {
+      "fn_id": "codex_live_executor.run_live_task",
+      "description": "Захват точно указанной задачи; блокировка повторного модельного обращения.",
+      "args": [
+        "store",
+        "task_id",
+        "binary",
+        "codex_home",
+        "workspace",
+        "expected_binary_sha256",
+        "one_turn_consent",
+        "timeout_seconds",
+        "driver"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "binary": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        },
+        "codex_home": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        },
+        "workspace": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        },
+        "expected_binary_sha256": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "one_turn_consent": {
+          "type": "bool",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "120"
+        },
+        "driver": {
+          "type": "Callable[..., dict[str, Any]]",
+          "required": false,
+          "default": "_drive_single_turn"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "codex_live_executor.main",
+      "description": "Функция main",
+      "args": [
+        "argv"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "list[str] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

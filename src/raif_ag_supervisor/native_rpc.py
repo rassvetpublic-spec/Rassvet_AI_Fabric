@@ -7,6 +7,8 @@ neither the token nor the server's raw JSON is ever returned in reports.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import http.client
 import json
 import ssl

@@ -1,0 +1,212 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "continuity",
+  "name": "Continuity",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "CP-54D: offline checkpoint integrity and non-replaying resume planner.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "ContinuityRecord.body": {
+      "fn_id": "continuity.ContinuityRecord.body",
+      "description": "Функция ContinuityRecord.body",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_canonical": {
+      "fn_id": "continuity._canonical",
+      "description": "Функция _canonical",
+      "args": [
+        "obj"
+      ],
+      "inputs": {
+        "obj": {
+          "type": "dict",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "serialize_checkpoint": {
+      "fn_id": "continuity.serialize_checkpoint",
+      "description": "Функция serialize_checkpoint",
+      "args": [
+        "record"
+      ],
+      "inputs": {
+        "record": {
+          "type": "ContinuityRecord",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_no_duplicate_keys": {
+      "fn_id": "continuity._no_duplicate_keys",
+      "description": "Функция _no_duplicate_keys",
+      "args": [
+        "pairs"
+      ],
+      "inputs": {
+        "pairs": {
+          "type": "list[tuple[str, object]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "parse_checkpoint": {
+      "fn_id": "continuity.parse_checkpoint",
+      "description": "Функция parse_checkpoint",
+      "args": [
+        "encoded"
+      ],
+      "inputs": {
+        "encoded": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ContinuityRecord"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "plan_resume": {
+      "fn_id": "continuity.plan_resume",
+      "description": "Only create a plan. No task replay, credential access or Git mutation.",
+      "args": [
+        "record",
+        "operator_approved"
+      ],
+      "inputs": {
+        "record": {
+          "type": "ContinuityRecord",
+          "required": true,
+          "default": null
+        },
+        "operator_approved": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_validate_directory": {
+      "fn_id": "continuity._validate_directory",
+      "description": "Функция _validate_directory",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "persist_checkpoint": {
+      "fn_id": "continuity.persist_checkpoint",
+      "description": "Atomically write within an explicitly caller-chosen local test directory.",
+      "args": [
+        "directory",
+        "record"
+      ],
+      "inputs": {
+        "directory": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "record": {
+          "type": "ContinuityRecord",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "load_checkpoint": {
+      "fn_id": "continuity.load_checkpoint",
+      "description": "Функция load_checkpoint",
+      "args": [
+        "directory"
+      ],
+      "inputs": {
+        "directory": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ContinuityRecord"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

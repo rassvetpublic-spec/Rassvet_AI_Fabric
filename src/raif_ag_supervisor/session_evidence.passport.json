@@ -1,0 +1,79 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "session_evidence",
+  "name": "Session Evidence",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "CP-54C1: non-identifying process evidence for offline planning.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "process_relation": {
+      "fn_id": "session_evidence.process_relation",
+      "description": "Return only a process-instance relation, never identity attestation.",
+      "args": [
+        "before",
+        "after"
+      ],
+      "inputs": {
+        "before": {
+          "type": "ProcessStamp | None",
+          "required": true,
+          "default": null
+        },
+        "after": {
+          "type": "ProcessStamp | None",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "bounded_session_evidence": {
+      "fn_id": "session_evidence.bounded_session_evidence",
+      "description": "Accept untrusted status for analysis only; do not propagate raw data.",
+      "args": [
+        "before",
+        "after",
+        "_untrusted_status"
+      ],
+      "inputs": {
+        "before": {
+          "type": "ProcessStamp | None",
+          "required": true,
+          "default": null
+        },
+        "after": {
+          "type": "ProcessStamp | None",
+          "required": true,
+          "default": null
+        },
+        "_untrusted_status": {
+          "type": "object",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

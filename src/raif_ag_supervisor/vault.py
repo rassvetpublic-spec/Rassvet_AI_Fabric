@@ -2,6 +2,8 @@
 
 Windows adapter intentionally deferred until native API tests are available.
 """
+
+__version__ = "1.0.0"
 from dataclasses import dataclass, field
 from typing import Protocol
 

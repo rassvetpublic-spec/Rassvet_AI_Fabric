@@ -1,0 +1,16 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "Test-RaiF-10_1B-Static",
+  "name": "Test RaiF 10.1B Static",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "scripts",
+  "description": "Статическая инспекция контракта запускатора хостовой валидации",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "FAIL_CLOSED",
+    "WINDOWS_ONLY"
+  ]
+}

@@ -6,6 +6,8 @@ Its success is not proof of restoration of an actual Standalone session.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 from dataclasses import dataclass
 from enum import Enum
 

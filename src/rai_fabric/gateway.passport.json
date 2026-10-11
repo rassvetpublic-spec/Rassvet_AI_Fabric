@@ -1,0 +1,146 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "gateway",
+  "name": "Gateway",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "quality_gates",
+  "description": "Локальный шлюз инструментов только для чтения, без произвольных shell-команд.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "Gateway.health": {
+      "fn_id": "gateway.Gateway.health",
+      "description": "Функция Gateway.health",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Gateway.read_file": {
+      "fn_id": "gateway.Gateway.read_file",
+      "description": "Функция Gateway.read_file",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Gateway.list_files": {
+      "fn_id": "gateway.Gateway.list_files",
+      "description": "Функция Gateway.list_files",
+      "args": [
+        "path",
+        "limit"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str",
+          "required": false,
+          "default": "'.'"
+        },
+        "limit": {
+          "type": "int",
+          "required": false,
+          "default": "50"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Gateway.git_status": {
+      "fn_id": "gateway.Gateway.git_status",
+      "description": "Функция Gateway.git_status",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Gateway.gpu_status": {
+      "fn_id": "gateway.Gateway.gpu_status",
+      "description": "Функция Gateway.gpu_status",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Gateway.invoke": {
+      "fn_id": "gateway.Gateway.invoke",
+      "description": "Функция Gateway.invoke",
+      "args": [
+        "name",
+        "args"
+      ],
+      "inputs": {
+        "name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "args": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "tools_manifest": {
+      "fn_id": "gateway.tools_manifest",
+      "description": "Функция tools_manifest",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "list[dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

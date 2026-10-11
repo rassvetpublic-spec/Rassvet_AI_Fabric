@@ -1,0 +1,194 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "oauth_readiness",
+  "name": "Oauth Readiness",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Подготовка авторизации ChatGPT по подписке без сети и доступа к секретам.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "OAuthAttempt.public_report": {
+      "fn_id": "oauth_readiness.OAuthAttempt.public_report",
+      "description": "Только неизменные несекретные метаданные для evidence.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, str | bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_valid_identifier": {
+      "fn_id": "oauth_readiness._valid_identifier",
+      "description": "Функция _valid_identifier",
+      "args": [
+        "value",
+        "name",
+        "maximum"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "maximum": {
+          "type": "int",
+          "required": false,
+          "default": "128"
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "new_authorization_attempt": {
+      "fn_id": "oauth_readiness.new_authorization_attempt",
+      "description": "Генерирует параметры и URL, но никогда сам не инициирует вход или сетевой запрос.",
+      "args": [
+        "host_id",
+        "callback_port",
+        "client_id",
+        "agent_name"
+      ],
+      "inputs": {
+        "host_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "callback_port": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "client_id": {
+          "type": "str",
+          "required": false,
+          "default": "_DYNAMICAL_CLIENT_ID"
+        },
+        "agent_name": {
+          "type": "str",
+          "required": false,
+          "default": "'rassvet_ai_fabric'"
+        }
+      },
+      "outputs": {
+        "return_type": "OAuthAttempt"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "validate_authorization_callback": {
+      "fn_id": "oauth_readiness.validate_authorization_callback",
+      "description": "Проверяет одноразовый callback без обмена кода и без вывода самих секретов.",
+      "args": [
+        "attempt",
+        "callback_url"
+      ],
+      "inputs": {
+        "attempt": {
+          "type": "OAuthAttempt",
+          "required": true,
+          "default": null
+        },
+        "callback_url": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, str | bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "plan_scope_granted": {
+      "fn_id": "oauth_readiness.plan_scope_granted",
+      "description": "Только предикат для уже полученного ответа token endpoint; не проверяет идентичность.",
+      "args": [
+        "scopes"
+      ],
+      "inputs": {
+        "scopes": {
+          "type": "str | None",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "OAuthCallbackGuard.consume": {
+      "fn_id": "oauth_readiness.OAuthCallbackGuard.consume",
+      "description": "Функция OAuthCallbackGuard.consume",
+      "args": [
+        "callback_url"
+      ],
+      "inputs": {
+        "callback_url": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, str | bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "OAuthCallbackGuard.consume_private": {
+      "fn_id": "oauth_readiness.OAuthCallbackGuard.consume_private",
+      "description": "Одноразово возвращает код ТОЛЬКО вызывающему доверенному обработчику.",
+      "args": [
+        "callback_url"
+      ],
+      "inputs": {
+        "callback_url": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "'PrivateAuthorizationCode'"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

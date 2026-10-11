@@ -1,0 +1,13 @@
+id: Rassvet_AI_Fabric
+name: "Rassvet AI Agent Fabric"
+status: ACTIVE
+description: "Оркестратор распределенных агентов и фабрика параллельных воркеров."
+primary_machine: RASSVET_DESKTOP
+local_path: C:/GIT/Rassvet_AI_Fabric
+remote_url: https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric
+updated: 2026-10-11
+canonical_layout:
+  - PROJECT_PASSPORT.yaml
+  - checkpoints/
+  - docs/
+  - metrics/

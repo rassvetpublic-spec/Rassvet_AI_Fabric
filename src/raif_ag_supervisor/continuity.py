@@ -6,6 +6,8 @@ All input metadata are constrained and cannot contain credential material.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import hashlib
 import hmac
 import json

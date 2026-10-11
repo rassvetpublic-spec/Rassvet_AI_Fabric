@@ -5,6 +5,8 @@ reset, or a user-supplied test executable. A review is not approval to merge.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import argparse
 import ctypes
 import ast

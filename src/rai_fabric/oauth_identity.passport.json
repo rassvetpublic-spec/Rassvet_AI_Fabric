@@ -1,0 +1,110 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "oauth_identity",
+  "name": "Oauth Identity",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "VerifiedIdentity.public_report": {
+      "fn_id": "oauth_identity.VerifiedIdentity.public_report",
+      "description": "Для общего журнала без персонального subject, email и токенов.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict[str, str | bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "verify_id_token": {
+      "fn_id": "oauth_identity.verify_id_token",
+      "description": "Проверяет JWT по ранее полученному доверенному набору ключей.",
+      "args": [
+        "token",
+        "jwks",
+        "issued_client_id",
+        "expected_nonce",
+        "issuer",
+        "leeway_seconds"
+      ],
+      "inputs": {
+        "token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "jwks": {
+          "type": "Mapping[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "issued_client_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "expected_nonce": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "issuer": {
+          "type": "str",
+          "required": false,
+          "default": "ISSUER"
+        },
+        "leeway_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "5"
+        }
+      },
+      "outputs": {
+        "return_type": "VerifiedIdentity"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "confirmed_plan_scope": {
+      "fn_id": "oauth_identity.confirmed_plan_scope",
+      "description": "Отмечает наличие scope только после проверки личности; это не гарантия квоты.",
+      "args": [
+        "identity",
+        "granted_scopes"
+      ],
+      "inputs": {
+        "identity": {
+          "type": "VerifiedIdentity | None",
+          "required": true,
+          "default": null
+        },
+        "granted_scopes": {
+          "type": "str | None",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

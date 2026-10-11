@@ -5,6 +5,8 @@ or any running process. No credentials are displayed or written to GitHub.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import ctypes
 import os
 import re

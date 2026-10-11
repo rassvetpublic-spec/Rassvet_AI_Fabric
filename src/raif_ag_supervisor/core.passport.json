@@ -1,0 +1,120 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "core",
+  "name": "Core",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "Dependency-free, testable core. No credentials, no binary patches, no network.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "Supervisor.start": {
+      "fn_id": "core.Supervisor.start",
+      "description": "Функция Supervisor.start",
+      "args": [
+        "account_id",
+        "cursor"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "cursor": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Supervisor.observe_error": {
+      "fn_id": "core.Supervisor.observe_error",
+      "description": "Функция Supervisor.observe_error",
+      "args": [
+        "http_status"
+      ],
+      "inputs": {
+        "http_status": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Supervisor.plan_handoff": {
+      "fn_id": "core.Supervisor.plan_handoff",
+      "description": "Функция Supervisor.plan_handoff",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Optional[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Supervisor.confirm_handoff": {
+      "fn_id": "core.Supervisor.confirm_handoff",
+      "description": "Called only after a trusted integration confirms the session switched.",
+      "args": [
+        "target",
+        "session_validated"
+      ],
+      "inputs": {
+        "target": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "session_validated": {
+          "type": "bool",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "Supervisor.checkpoint": {
+      "fn_id": "core.Supervisor.checkpoint",
+      "description": "Export only nonsecret state. No account tokens, credentials or prompts.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

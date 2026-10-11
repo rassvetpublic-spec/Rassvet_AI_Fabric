@@ -5,6 +5,8 @@ files concurrently. The journal allows recovery after an interrupted import.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import os
 import re

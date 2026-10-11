@@ -1,0 +1,256 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "codex_real_transport",
+  "name": "Codex Real Transport",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Управляемый App Server: только initialize и необязательный thread/start.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_unique_json": {
+      "fn_id": "codex_real_transport._unique_json",
+      "description": "Функция _unique_json",
+      "args": [
+        "pairs"
+      ],
+      "inputs": {
+        "pairs": {
+          "type": "list[tuple[str, Any]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_bad_json_number": {
+      "fn_id": "codex_real_transport._bad_json_number",
+      "description": "Функция _bad_json_number",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_parse_response": {
+      "fn_id": "codex_real_transport._parse_response",
+      "description": "Функция _parse_response",
+      "args": [
+        "frame"
+      ],
+      "inputs": {
+        "frame": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_environment": {
+      "fn_id": "codex_real_transport._environment",
+      "description": "Функция _environment",
+      "args": [
+        "private_home"
+      ],
+      "inputs": {
+        "private_home": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_owns_binary": {
+      "fn_id": "codex_real_transport._owns_binary",
+      "description": "Функция _owns_binary",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_cleanup": {
+      "fn_id": "codex_real_transport._cleanup",
+      "description": "Функция _cleanup",
+      "args": [
+        "proc"
+      ],
+      "inputs": {
+        "proc": {
+          "type": "subprocess.Popen[bytes] | None",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_drive_app_server": {
+      "fn_id": "codex_real_transport._drive_app_server",
+      "description": "Внутренняя функция; произвольный command недоступен внешнему CLI.",
+      "args": [
+        "command",
+        "cwd",
+        "mode",
+        "timeout_seconds",
+        "env"
+      ],
+      "inputs": {
+        "command": {
+          "type": "list[str]",
+          "required": true,
+          "default": null
+        },
+        "cwd": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "mode": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "env": {
+          "type": "dict[str, str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "probe_installed_codex": {
+      "fn_id": "codex_real_transport.probe_installed_codex",
+      "description": "Публичная точка входа: запускает только проверенный codex.exe, без turn/start.",
+      "args": [
+        "binary",
+        "workspace",
+        "mode",
+        "timeout_seconds",
+        "expected_sha256"
+      ],
+      "inputs": {
+        "binary": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        },
+        "workspace": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        },
+        "mode": {
+          "type": "str",
+          "required": false,
+          "default": "'thread'"
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "18.0"
+        },
+        "expected_sha256": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "codex_real_transport.main",
+      "description": "Функция main",
+      "args": [
+        "argv"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "list[str] | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

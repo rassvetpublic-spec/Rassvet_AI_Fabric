@@ -5,6 +5,8 @@ credentials or account identifiers into this lock file.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import os
 from contextlib import contextmanager
 from pathlib import Path

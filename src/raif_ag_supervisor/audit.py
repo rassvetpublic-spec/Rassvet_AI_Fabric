@@ -5,6 +5,8 @@ are accepted; serialization contains fixed-schema reason codes only.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import re
 from dataclasses import dataclass, field

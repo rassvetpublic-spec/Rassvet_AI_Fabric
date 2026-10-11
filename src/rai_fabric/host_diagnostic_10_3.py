@@ -7,6 +7,8 @@ A positive result is only a Git source preflight, not Fabric host QA.
 """
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import json
 import hashlib
 import hmac

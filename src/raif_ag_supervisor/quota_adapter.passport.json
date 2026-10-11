@@ -1,0 +1,109 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "quota_adapter",
+  "name": "Quota Adapter",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Strict, read-only parser for the Antigravity quota summary response shape.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_fraction": {
+      "fn_id": "quota_adapter._fraction",
+      "description": "Функция _fraction",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "float | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_reset_timestamp": {
+      "fn_id": "quota_adapter._reset_timestamp",
+      "description": "Функция _reset_timestamp",
+      "args": [
+        "raw"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "float | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_document": {
+      "fn_id": "quota_adapter._document",
+      "description": "Функция _document",
+      "args": [
+        "payload"
+      ],
+      "inputs": {
+        "payload": {
+          "type": "bytes | dict",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "parse_quota_summary": {
+      "fn_id": "quota_adapter.parse_quota_summary",
+      "description": "Extract trusted-shape observations; invalid/ambiguous data fails closed.",
+      "args": [
+        "payload",
+        "observed_at"
+      ],
+      "inputs": {
+        "payload": {
+          "type": "bytes | dict",
+          "required": true,
+          "default": null
+        },
+        "observed_at": {
+          "type": "float",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[ModelGroup, GroupQuota]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

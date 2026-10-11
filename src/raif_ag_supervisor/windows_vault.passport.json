@@ -1,0 +1,109 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "windows_vault",
+  "name": "Windows Vault",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Windows Credential Manager adapter for RAiF-owned generic credentials.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_target": {
+      "fn_id": "windows_vault._target",
+      "description": "Функция _target",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsCredentialVault.put": {
+      "fn_id": "windows_vault.WindowsCredentialVault.put",
+      "description": "Функция WindowsCredentialVault.put",
+      "args": [
+        "account_id",
+        "secret"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "secret": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsCredentialVault.has": {
+      "fn_id": "windows_vault.WindowsCredentialVault.has",
+      "description": "Функция WindowsCredentialVault.has",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsCredentialVault.delete": {
+      "fn_id": "windows_vault.WindowsCredentialVault.delete",
+      "description": "Функция WindowsCredentialVault.delete",
+      "args": [
+        "account_id"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

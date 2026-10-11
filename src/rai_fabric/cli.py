@@ -1,6 +1,8 @@
 """Явное локальное управление: задания и токены не отправляются в API без согласия."""
 from __future__ import annotations
 
+__version__ = "1.0.0"
+
 import argparse
 import json
 import os

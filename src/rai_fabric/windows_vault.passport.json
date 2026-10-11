@@ -1,0 +1,115 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "windows_vault",
+  "name": "Windows Vault",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "Заготовка защищённого Windows-хранилища: текущий пользователь DPAPI.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "credential_record_key": {
+      "fn_id": "windows_vault.credential_record_key",
+      "description": "Обезличенное имя записи; не выводит почту, subject или OAuth-токены.",
+      "args": [
+        "client_id",
+        "subject",
+        "issuer"
+      ],
+      "inputs": {
+        "client_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "subject": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "issuer": {
+          "type": "str",
+          "required": false,
+          "default": "ISSUER"
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "default_vault_root": {
+      "fn_id": "windows_vault.default_vault_root",
+      "description": "Только рассчитывает путь под профилем Windows; ничего не создаёт.",
+      "args": [
+        "local_appdata"
+      ],
+      "inputs": {
+        "local_appdata": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsUserDPAPI.protect": {
+      "fn_id": "windows_vault.WindowsUserDPAPI.protect",
+      "description": "Шифрует данные пользователя; запрещён режим шифрования всей машины.",
+      "args": [
+        "plaintext"
+      ],
+      "inputs": {
+        "plaintext": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WindowsUserDPAPI.unprotect": {
+      "fn_id": "windows_vault.WindowsUserDPAPI.unprotect",
+      "description": "Расшифровывает только при наличии исходного контекста пользователя.",
+      "args": [
+        "encrypted"
+      ],
+      "inputs": {
+        "encrypted": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
