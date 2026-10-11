@@ -126,6 +126,23 @@ class SidecarPassportValidator:
                 "violations": violations
             }
 
+        if not isinstance(passport_data, dict):
+            violations.append({
+                "rule": "INVALID_SIDECAR_ROOT",
+                "severity": "P0",
+                "detail": "Корень sidecar JSON должен быть объектом"
+            })
+            return {
+                "file": str(py_path), "sidecar": str(sidecar_path),
+                "is_valid": False, "violations": violations
+            }
+
+        if passport_data.get("schema") != "BPR40_SIDECAR_PASSPORT/1.1":
+            violations.append({
+                "rule": "INVALID_SIDECAR_SCHEMA",
+                "severity": "P0",
+                "detail": "Требуется схема BPR40_SIDECAR_PASSPORT/1.1"
+            })
         json_ver = passport_data.get("version")
         json_id = passport_data.get("module_id")
 
@@ -147,6 +164,12 @@ class SidecarPassportValidator:
                 "rule": "MISSING_MODULE_ID",
                 "severity": "P1",
                 "detail": "Поле 'module_id' отсутствует в sidecar-паспорте"
+            })
+        elif json_id != stem:
+            violations.append({
+                "rule": "MODULE_ID_MISMATCH",
+                "severity": "P1",
+                "detail": "module_id должен совпадать с именем файла"
             })
 
         # 4. Валидация машинописного контракта функций (AST Introspection Gate)
@@ -170,11 +193,11 @@ class SidecarPassportValidator:
                             "detail": f"Рассинхрон аргументов функции '{fn_name}': в коде {actual_args}, в паспорте {expected_args}"
                         })
 
-        has_p0 = any(v["severity"] == "P0" for v in violations)
+        has_blocker = any(v["severity"] in ("P0", "P1") for v in violations)
         return {
             "file": str(py_path),
             "sidecar": str(sidecar_path),
-            "is_valid": not has_p0,
+            "is_valid": not has_blocker,
             "violations": violations,
             "passport_summary": {
                 "module_id": json_id,
@@ -182,7 +205,7 @@ class SidecarPassportValidator:
                 "layer": passport_data.get("layer") or passport_data.get("category"),
                 "description": passport_data.get("description"),
                 "functions_count": len(passport_functions) if isinstance(passport_functions, dict) else 0
-            } if not has_p0 else None
+            } if not has_blocker else None
         }
 
     def extract_functions_from_ast(self, py_path: Path) -> Dict[str, Dict[str, Any]]:
@@ -231,6 +254,15 @@ class SidecarPassportValidator:
                     "default": default_repr
                 }
 
+            # Preserve both the parameter name and its variadic semantics.
+            if node.args.vararg is not None:
+                a = node.args.vararg
+                args_list.append("*" + a.arg)
+                inputs_meta[a.arg] = {
+                    "type": ast.unparse(a.annotation) if a.annotation else "Any",
+                    "required": False, "default": None, "kind": "VAR_POSITIONAL"
+                }
+
             for idx, a in enumerate(getattr(node.args, "kwonlyargs", [])):
                 args_list.append(a.arg)
                 kw_def = node.args.kw_defaults[idx] if idx < len(node.args.kw_defaults) else None
@@ -251,6 +283,14 @@ class SidecarPassportValidator:
                     "type": type_repr,
                     "required": is_req,
                     "default": default_repr
+                }
+
+            if node.args.kwarg is not None:
+                a = node.args.kwarg
+                args_list.append("**" + a.arg)
+                inputs_meta[a.arg] = {
+                    "type": ast.unparse(a.annotation) if a.annotation else "Any",
+                    "required": False, "default": None, "kind": "VAR_KEYWORD"
                 }
 
             ret_type = "Any"
@@ -304,8 +344,11 @@ class SidecarPassportValidator:
         try:
             with open(sidecar_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-        except Exception:
-            data = {}
+        except (OSError, UnicodeError, ValueError, TypeError):
+            # Never overwrite an unreadable/corrupt sidecar with an empty dict.
+            return None
+        if not isinstance(data, dict):
+            return None
 
         ast_functions = self.extract_functions_from_ast(py_path)
         data["schema"] = "BPR40_SIDECAR_PASSPORT/1.1"
@@ -396,15 +439,25 @@ def main():
         return 0
 
     if getattr(args, "enrich_functions", False):
+        failures = 0
         if target.is_file():
             res = validator.enrich_sidecar_with_functions(str(target))
-            print(f"Паспорт обогащен: {res}")
+            if res is None:
+                failures += 1
+                print("Ошибка: обогащение паспорта отклонено", file=sys.stderr)
+            else:
+                print(f"Паспорт обогащен: {res}")
         elif target.is_dir():
             for p in sorted(target.rglob("*.py")):
                 res = validator.enrich_sidecar_with_functions(str(p))
                 if res:
                     print(f"Обогащен: {res.name}")
-        return 0
+                else:
+                    failures += 1
+                    print("Ошибка: обогащение паспорта отклонено", file=sys.stderr)
+        else:
+            return 2
+        return 1 if failures else 0
 
     # Обычная валидация
     files_to_check = []

@@ -96,8 +96,12 @@ def _no_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
 def parse_checkpoint(encoded: bytes) -> ContinuityRecord:
     if not isinstance(encoded, bytes) or not 0 < len(encoded) <= _MAX_BYTES:
         raise ContinuityError("CHECKPOINT_SIZE_INVALID")
+    def _reject_constant(_value: str) -> object:
+        raise ContinuityError("CHECKPOINT_JSON_INVALID")
+
     try:
-        doc = json.loads(encoded.decode("ascii"), object_pairs_hook=_no_duplicate_keys)
+        doc = json.loads(encoded.decode("ascii"), object_pairs_hook=_no_duplicate_keys,
+                         parse_constant=_reject_constant)
     except ContinuityError:
         raise
     except (UnicodeError, ValueError, TypeError):
@@ -137,8 +141,25 @@ def plan_resume(record: ContinuityRecord, *, operator_approved: bool = False) ->
 
 
 def _validate_directory(path: Path) -> None:
-    if path.is_symlink() or not path.is_dir():
+    """Reject symlink/junction ancestors, not only the final directory.
+
+    This is a static preflight, not a claim of race-free Windows handle binding.
+    A separately trusted caller must own the directory and prevent renames.
+    """
+    if not path.is_dir():
         raise ContinuityError("CHECKPOINT_DIRECTORY_UNSAFE")
+    current = path.absolute()
+    while True:
+        try:
+            meta = current.lstat()
+        except OSError:
+            raise ContinuityError("CHECKPOINT_DIRECTORY_UNSAFE") from None
+        if (stat.S_ISLNK(meta.st_mode)
+                or getattr(meta, "st_file_attributes", 0) & 0x400):
+            raise ContinuityError("CHECKPOINT_DIRECTORY_UNSAFE")
+        if current.parent == current:
+            break
+        current = current.parent
 
 
 def persist_checkpoint(directory: Path, record: ContinuityRecord) -> None:
@@ -169,6 +190,10 @@ def persist_checkpoint(directory: Path, record: ContinuityRecord) -> None:
                 raise ContinuityError("CHECKPOINT_LINEAGE_MISMATCH")
             if record.generation <= prior.generation:
                 raise ContinuityError("CHECKPOINT_GENERATION_NOT_MONOTONIC")
+            # A checksum is not a review receipt. Once external effects are
+            # possible, changing their state could launder a blocked task.
+            if prior.effect is not SideEffect.NONE and record.effect is not prior.effect:
+                raise ContinuityError("CHECKPOINT_EFFECT_TRANSITION_REQUIRES_REVIEW")
         raw = serialize_checkpoint(record)
         try:
             with temporary.open("xb") as stream:

@@ -1,0 +1,248 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "host_diagnostic_10_3",
+  "name": "Host Diagnostic 10 3",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "RAiF 10.3 bounded read-only Windows checkout diagnosis.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_report": {
+      "fn_id": "host_diagnostic_10_3._report",
+      "description": "Функция _report",
+      "args": [
+        "code",
+        "stage",
+        "git_reads",
+        "source_class"
+      ],
+      "inputs": {
+        "code": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "stage": {
+          "type": "str",
+          "required": false,
+          "default": "'PREFLIGHT'"
+        },
+        "git_reads": {
+          "type": "int",
+          "required": false,
+          "default": "0"
+        },
+        "source_class": {
+          "type": "str",
+          "required": false,
+          "default": "'UNKNOWN'"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_classify_git_stderr": {
+      "fn_id": "host_diagnostic_10_3._classify_git_stderr",
+      "description": "Recognize bounded Git problems without exposing untrusted stderr.",
+      "args": [
+        "body"
+      ],
+      "inputs": {
+        "body": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_capture_bounded": {
+      "fn_id": "host_diagnostic_10_3._capture_bounded",
+      "description": "Capture two child streams with bounded resident buffers on Windows.",
+      "args": [
+        "argv",
+        "env",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "list[str]",
+          "required": true,
+          "default": null
+        },
+        "env": {
+          "type": "dict[str, str]",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "8.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Probe"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_invoke_git": {
+      "fn_id": "host_diagnostic_10_3._invoke_git",
+      "description": "Read local Git metadata without accumulating untrusted pipe output.",
+      "args": [
+        "source",
+        "git_exe",
+        "args"
+      ],
+      "inputs": {
+        "source": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "git_exe": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "args": {
+          "type": "tuple[str, ...]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Probe"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_unsafe_ancestor": {
+      "fn_id": "host_diagnostic_10_3._unsafe_ancestor",
+      "description": "Block symlinks, Windows junctions and unreadable ancestors.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_resolve_git_executable": {
+      "fn_id": "host_diagnostic_10_3._resolve_git_executable",
+      "description": "Prefer the operator-confirmed installation before PATH (no PATH mutation).",
+      "args": [
+        "windows_override_for_tests"
+      ],
+      "inputs": {
+        "windows_override_for_tests": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "str | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_pin_class": {
+      "fn_id": "host_diagnostic_10_3._pin_class",
+      "description": "Функция _pin_class",
+      "args": [
+        "sha"
+      ],
+      "inputs": {
+        "sha": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "inspect_clone": {
+      "fn_id": "host_diagnostic_10_3.inspect_clone",
+      "description": "Classify failure stage and Git metadata without changing the checkout.",
+      "args": [
+        "source",
+        "windows_override_for_tests"
+      ],
+      "inputs": {
+        "source": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "windows_override_for_tests": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "host_diagnostic_10_3.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

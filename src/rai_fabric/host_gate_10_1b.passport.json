@@ -40,13 +40,20 @@
       "fn_id": "host_gate_10_1b._git",
       "description": "Функция _git",
       "args": [
-        "source"
+        "source",
+        "*args"
       ],
       "inputs": {
         "source": {
           "type": "Path",
           "required": true,
           "default": null
+        },
+        "args": {
+          "type": "str",
+          "required": false,
+          "default": null,
+          "kind": "VAR_POSITIONAL"
         }
       },
       "outputs": {
