@@ -1,0 +1,105 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "foreground_w2",
+  "name": "W2 / 10.5 Foreground Synthetic Worker",
+  "version": "0.1.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "Windows-only foreground worker: cancellation, durable effect evidence and no replay.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "SYNTHETIC_ONLY"
+  ],
+  "functions": {
+    "run_foreground_synthetic_once": {
+      "fn_id": "foreground_w2.run_foreground_synthetic_once",
+      "description": "Один fenced foreground synthetic effect, owned Windows Job и immutable target receipt",
+      "args": [
+        "store",
+        "target",
+        "operation_id",
+        "payload_sha256",
+        "case",
+        "timeout_seconds",
+        "task_id",
+        "owner"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "target": {
+          "type": "SyntheticSQLiteTarget",
+          "required": true,
+          "default": null
+        },
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "payload_sha256": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "case": {
+          "type": "str",
+          "required": false,
+          "default": "\"EXIT_ZERO\""
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "3.0"
+        },
+        "task_id": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        },
+        "owner": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "SYNTHETIC_ONLY",
+        "NO_REPLAY"
+      ]
+    },
+    "recover_foreground_synthetic": {
+      "fn_id": "foreground_w2.recover_foreground_synthetic",
+      "description": "Переход expired lease в BLOCKED/UNKNOWN без запуска задач",
+      "args": [
+        "store"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "NO_REPLAY"
+      ]
+    }
+  }
+}
