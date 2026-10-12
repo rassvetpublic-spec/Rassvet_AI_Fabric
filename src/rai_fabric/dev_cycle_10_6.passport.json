@@ -1,0 +1,39 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "dev_cycle_10_6",
+  "name": "RAiF 10.6 Offline Development Cycle",
+  "version": "0.1.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "quality_gates",
+  "description": "10.6: Windows-only synthetic development task -> detached worktree -> bounded static mock tests -> independent QA request -> DRAFT PR intent; no auto-push/merge/provider.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": ["SIDECAR_CANON_ENFORCED", "IN_CODE_ONLY_VERSION", "FAIL_CLOSED", "NO_EXTERNAL_PROVIDER", "OWNER_MTD_FOR_MERGE"],
+  "functions": {
+    "_is_legacy": {
+      "fn_id": "dev_cycle_10_6._is_legacy", "description": "Legacy C source root denylist", "args": ["path"]
+    },
+    "_read_json": {
+      "fn_id": "dev_cycle_10_6._read_json", "description": "Bounded JSON duplicate-key reject", "args": ["path"]
+    },
+    "_stamp": {
+      "fn_id": "dev_cycle_10_6._stamp", "description": "Internal untrusted SHA256 checksum seal", "args": ["value"]
+    },
+    "_check_stamp": {
+      "fn_id": "dev_cycle_10_6._check_stamp", "description": "Recalculate receipt checksum", "args": ["value"]
+    },
+    "_check_task": {
+      "fn_id": "dev_cycle_10_6._check_task", "description": "Windows task, exact source pin, root and queue fail-closed preflight", "args": ["store", "task_id", "repo", "pin", "root"]
+    },
+    "_build_evidence": {
+      "fn_id": "dev_cycle_10_6._build_evidence", "description": "Check worktree-review manifest, checkpoint, mock tests and patch bytes", "args": ["run", "expected_pin"]
+    },
+    "run_synthetic_cycle": {
+      "fn_id": "dev_cycle_10_6.run_synthetic_cycle", "description": "Stage queue-owned synthetic dev task into verifiable offline review packet", "args": ["store", "task_id", "repo", "pin", "output_root", "owner"]
+    },
+    "verify_cycle_receipt": {
+      "fn_id": "dev_cycle_10_6.verify_cycle_receipt", "description": "Tamper-evident offline readback, without approving QA or PR", "args": ["run_dir"]
+    }
+  }
+}

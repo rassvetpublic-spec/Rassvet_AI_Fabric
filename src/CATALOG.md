@@ -14,6 +14,7 @@
 | `rai_fabric/codex_protocol.py` | Python | Офлайн-контракт обмена с Codex App Server: не запускает процессы и модели. |
 | `rai_fabric/codex_real_transport.py` | Python | Управляемый App Server: только initialize и необязательный thread/start. |
 | `rai_fabric/credential_store.py` | Python | Атомарное хранение проверенной OAuth-сессии под DPAPI текущего Windows SID. |
+| `rai_fabric/dev_cycle_10_6.py` | Python | RAiF 10.6: synthetic-only offline dev task -> isolated diff -> tests -> independent QA and DRAFT-PR request. |
 | `rai_fabric/effect_ledger.py` | Python | W2: SQLite-журнал намерений и fail-closed восстановление внешних эффектов. |
 | `rai_fabric/foreground_w2.py` | Python | W2/10.5: foreground worker, owned Windows Job, cancellation and durable synthetic receipt. |
 | `rai_fabric/gateway.py` | Python | Локальный шлюз инструментов только для чтения, без произвольных shell-команд. |
