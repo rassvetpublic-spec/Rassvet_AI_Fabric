@@ -243,6 +243,10 @@ class EffectLedger:
             now = time.time()
             row = self.store.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             self.store._assert_lease(row, owner, lease_token, now)
+            if row["provider"] not in ("mock", "codex-mock"):
+                raise FabricError(
+                    "W2: нельзя регистрировать synthetic effect для реального провайдера"
+                )
             old = self.store.db.execute(
                 "SELECT * FROM effect_operations WHERE target_id=? AND operation_id=?",
                 (target, op),
@@ -274,6 +278,8 @@ class EffectLedger:
             now = time.time()
             row = self.store.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             self.store._assert_lease(row, owner, lease_token, now)
+            if row["provider"] not in ("mock", "codex-mock"):
+                raise FabricError("W2: real target dispatch не разрешён")
             op = self._operation(target_id, operation_id)
             if (op["task_id"] != task_id or op["lease_epoch"] != row["lease_epoch"]
                     or op["phase"] != "PREPARED"):

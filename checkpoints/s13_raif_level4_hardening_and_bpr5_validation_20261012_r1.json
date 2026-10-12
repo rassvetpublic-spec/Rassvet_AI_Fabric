@@ -1,0 +1,65 @@
+{
+  "schema": "RAIF_LEVEL4_HARDENING_AND_BPR5_VALIDATION/1",
+  "checkpoint_id": "RAIF_LEVEL4_HARDENING_AND_BPR5_VALIDATED_20261012_R1",
+  "date": "2026-10-12",
+  "project": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "source": {
+    "branch": "main",
+    "exact_sha": "851397914041b65e90ea2a62ff7fa88274d754b2",
+    "parent_pr5_merge_sha": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+    "pr9_sha": "601f0f49b5bb45a15977cc5beb832bdf1d95d6db",
+    "pr9_merge_commit": "851397914041b65e90ea2a62ff7fa88274d754b2",
+    "ci_runs": {
+      "pr5_main_run": 38185243827,
+      "pr9_branch_run": 38186739858,
+      "pr9_main_run": 38186830397
+    }
+  },
+  "level4_hardening": {
+    "toctou_ancestor": {
+      "status": "CLOSED",
+      "mechanism": "Win32 CreateFileW FILE_FLAG_BACKUP_SEMANTICS handle lock without FILE_SHARE_DELETE",
+      "test": "test_bigwave02_continuity_faults.test_windows_toctou_handle_lock_and_directory_flush",
+      "expected_error": "PermissionError (WinError 32)"
+    },
+    "powerloss_fsync": {
+      "status": "CLOSED",
+      "mechanism": "Win32 FlushFileBuffers on directory descriptor post-replace and pre-close"
+    },
+    "host_r3_run": {
+      "status": "CLOSED",
+      "trusted_git_hashes": [
+        "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f",
+        "54bda91c773c6bba2b970424423cfcb80552d92dc6967d766f98931fe1251a54"
+      ],
+      "target_pin": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+      "verdict": "HOST_MAIN_10_4_CLEAN_PREFLIGHT_ONLY",
+      "exit_code": 0
+    }
+  },
+  "bpr5_candidate": {
+    "version": "5.0.0-rc.1",
+    "manifest_sha256": "6ca1fe4ace4a87d2514afe221ccf7b6c2218bf260cf7a9209e0b58d8dcb36377",
+    "automatic_activation": false,
+    "verify_candidate_status": "PASS",
+    "test_candidate_status": "21_TESTS_PASS",
+    "sha256sums_status": "78_FILES_ALL_MATCH",
+    "rules": {
+      "baseline": 683,
+      "unchanged": 666,
+      "modified": 17,
+      "removed": 0,
+      "total_candidate": 730,
+      "modules": 19,
+      "exports": 23
+    }
+  },
+  "qa_summary": {
+    "full_unittest_suite": "483/483_PASS",
+    "bpr40_sidecar_passports": "44/44_VALID_0_VIOLATIONS",
+    "russian_language_tests": "7/7_PASS",
+    "working_tree": "CLEAN"
+  },
+  "next_cursor": "BPR5/FROZEN_CANDIDATE/BEHAVIORAL_VALIDATION_PREPARATION",
+  "next_review_target": "docs/BPR5/modules/m01_bootstrap_resolution.yaml"
+}

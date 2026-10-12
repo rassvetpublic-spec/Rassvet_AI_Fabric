@@ -47,6 +47,16 @@ class HostDiagnosticTests(unittest.TestCase):
         self.assertEqual(report["git_reads"], 6)
         self.assertFalse(report["merge_authorized"])
 
+    def test_exact_main_10_4_is_only_preflight(self):
+        report = self.inspect_mock([h.Probe("OK", str(self.repo)),
+            h.Probe("OK", sorted(h._ORIGINS)[0]), h.Probe("OK", h.MAIN_10_4_SHA),
+            h.Probe("OK", ""), h.Probe("OK", ""), h.Probe("OK", h.MAIN_10_4_SHA)])
+        self.assertEqual(report["verdict"], "HOST_MAIN_10_4_CLEAN_PREFLIGHT_ONLY")
+        self.assertEqual(report["source_class"], "MAIN_10_4_EXACT")
+        self.assertEqual(report["target_pin"], h.MAIN_10_4_SHA)
+        self.assertEqual(report["git_reads"], 6)
+        self.assertFalse(report["merge_authorized"])
+
     def test_old_pin_is_never_upgraded_to_main(self):
         report = self.inspect_mock([h.Probe("OK", str(self.repo)),
             h.Probe("OK", sorted(h._ORIGINS)[0]), h.Probe("OK", h.LEGACY_10_1_SHA),

@@ -295,6 +295,77 @@ class W2EffectLedgerTests(unittest.TestCase):
         self.assertEqual(result["phase"], "BLOCKED_RECONCILE")
         self.assertEqual(self.ledger.receipts_for_task("task-w2"), [])
 
+    def test_direct_claim_is_not_an_external_W2_worker_bypass(self):
+        self.store.submit("Real executor must remain disabled", "antigravity",
+                          str(self.root), task_id="external-only")
+        with self.assertRaises(FabricError):
+            self.store.claim("manual", provider="antigravity", task_id="external-only")
+        self.assertIsNone(self.store.claim("manual", task_id="external-only"))
+        self.assertEqual(self.store.get("external-only")["status"], "QUEUED")
+        self.assertEqual(self.store.get("external-only")["attempt"], 0)
+
+    def test_direct_synthetic_effect_api_rejects_real_provider(self):
+        self.store.submit("Deliberately malformed lease sandbox", "antigravity",
+                          str(self.root), task_id="external-effect")
+        token = "fixture-only-lease-token"
+        # Fault injection only: simulate a W2 task row written by an older
+        # implementation, bypassing the normal claim() contract.
+        self.store.db.execute(
+            "UPDATE tasks SET status='RUNNING',lease_owner=?,lease_hash=?,"
+            "lease_epoch=1,lease_deadline=? WHERE id=?",
+            ("synthetic-admin", hashlib.sha256(token.encode()).hexdigest(),
+             time.time() + 60, "external-effect"),
+        )
+        with self.assertRaises(FabricError):
+            self.ledger.prepare_effect(
+                "external-effect", "synthetic-admin", token,
+                target_id="local-sink", operation_id="external-op",
+                payload_sha256=DIGEST, expected_revision="rev-0",
+            )
+        with self.assertRaises(FabricError):
+            self.store.finish(
+                "external-effect", "synthetic-admin", token, verdict="PASS",
+                response="fake success", evidence={"simulation": True},
+            )
+        self.assertEqual(self.store.get("external-effect")["status"], "RUNNING")
+        self.assertEqual(self.ledger.list_for_task("external-effect"), [])
+
+    def test_applied_phase_without_receipt_does_not_pass(self):
+        self.prepare()
+        self.dispatch()
+        # Simulate partial DB corruption or a faulty writer: the phase alone
+        # is not independent target evidence and must not authorize COMPLETE.
+        self.store.db.execute(
+            "UPDATE effect_operations SET phase='APPLIED_VERIFIED' "
+            "WHERE target_id='local-sink' AND operation_id='op-1'"
+        )
+        with self.assertRaises(FabricError):
+            self.store.finish(
+                "task-w2", "worker-1", self.claim["lease_token"],
+                verdict="PASS", response="phase only", evidence={},
+            )
+        self.assertEqual(self.store.get("task-w2")["status"], "RUNNING")
+        self.assertEqual(self.ledger.receipts_for_task("task-w2"), [])
+
+    def test_corrupted_receipt_checksum_cannot_finish(self):
+        self.prepare()
+        self.dispatch()
+        self.sink.apply("op-1", DIGEST)
+        self.ledger.reconcile_synthetic(self.sink, "op-1")
+        # Explicit fault injection in disposable DB. The immutable trigger
+        # is removed only to model on-disk corruption, never in production.
+        self.store.db.execute("DROP TRIGGER immutable_effect_receipt_update")
+        self.store.db.execute(
+            "UPDATE effect_receipts SET evidence_sha256=? WHERE operation_id='op-1'",
+            ("0" * 64,),
+        )
+        with self.assertRaises(FabricError):
+            self.store.finish(
+                "task-w2", "worker-1", self.claim["lease_token"],
+                verdict="PASS", response="checksum mismatch", evidence={},
+            )
+        self.assertEqual(self.store.get("task-w2")["status"], "RUNNING")
+
     def test_existing_sink_must_never_be_reinitialized(self):
         before = self.sink_path.stat().st_size
         with self.assertRaises(FabricError):

@@ -52,6 +52,39 @@ class WindowsOwnedJobTests(unittest.TestCase):
         self.assertEqual(result["verdict"], "OWNED_GROUP_TERMINATED")
         self.assertEqual(result["descendants_active"], 0)
 
+    def test_assignment_failure_terminates_suspended_owned_child(self):
+        from unittest.mock import patch
+        import rai_fabric.windows_owned_job as owned
+
+        real = owned._kernel()
+
+        class FaultInjectedKernel:
+            terminate_calls = 0
+            resume_calls = 0
+
+            def __getattr__(self, key):
+                if key == "AssignProcessToJobObject":
+                    return lambda *_args: False
+                if key == "ResumeThread":
+                    def forbidden_resume(*_args):
+                        self.resume_calls += 1
+                        return 0xFFFFFFFF
+                    return forbidden_resume
+                if key == "TerminateProcess":
+                    def terminate(handle, status):
+                        self.terminate_calls += 1
+                        return real.TerminateProcess(handle, status)
+                    return terminate
+                return getattr(real, key)
+
+        fault = FaultInjectedKernel()
+        with patch.object(owned, "_kernel", return_value=fault):
+            with self.assertRaises(FabricError) as exc:
+                run_synthetic_job("HANG_PARENT", timeout_seconds=1)
+        self.assertEqual(str(exc.exception), "WINDOWS_JOB_ASSIGNMENT_REJECTED")
+        self.assertEqual(fault.resume_calls, 0)
+        self.assertGreaterEqual(fault.terminate_calls, 1)
+
     def test_missing_workspace_rejected_before_spawn(self):
         with tempfile.TemporaryDirectory() as folder:
             fake = Path(folder) / "absent"

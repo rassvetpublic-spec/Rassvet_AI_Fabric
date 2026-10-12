@@ -40,3 +40,28 @@
 - `W2_RELEASE / PROD_ACCEPTED` **не заявляется** даже при зелёной GitHub CI. Для PR требуется независимый QA и отдельное `OWNER MERGE MTD` на точный HEAD.
 
 **Следующий курсор:** `RAIF/W2_F2_1_WINDOWS_CI_AND_INDEPENDENT_SOURCE_QA` → `W2_F2_2_OWNER_HOST_SYNTHETIC_LOST_ACK_AND_JOB_CHILDREN`.
+
+
+## W2 R2 — adversarial safety hardening, after QA request
+
+Проверка после CI514 выявила два обхода на низкоуровневом API:
+
+1. W2 schema_version=2: запрет direct FabricStore.claim() для real provider,
+   включая выбор без фильтра; PREPARED и MAY_HAVE_RUN не создаются для
+   внешних задач даже при вручную испорченной строке аренды.
+2. FabricStore.finish(PASS) требует не одну фазу APPLIED_VERIFIED, а
+   существующий matching effect_receipts: verdict, payload digest и
+   каноническую SHA-256 контрольную сумму. Пустой или повреждённый receipt
+   запрещает COMPLETE. При этом SHA-256 не является подписью remote target.
+
+Новые отрицательные тесты используют только отдельную временную SQLite
+базу для fault injection. На Windows дополнительный тест имитирует отказ
+AssignProcessToJobObject и доказывает, что ResumeThread не вызывается,
+а suspended synthetic-child прекращается собственным HANDLE.
+
+Кандидат также синхронизирован с новым main Level-4 PR #9 (защита каталога
+Windows, host preflight). Эти изменения лишь наследуются; не означают
+приёмку реальных worker/side-effects или отсутствие всех TOCTOU.
+
+Любой новый SHA требует одну новую Windows CI и отдельную независимую QA.
+Реальный аккаунт/провайдер не используется; owner merge MTD закрыт.

@@ -215,17 +215,26 @@ class FabricStore:
         if provider and provider not in PROVIDERS:
             raise FabricError("Неизвестный исполнитель")
         with self.atomic():
+            # W2 has no verified real-target adapter. Gate direct claim(),
+            # not only worker.run_one(), or an operator can bypass the worker.
+            version_row = self.db.execute(
+                "SELECT value FROM meta WHERE key='schema_version'"
+            ).fetchone()
+            schema2 = bool(version_row and version_row[0] == "2")
+            if schema2 and provider not in (None, "mock", "codex-mock"):
+                raise FabricError("W2: реальный исполнитель заблокирован до target adapter")
             now = time.time()
             row = self.db.execute("""
                 SELECT * FROM tasks t WHERE t.status='QUEUED'
                 AND (? IS NULL OR t.provider=?)
                 AND (? IS NULL OR t.id=?)
+                AND (?=0 OR t.provider IN ('mock','codex-mock'))
                 AND NOT EXISTS (
                     SELECT 1 FROM dependencies d
                     JOIN tasks parent ON parent.id=d.depends_on
                     WHERE d.task_id=t.id AND parent.status!='COMPLETE')
                 ORDER BY t.created_at,t.id LIMIT 1
-            """, (provider, provider, task_id, task_id)).fetchone()
+            """, (provider, provider, task_id, task_id, int(schema2))).fetchone()
             if row is None:
                 return None
             token = secrets.token_urlsafe(32)
@@ -288,16 +297,47 @@ class FabricStore:
             now = time.time()
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             self._assert_lease(row, owner, token, now)
-            if verdict == "PASS" and self.db.execute(
-                "SELECT 1 FROM sqlite_master WHERE type='table' "
-                "AND name='effect_operations'"
-            ).fetchone():
-                unverified = self.db.execute(
-                    "SELECT 1 FROM effect_operations WHERE task_id=? "
-                    "AND phase!='APPLIED_VERIFIED' LIMIT 1", (task_id,)
+            if verdict == "PASS":
+                version_row = self.db.execute(
+                    "SELECT value FROM meta WHERE key='schema_version'"
                 ).fetchone()
-                if unverified:
-                    raise FabricError("W2: неподтверждённый внешний эффект блокирует PASS")
+                if version_row and version_row[0] == "2":
+                    if row["provider"] not in ("mock", "codex-mock"):
+                        raise FabricError(
+                            "W2: PASS реального исполнителя запрещён без target adapter"
+                        )
+                    # A phase flag without an independently reconciled receipt
+                    # must never transform an unverified task into COMPLETE.
+                    effects = self.db.execute("""
+                        SELECT e.target_id,e.operation_id,e.phase,e.payload_sha256,
+                               r.verdict AS receipt_verdict,
+                               r.target_revision,r.applied_sha256,
+                               r.evidence_sha256,r.readback_class
+                        FROM effect_operations e LEFT JOIN effect_receipts r
+                          ON r.target_id=e.target_id AND r.operation_id=e.operation_id
+                        WHERE e.task_id=?
+                    """, (task_id,)).fetchall()
+                    for effect in effects:
+                        if (effect["phase"] != "APPLIED_VERIFIED" or
+                                effect["receipt_verdict"] != "APPLIED_VERIFIED" or
+                                effect["applied_sha256"] != effect["payload_sha256"]):
+                            raise FabricError(
+                                "W2: отсутствует подтверждённый receipt внешнего эффекта"
+                            )
+                        receipt = {
+                            "target_id": effect["target_id"],
+                            "operation_id": effect["operation_id"],
+                            "verdict": effect["receipt_verdict"],
+                            "revision": effect["target_revision"],
+                            "applied_sha256": effect["applied_sha256"],
+                            "readback_class": effect["readback_class"],
+                        }
+                        actual = hashlib.sha256(
+                            canonical(receipt).encode("utf-8")
+                        ).hexdigest()
+                        saved = effect["evidence_sha256"]
+                        if not isinstance(saved, str) or not hmac.compare_digest(actual, saved):
+                            raise FabricError("W2: checksum receipt не соответствует записи")
             self._checkpoint(task_id, "WORKER_RESULT", verdict, cursor,
                              {**evidence, "response_sha256": hashlib.sha256(response.encode()).hexdigest()})
             self.db.execute("""
