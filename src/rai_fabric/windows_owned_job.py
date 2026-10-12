@@ -5,7 +5,7 @@
 """
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 import ctypes
 import subprocess
@@ -13,6 +13,7 @@ import sys
 import time
 from ctypes import wintypes
 from pathlib import Path
+from collections.abc import Callable
 
 from .store import FabricError
 
@@ -153,7 +154,8 @@ def _active_count(api, job) -> int:
 
 
 def run_synthetic_job(case: str, *, timeout_seconds: float = 3.0,
-                      cwd: str | Path | None = None) -> dict:
+                      cwd: str | Path | None = None,
+                      cancel_check: Callable[[], bool] | None = None) -> dict:
     """Доказательство владения тестовым дочерним деревом без внешнего inference.
 
     На отказе до Assign/Resume ребёнок остаётся suspended и принудительно
@@ -167,6 +169,8 @@ def run_synthetic_job(case: str, *, timeout_seconds: float = 3.0,
         raise FabricError("WINDOWS_JOB_TIMEOUT_INVALID")
     if cwd is not None and not Path(cwd).is_dir():
         raise FabricError("WINDOWS_JOB_WORKSPACE_MISSING")
+    if cancel_check is not None and not callable(cancel_check):
+        raise FabricError("WINDOWS_JOB_CANCEL_CALLBACK_INVALID")
     api = _kernel()
     job = api.CreateJobObjectW(None, None)
     if not job:
@@ -202,6 +206,19 @@ def run_synthetic_job(case: str, *, timeout_seconds: float = 3.0,
         resumed = True
         deadline = time.monotonic() + float(timeout_seconds)
         while _active_count(api, job) != 0:
+            if cancel_check is not None and cancel_check():
+                if not api.TerminateJobObject(job, 1):
+                    raise FabricError("WINDOWS_JOB_CANCEL_TERMINATE_FAILED")
+                grace = time.monotonic() + 2.0
+                while _active_count(api, job) and time.monotonic() < grace:
+                    time.sleep(0.025)
+                if _active_count(api, job):
+                    raise FabricError("WINDOWS_JOB_CANCEL_CHILDREN_UNVERIFIED")
+                return {
+                    "verdict": "OWNED_GROUP_CANCELLED",
+                    "owned_job": True, "descendants_active": 0,
+                    "external_provider_calls": 0, "synthetic": True,
+                }
             if time.monotonic() >= deadline:
                 if not api.TerminateJobObject(job, 1):
                     raise FabricError("WINDOWS_JOB_TERMINATE_FAILED")
