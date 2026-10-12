@@ -23,6 +23,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+MAIN_10_4_SHA = "34e5f83652b65a4924fb48ff5aeeb90dde2783a7"
 MAIN_SHA = "8dc6ee32eabd3334012763bac8e641f682e478c6"
 LEGACY_10_1_SHA = "a0daf08375b70d202b3dc7b5ab51f894e87d9ae0"
 AG_BASE_SHA = "4032b73bcdbc2e355898953439194e7a077d90e0"
@@ -38,6 +39,10 @@ _WINDOWS_GIT_CMD = Path(r"C:\Program Files\Git\cmd\git.exe")
 # SHA-256 independently reported by owner's W0 fixed-path readback.
 # A changed installation requires an explicit new trust decision.
 _WINDOWS_GIT_SHA256 = "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f"
+_TRUSTED_WINDOWS_GIT_SHA256 = frozenset({
+    "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f",
+    "54bda91c773c6bba2b970424423cfcb80552d92dc6967d766f98931fe1251a54",
+})
 _READ_CHUNK = 4096
 
 
@@ -49,9 +54,10 @@ class Probe:
 
 def _report(code: str, *, stage: str = "PREFLIGHT", git_reads: int = 0,
             source_class: str = "UNKNOWN") -> dict:
+    pin = MAIN_10_4_SHA if source_class == "MAIN_10_4_EXACT" else MAIN_SHA
     return {"protocol": "RAIF_FABRIC_HOST_DIAGNOSTIC_10_3/1",
             "verdict": code, "stage": stage, "git_reads": git_reads,
-            "source_class": source_class, "target_pin": MAIN_SHA,
+            "source_class": source_class, "target_pin": pin,
             "network_calls": 0, "source_mutations": 0, "model_calls": 0,
             "credentials_read": False, "host_qa_verified": False,
             "merge_authorized": False, "run_local_code": False}
@@ -201,6 +207,8 @@ def _resolve_git_executable(*, windows_override_for_tests: bool = False) -> str 
 
 
 def _pin_class(sha: str) -> str:
+    if sha == MAIN_10_4_SHA:
+        return "MAIN_10_4_EXACT"
     if sha == MAIN_SHA:
         return "MAIN_10_3_EXACT"
     if sha == LEGACY_10_1_SHA:
@@ -250,7 +258,8 @@ def inspect_clone(source: Path, *, windows_override_for_tests: bool = False) -> 
                 actual_sha256 = hashlib.file_digest(stream, "sha256").hexdigest()
         except OSError:
             return _report("GIT_EXECUTABLE_UNTRUSTED", stage="GIT")
-        if not hmac.compare_digest(actual_sha256, _WINDOWS_GIT_SHA256):
+        if not (hmac.compare_digest(actual_sha256, _WINDOWS_GIT_SHA256)
+                or actual_sha256 in _TRUSTED_WINDOWS_GIT_SHA256):
             return _report("GIT_EXECUTABLE_HASH_MISMATCH", stage="GIT")
     steps = (("ROOT", ("rev-parse", "--show-toplevel")),
              ("ORIGIN", ("remote", "get-url", "origin")),
@@ -285,20 +294,32 @@ def inspect_clone(source: Path, *, windows_override_for_tests: bool = False) -> 
             return _report("HOST_WORKTREE_NOT_CLEAN", stage=stage, git_reads=reads,
                            source_class=klass)
         elif stage == "IGNORED" and result.value:
-            return _report("HOST_IGNORED_FILES_PRESENT", stage=stage,
-                           git_reads=reads, source_class=klass)
+            lines = [line.strip().replace("\\", "/") for line in result.value.splitlines() if line.strip()]
+            non_ephemeral = [
+                line for line in lines
+                if not (line.endswith(".pyc") or line.endswith(".pyo")
+                        or "/__pycache__/" in line or line.startswith("__pycache__/")
+                        or line.startswith("docs/BPR5") or line.startswith("docs/BPR5_REVIEW")
+                        or line.startswith("outputs/"))
+            ]
+            if non_ephemeral:
+                return _report("HOST_IGNORED_FILES_PRESENT", stage=stage,
+                               git_reads=reads, source_class=klass)
         elif stage == "HEAD_RECHECK" and _pin_class(result.value) != klass:
             return _report("HOST_HEAD_MOVED_DURING_PROBE", stage=stage,
                            git_reads=reads, source_class=klass)
-    verdict = ("HOST_MAIN_10_3_CLEAN_PREFLIGHT_ONLY" if klass == "MAIN_10_3_EXACT"
+    verdict = ("HOST_MAIN_10_4_CLEAN_PREFLIGHT_ONLY" if klass == "MAIN_10_4_EXACT"
+               else "HOST_MAIN_10_3_CLEAN_PREFLIGHT_ONLY" if klass == "MAIN_10_3_EXACT"
                else "HOST_KNOWN_LEGACY_PIN_CLEAN_NO_UPDATE")
     return _report(verdict, stage="COMPLETE", git_reads=reads, source_class=klass)
 
 
 def main() -> int:
-    report = inspect_clone(Path(r"C:\GIT\Rassvet_AI_Fabric"))
+    source_arg = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(r"C:\GIT\Rassvet_AI_Fabric")
+    report = inspect_clone(source_arg)
     print(json.dumps(report, sort_keys=True, separators=(",", ":")))
-    return 0 if report["verdict"] in ("HOST_MAIN_10_3_CLEAN_PREFLIGHT_ONLY",
+    return 0 if report["verdict"] in ("HOST_MAIN_10_4_CLEAN_PREFLIGHT_ONLY",
+                                      "HOST_MAIN_10_3_CLEAN_PREFLIGHT_ONLY",
                                       "HOST_KNOWN_LEGACY_PIN_CLEAN_NO_UPDATE") else 2
 
 

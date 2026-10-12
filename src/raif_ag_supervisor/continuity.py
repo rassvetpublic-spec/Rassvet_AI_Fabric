@@ -14,6 +14,7 @@ import json
 import os
 import re
 import stat
+import sys
 import uuid
 from dataclasses import dataclass
 from enum import Enum
@@ -162,6 +163,66 @@ def _validate_directory(path: Path) -> None:
         current = current.parent
 
 
+def _lock_directory_windows(path: Path) -> int | None:
+    """Acquire a non-sharing directory handle on Windows to prevent concurrent renames and enable metadata flushing."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        GENERIC_READ = 0x80000000
+        GENERIC_WRITE = 0x40000000
+        FILE_SHARE_READ = 0x00000001
+        FILE_SHARE_WRITE = 0x00000002
+        OPEN_EXISTING = 3
+        FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
+
+        # Try read/write first to allow FlushFileBuffers, fall back to read-only
+        h = kernel32.CreateFileW(
+            str(path.absolute()),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            None,
+            OPEN_EXISTING,
+            FILE_FLAG_BACKUP_SEMANTICS,
+            None
+        )
+        if h in (-1, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF):
+            h = kernel32.CreateFileW(
+                str(path.absolute()),
+                GENERIC_READ,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                None,
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS,
+                None
+            )
+        if h in (-1, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF):
+            return None
+        return h
+    except Exception:
+        return None
+
+
+def _flush_and_close_directory_windows(handle: int | None) -> None:
+    """Flush NTFS directory metadata buffers and close handle."""
+    if handle is None or sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        kernel32.FlushFileBuffers(handle)
+    except Exception:
+        pass
+    finally:
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            kernel32.CloseHandle(handle)
+        except Exception:
+            pass
+
+
 def persist_checkpoint(directory: Path, record: ContinuityRecord) -> None:
     """Atomically write within an explicitly caller-chosen local test directory.
 
@@ -175,45 +236,59 @@ def persist_checkpoint(directory: Path, record: ContinuityRecord) -> None:
         raise ContinuityError("CHECKPOINT_SYMLINK_BLOCKED")
     if destination.exists() and not destination.is_file():
         raise ContinuityError("CHECKPOINT_TARGET_UNSAFE")
-    # os.mkdir is atomic on a local filesystem. A stale crash lock is not
-    # automatically stolen: human-controlled recovery must resolve it.
-    lock = root / ".raif-continuity.lock"
+
+    # Acquire Windows kernel handle lock to eliminate TOCTOU directory renames
+    # and provide directory descriptor for NTFS powerloss metadata flushing.
+    dir_handle = _lock_directory_windows(root)
     try:
-        lock.mkdir()
-    except OSError:
-        raise ContinuityError("CHECKPOINT_WRITER_BUSY") from None
-    temporary = root / (".raif-task-" + uuid.uuid4().hex + ".tmp")
-    try:
-        if destination.exists():
-            prior = load_checkpoint(root)
-            if record.task_id != prior.task_id or record.git_sha != prior.git_sha:
-                raise ContinuityError("CHECKPOINT_LINEAGE_MISMATCH")
-            if record.generation <= prior.generation:
-                raise ContinuityError("CHECKPOINT_GENERATION_NOT_MONOTONIC")
-            # A checksum is not a review receipt. Once external effects are
-            # possible, changing their state could launder a blocked task.
-            if prior.effect is not SideEffect.NONE and record.effect is not prior.effect:
-                raise ContinuityError("CHECKPOINT_EFFECT_TRANSITION_REQUIRES_REVIEW")
-        raw = serialize_checkpoint(record)
+        # os.mkdir is atomic on a local filesystem. A stale crash lock is not
+        # automatically stolen: human-controlled recovery must resolve it.
+        lock = root / ".raif-continuity.lock"
         try:
-            with temporary.open("xb") as stream:
-                stream.write(raw)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(temporary, destination)
+            lock.mkdir()
         except OSError:
-            raise ContinuityError("CHECKPOINT_WRITE_FAILED") from None
+            raise ContinuityError("CHECKPOINT_WRITER_BUSY") from None
+        temporary = root / (".raif-task-" + uuid.uuid4().hex + ".tmp")
+        try:
+            if destination.exists():
+                prior = load_checkpoint(root)
+                if record.task_id != prior.task_id or record.git_sha != prior.git_sha:
+                    raise ContinuityError("CHECKPOINT_LINEAGE_MISMATCH")
+                if record.generation <= prior.generation:
+                    raise ContinuityError("CHECKPOINT_GENERATION_NOT_MONOTONIC")
+                # A checksum is not a review receipt. Once external effects are
+                # possible, changing their state could launder a blocked task.
+                if prior.effect is not SideEffect.NONE and record.effect is not prior.effect:
+                    raise ContinuityError("CHECKPOINT_EFFECT_TRANSITION_REQUIRES_REVIEW")
+            raw = serialize_checkpoint(record)
+            try:
+                with temporary.open("xb") as stream:
+                    stream.write(raw)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.replace(temporary, destination)
+                # Flush NTFS directory entry after rename for powerloss crash consistency
+                if dir_handle is not None:
+                    try:
+                        import ctypes
+                        ctypes.windll.kernel32.FlushFileBuffers(dir_handle)
+                    except Exception:
+                        pass
+            except OSError:
+                raise ContinuityError("CHECKPOINT_WRITE_FAILED") from None
+            finally:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
         finally:
             try:
-                temporary.unlink(missing_ok=True)
+                lock.rmdir()
             except OSError:
+                # Never falsely claim recovery; crash/stale lock remains BLOCKED.
                 pass
     finally:
-        try:
-            lock.rmdir()
-        except OSError:
-            # Never falsely claim recovery; crash/stale lock remains BLOCKED.
-            pass
+        _flush_and_close_directory_windows(dir_handle)
 
 
 def load_checkpoint(directory: Path) -> ContinuityRecord:
