@@ -1,0 +1,66 @@
+{
+  "schema": "RAIF_W2_F2_1_WINDOWS_QA_EVIDENCE/1",
+  "as_of": "2026-10-12",
+  "origin": "GITHUB_ACTIONS_AND_SOURCE_READBACK",
+  "source": {
+    "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+    "pr": 8,
+    "branch": "raif-w2-durable-effect-ledger-20261012",
+    "sha": "b36cfbc0850b5f49327162133a2a4840ba82e1ee",
+    "tree_sha": "06f511d0dd6a9a0984040aeefb82a928a90467c1",
+    "base_main": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+    "files_changed": 13,
+    "modules": 46,
+    "passports": 46
+  },
+  "CI": {
+    "url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38186544803",
+    "run_id": 38186544803,
+    "job_id": 114609976272,
+    "head_sha": "b36cfbc0850b5f49327162133a2a4840ba82e1ee",
+    "status": "completed",
+    "conclusion": "success",
+    "unittest_total": 514,
+    "unittest_passed": 514,
+    "errors": 0,
+    "unittest_seconds": 33.317,
+    "sqlite_mock": "PASS",
+    "codex_mock": "PASS",
+    "windows_preflight": "PASS",
+    "new_w2_ledger_tests": 26,
+    "new_w2_job_tests": 7
+  },
+  "observed_smoke": [
+    "test_lost_ack_marks_unknown_and_never_requeues: ok",
+    "test_separate_process_applies_after_dispatch_then_ack_lost: ok",
+    "test_two_sqlite_connections_compete_for_one_dispatch: ok",
+    "test_receipt_immutable_and_durable_after_reopen: ok",
+    "test_child_descendant_survives_parent_but_job_kills_it: ok",
+    "test_timeout_kills_only_owned_group: ok",
+    "test_w2_external_worker_blocked_before_claim: ok"
+  ],
+  "QA": {
+    "request_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/8#issuecomment-6115408037",
+    "independent_source_QA": "PENDING",
+    "user_windows_host_F2_2": "NOT_RUN",
+    "owner_MTD": "CLOSED"
+  },
+  "limitations": [
+    "synthetic-only target receipt not real provider attestation",
+    "W2 real external workers blocked before claim",
+    "static Windows junction preflight not a handle-bound guarantee",
+    "SQLite FULL+WAL is not physical hardware power-loss proof",
+    "no automatic migration of old user DB or changes in source checkout"
+  ],
+  "safeguards": {
+    "main_mutated": false,
+    "AG_pather_only_documents": true,
+    "original_checkout_C_last_reported_WIP": 134,
+    "original_checkout_modified": false,
+    "real_provider_calls": 0,
+    "live_account_switches": 0,
+    "authority_mutations": 0
+  },
+  "cursor": "RAIF/W2_F2_1_INDEPENDENT_QA_PENDING",
+  "self_hash_note": "This checkpoint is Git-blob-addressed; no self-referential or unaudited SHA256 claim."
+}
