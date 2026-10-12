@@ -43,8 +43,8 @@ class ForegroundOfflineTests(unittest.TestCase):
                                  task_id=task_id)
 
     def run_fake(self, result=EXIT_OK, *, op="operation-1"):
-        with (patch("rai_fabric.foreground_w2.sys.platform", "win32"),
-              patch("rai_fabric.foreground_w2.run_synthetic_job", return_value=result)) as invoked:
+        with patch("rai_fabric.foreground_w2.sys.platform", "win32"), \
+             patch("rai_fabric.foreground_w2.run_synthetic_job", return_value=result) as invoked:
             answer = run_foreground_synthetic_once(self.store, self.target,
                        operation_id=op, payload_sha256=DIGEST, task_id="fixture-task")
         return answer, invoked
