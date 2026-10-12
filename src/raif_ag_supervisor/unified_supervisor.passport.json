@@ -1,0 +1,93 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "unified_supervisor",
+  "name": "UnifiedSupervisor",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "src/raif_ag_supervisor",
+  "description": "Унифицированный супервизор Antigravity и контроллер процессов (Rassvet_AI_Fabric#13).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "PROCESS_OBSERVER_NON_INTRUSIVE",
+    "HOTSWAP_VALIDATED"
+  ],
+  "functions": {
+    "BinaryPatchMechanism.probe_binary": {
+      "fn_id": "unified_supervisor.BinaryPatchMechanism.probe_binary",
+      "description": "Проверка состояния сигнатуры без модификации файла",
+      "args": ["binary_path"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "BinaryPatchMechanism.apply_patch_no_backup": {
+      "fn_id": "unified_supervisor.BinaryPatchMechanism.apply_patch_no_backup",
+      "description": "Применяет патч 6 байт без создания бэкапа по канону CP-31",
+      "args": ["binary_path"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "AstraRoutingMechanism.bind_session": {
+      "fn_id": "unified_supervisor.AstraRoutingMechanism.bind_session",
+      "description": "Мгновенная привязка сессии к аккаунту в RAM без перезапуска процесса",
+      "args": ["session_id", "account_id"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "AstraRoutingMechanism.get_session_account": {
+      "fn_id": "unified_supervisor.AstraRoutingMechanism.get_session_account",
+      "description": "Получение аккаунта активной сессии",
+      "args": ["session_id"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "AstraRoutingMechanism.unbind_session": {
+      "fn_id": "unified_supervisor.AstraRoutingMechanism.unbind_session",
+      "description": "Снятие привязки сессии",
+      "args": ["session_id"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "CdpControllerMechanism.read_active_port": {
+      "fn_id": "unified_supervisor.CdpControllerMechanism.read_active_port",
+      "description": "Чтение активного порта отладки из DevToolsActivePort",
+      "args": ["profile_dir"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "CdpControllerMechanism.parse_usage_metadata": {
+      "fn_id": "unified_supervisor.CdpControllerMechanism.parse_usage_metadata",
+      "description": "Извлечение точных серверных токенов Gemini API из usageMetadata",
+      "args": ["raw_json"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "AntigravityProcessManager.get_running_status": {
+      "fn_id": "unified_supervisor.AntigravityProcessManager.get_running_status",
+      "description": "Возвращает статус активных компонентов флота",
+      "args": [],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "AntigravityProcessManager.stop_component_by_pid": {
+      "fn_id": "unified_supervisor.AntigravityProcessManager.stop_component_by_pid",
+      "description": "Безопасная остановка процесса по PID через Win32 API",
+      "args": ["pid"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "UnifiedSupervisor.check_quota_and_alarm": {
+      "fn_id": "unified_supervisor.UnifiedSupervisor.check_quota_and_alarm",
+      "description": "Проверка квот и генерация алармов при малом балансе",
+      "args": ["accounts_quota", "alarm_threshold_percent"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "UnifiedSupervisor.find_active_transcripts": {
+      "fn_id": "unified_supervisor.UnifiedSupervisor.find_active_transcripts",
+      "description": "Поиск файлов транскриптов бесед transcript.jsonl в каталоге brain",
+      "args": ["brain_dir"],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    },
+    "UnifiedSupervisor.run_mechanism_benchmark": {
+      "fn_id": "unified_supervisor.UnifiedSupervisor.run_mechanism_benchmark",
+      "description": "Сравнительный бенчмарк 3 механизмов авторизации и переключения",
+      "args": [],
+      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+    }
+  }
+}
