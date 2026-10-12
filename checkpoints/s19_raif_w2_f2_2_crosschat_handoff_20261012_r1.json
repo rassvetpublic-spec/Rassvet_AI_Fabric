@@ -1,0 +1,97 @@
+{
+  "schema": "RAIF_W2_F2_2_CROSS_CHAT_HANDOFF/1",
+  "checkpoint_id": "RAIF_W2_F2_2_HOST_521_PASS_MOCK_TIMEOUT_2026_10_12_R1",
+  "created_date": "2026-10-12",
+  "project": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "phase": "W2 F2.2",
+  "current_cursor": "RAIF/W2_F2_2_HOST_UNIT_521_PASS_MOCK_TIMEOUT_DIRECT_PYTHON_DIAG_R1",
+  "state": "HOST_UNIT_PASS_INTEGRATION_SMOKE_BLOCKED",
+  "source": {
+    "pr_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/8",
+    "pr_number": 8,
+    "branch": "raif-w2-durable-effect-ledger-20261012",
+    "head_sha": "4c4dff1433d5b1ccd11c3a6fe45348b4ec7a9395",
+    "git_tree": "9535e1c44291d994a6d6f998c0f13ea1705749b7",
+    "review_base": "c42a905f904b36c8823930caaedf90951b603651",
+    "latest_main_sha": "cafa6b8dbd3e79a33d714665d424b5f353be3e1c",
+    "latest_main_delta_since_base": "5 BPR5 documentation/checkpoint-only commits; no executable src/tests/scripts changes",
+    "ag_pather_previous_head": "de5fa9bceb08d47b358fb8f4026e761c143b727b"
+  },
+  "ci": {
+    "run": 38187611702,
+    "status": "COMPLETED_SUCCESS",
+    "hosted_windows_tests": 521,
+    "sqlite_mock": "PASS",
+    "codex_mock": "PASS",
+    "url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38187611702"
+  },
+  "independent_qa": {
+    "request": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/8#issuecomment-6115552984",
+    "result": "PENDING",
+    "review_count": 0
+  },
+  "owner_host": {
+    "machine": "Windows, PowerShell 7, Python 3.13.14",
+    "run_id": "6fbe5f9755d4",
+    "run_directory": "D:\\ЗАГРУЗКИ\\RAiF_W2_F2_2_6fbe5f9755d4",
+    "result_filename": "RAiF_W2_F2_2_RESULT_6fbe5f9755d4.zip",
+    "result_zip_sha256": "7c0f28b240495975a7c4bc82ad3424a0ae82db675555bf3386d1d66335ed7716",
+    "unit_test_log_sha256": "49c586e9d6c8536796be1e891906d452c2c300a92f601bd3173e69bf170e3081",
+    "tests_run": 521,
+    "tests_passed": 521,
+    "unit_duration_seconds": 75.403,
+    "manifest_verdict": "BLOCKED",
+    "mock_smoke": "NOT_RUN",
+    "codex_mock_smoke": "NOT_RUN",
+    "test_tree_clean": false,
+    "test_tree_clean_reason": "stage 6 not completed; not proof of dirty tree",
+    "earlier_result_filename": "RAiF_W2_F2_2_RESULT_948fe03433ce.zip",
+    "note": "earlier 948fe... and 6fbe... are different run IDs; never mix artifacts"
+  },
+  "smoke_resume": {
+    "result_filename": "RAiF_W2_F2_2_SMOKERESUME_RESULT_296a3d806233.zip",
+    "result_zip_sha256": "909e57a631efa696ca1110e17321244b36d58fb23420c4a34b6c6c9d1d2fb415",
+    "unit_log_sha256": "49c586e9d6c8536796be1e891906d452c2c300a92f601bd3173e69bf170e3081",
+    "blocker_code": "RAIF_RESUME_MOCK_TIMEOUT",
+    "verdict": "BLOCKED",
+    "mock_smoke": "NOT_RUN",
+    "codex_mock_smoke": "NOT_RUN",
+    "console_local_diagnostics": "smoke-resume-296a3d806233\\local-diagnostics",
+    "mock_stdout_bytes": 0,
+    "mock_stderr_bytes": 0,
+    "hypothesis": "scripts/demo.ps1 calls Resolve-RAiFPython in nested PowerShell; output buffered/no output. Hypothesis unverified",
+    "root_cause": "NOT_DETERMINED"
+  },
+  "prepared_but_not_executed": {
+    "mode": "DIRECT_PYTHON_CLI_EQUIVALENT_NOT_ORIGINAL_DEMO_PS1",
+    "archive": "RAiF_W2_F2_2_DIRECTSMOKE_R1.zip",
+    "archive_sha256": "e92c8ac1d9fa2bcefe264f1b1218632d64ee5bc62e6dba71f21716bc513ec272",
+    "ps1": "Run-W2-F2_2-DirectSmoke-R1.ps1",
+    "ps1_sha256": "c68106ff0c3b1d85a686c2aa29a2578d043802e25bc5a78ba4460b30c05813a1",
+    "run_state": "NOT_RUN",
+    "timeout_per_direct_step_seconds": 90,
+    "purpose": "isolate nested PowerShell/launcher problem using Python CLI on same checkout; independent diagnostics"
+  },
+  "stop_rules": {
+    "do_not_rerun_full_unittest_or_clone": true,
+    "do_not_mix_sessions": true,
+    "do_not_claim_mock_pass_or_host_F2_2_pass": true,
+    "do_not_merge_or_undraft_PR8": true,
+    "do_not_modify_main_or_original_C_checkout": true,
+    "last_reported_C_checkout_tracked_WIP": 134,
+    "real_provider_calls": 0,
+    "real_target_attestation": "NOT_TESTED",
+    "independent_QA_gate": "OPEN_PENDING",
+    "owner_merge_MTD": "CLOSED",
+    "windows_C_checkout": "C:\\GIT\\Rassvet_AI_Fabric"
+  },
+  "next_actions": [
+    "Verify R2/source pins and local evidence; old unit tests stay accepted for exact SHA",
+    "Use already-prepared DirectSmoke R1 only when prior R2/Resume processes are ended; execute in existing D: isolated RUN_DIR, without git clone or 521 unittests",
+    "Review sanitized DirectSmoke RESULT (if produced), distinguish direct CLI PASS from original demo.ps1 integration; if failure, inspect bounded diagnostics and reproduce just the failing substep",
+    "Fix identified smoke harness or environment issue with evidence, not arbitrary CI; do not merge",
+    "Obtain independent R2 source QA and F2.2 Windows smoke/clean-tree evidence; exact-SHA owner MTD required before PR8 merge"
+  ],
+  "artifact_status": "GITHUB_AG_PATHER_MD_JSON_PLUS_LOCAL_HANDOFF_ZIP",
+  "resume_user_prompt": "Продолжай Rassvet AI Fabric из RAIF_W2_F2_2_HOST_521_PASS_MOCK_TIMEOUT_2026_10_12_R1. Курсор RAIF/W2_F2_2_HOST_UNIT_521_PASS_MOCK_TIMEOUT_DIRECT_PYTHON_DIAG_R1. PR #8 DRAFT, SHA 4c4dff1433d5b1ccd11c3a6fe45348b4ec7a9395, 521/521 host PASS. Stage 4 SQLite mock висит, Smoke Resume timeout, оба stdout/stderr пустые. Не повторяй clone/521 unittest. Прочитай d19/s19 и RESULT ZIP, продолжи диагностику через DirectSmoke R1 в изолированной D:. main/старый C: checkout не трогать; no merge."
+}
