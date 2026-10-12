@@ -1,0 +1,71 @@
+{
+  "schema": "RAIF_W2_F2_1_R2_CI521_RECEIPT_AND_F2_2_HANDOFF/1",
+  "date": "2026-10-12",
+  "repository": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "PR": {
+    "number": 8,
+    "branch": "raif-w2-durable-effect-ledger-20261012",
+    "head": "4c4dff1433d5b1ccd11c3a6fe45348b4ec7a9395",
+    "tree": "9535e1c44291d994a6d6f998c0f13ea1705749b7",
+    "base_main": "c42a905f904b36c8823930caaedf90951b603651",
+    "state": "OPEN_DRAFT",
+    "merged": false
+  },
+  "main": {
+    "code_level4_sha": "8513979110676f7a72faeefa3a1c393867946858",
+    "docs_checkpoint_sha": "c42a905f904b36c8823930caaedf90951b603651",
+    "main_CI_483": "38186830397:SUCCESS"
+  },
+  "source_receipt": {
+    "parents": [
+      "b36cfbc0850b5f49327162133a2a4840ba82e1ee",
+      "c42a905f904b36c8823930caaedf90951b603651"
+    ],
+    "prior_R1_windows_CI": 38186544803
+  },
+  "windows_ci": {
+    "run_id": 38187611702,
+    "job_id": 114613241070,
+    "source_head": "4c4dff1433d5b1ccd11c3a6fe45348b4ec7a9395",
+    "status": "completed",
+    "conclusion": "success",
+    "unit_tests": 521,
+    "unit_passed": 521,
+    "unit_seconds": 52.693,
+    "preflight": "PASS",
+    "sqlite_mock": "PASS",
+    "codex_mock": "PASS",
+    "test_claim_bypass": "ok",
+    "test_direct_synthetic_api": "ok",
+    "test_receipt_missing": "ok",
+    "test_receipt_checksum_corrupt": "ok",
+    "test_job_assignment_failure": "ok"
+  },
+  "QA": {
+    "source_request": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/8#issuecomment-6115552984",
+    "independent_result": "PENDING",
+    "host_F2_2": "NOT_RUN",
+    "owner_MTD": "CLOSED",
+    "old_R1_QA_request_superseded_for_source": true
+  },
+  "host_handoff": {
+    "filename": "RAiF_W2_F2_2_HOST_QA_R1.zip",
+    "sha256": "c466a7fb68a066076417a02f57475f5da5d35a002aab931ae9ffee57d8cd63c0",
+    "size_bytes": 4847,
+    "execution": "NOT_RUN",
+    "workdrive": "D:",
+    "exact_pin": "4c4dff1433d5b1ccd11c3a6fe45348b4ec7a9395",
+    "no_auto_upload": true,
+    "not_a_qa_result": true
+  },
+  "guards": {
+    "main_not_mutated_by_this_flow": true,
+    "ag_only_docs": true,
+    "owner_C_checkout_last_WIP": 134,
+    "checkout_not_touched": true,
+    "real_providers_not_used": true,
+    "external_effect_not_attested": true,
+    "physical_powerloss_not_proven": true
+  },
+  "cursor": "RAIF/W2_F2_1_R2_INDEPENDENT_QA_AND_F2_2_OWNER_HOST"
+}
