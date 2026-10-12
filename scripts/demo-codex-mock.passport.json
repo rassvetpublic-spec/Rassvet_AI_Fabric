@@ -2,15 +2,17 @@
   "schema": "BPR40_SIDECAR_PASSPORT/1.1",
   "module_id": "demo-codex-mock",
   "name": "Demo Codex Mock Runner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
   "layer": "scripts",
-  "description": "Испытание SQLite-очереди и подставного Codex по stdio без внешних вызовов",
+  "description": "SQLite codex-mock использует единый ограниченный Python resolver без WindowsApps alias",
   "author": "RAIF_DEVELOPER",
   "inputs": {},
   "outputs": {},
   "invariants": [
     "FAIL_CLOSED",
-    "WINDOWS_ONLY"
+    "WINDOWS_ONLY",
+    "SHARED_BOUNDED_PYTHON_RESOLVER",
+    "NO_REAL_PROVIDER_CALLS"
   ]
 }

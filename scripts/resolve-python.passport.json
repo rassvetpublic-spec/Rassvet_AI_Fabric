@@ -2,15 +2,19 @@
   "schema": "BPR40_SIDECAR_PASSPORT/1.1",
   "module_id": "resolve-python",
   "name": "Resolve Python Helper",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
   "layer": "scripts",
-  "description": "Разрешение исполняемого интерпретатора Python 3.11+ на Windows",
+  "description": "Bounded managed probe для абсолютного Python 3.11+; WindowsApps alias исключён для слэша и бэкслэша",
   "author": "RAIF_DEVELOPER",
   "inputs": {},
   "outputs": {},
   "invariants": [
     "FAIL_CLOSED",
-    "WINDOWS_ONLY"
+    "WINDOWS_ONLY",
+    "BOUNDED_CHILD_PROBE",
+    "ABSOLUTE_PYTHON_EXE",
+    "NO_WINDOWSAPP_ALIAS",
+    "OWNED_CHILD_FAIL_CLOSED"
   ]
 }
