@@ -1,0 +1,375 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "effect_ledger",
+  "name": "W2 Effect Ledger",
+  "version": "0.1.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "W2: SQLite-журнал намерений и fail-closed восстановление внешних эффектов.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_identifier": {
+      "fn_id": "effect_ledger._identifier",
+      "description": "Проверка неприватного ключа",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_sha": {
+      "fn_id": "effect_ledger._sha",
+      "description": "Проверка SHA-256 payload",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_safe_parent": {
+      "fn_id": "effect_ledger._safe_parent",
+      "description": "Static reparse path check",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SyntheticSQLiteTarget.close": {
+      "fn_id": "effect_ledger.SyntheticSQLiteTarget.close",
+      "description": "Закрыть синтетическую SQLite БД",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SyntheticSQLiteTarget.apply": {
+      "fn_id": "effect_ledger.SyntheticSQLiteTarget.apply",
+      "description": "Отдельная локальная идемпотентная запись",
+      "args": [
+        "operation_id",
+        "payload_sha256"
+      ],
+      "inputs": {
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "payload_sha256": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SyntheticSQLiteTarget.readback": {
+      "fn_id": "effect_ledger.SyntheticSQLiteTarget.readback",
+      "description": "Независимый синтетический readback",
+      "args": [
+        "operation_id"
+      ],
+      "inputs": {
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.install_on_empty_store": {
+      "fn_id": "effect_ledger.EffectLedger.install_on_empty_store",
+      "description": "Явная установка схемы в пустую БД",
+      "args": [
+        "store"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "EffectLedger"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.get": {
+      "fn_id": "effect_ledger.EffectLedger.get",
+      "description": "Прочитать состояние эффекта",
+      "args": [
+        "target_id",
+        "operation_id"
+      ],
+      "inputs": {
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.list_for_task": {
+      "fn_id": "effect_ledger.EffectLedger.list_for_task",
+      "description": "Только неприватные метаданные эффектов",
+      "args": [
+        "task_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[dict]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.prepare_effect": {
+      "fn_id": "effect_ledger.EffectLedger.prepare_effect",
+      "description": "Сохранить намерение до внешнего действия",
+      "args": [
+        "task_id",
+        "owner",
+        "lease_token",
+        "target_id",
+        "operation_id",
+        "payload_sha256",
+        "expected_revision"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "lease_token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "payload_sha256": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "expected_revision": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.mark_possible_dispatch": {
+      "fn_id": "effect_ledger.EffectLedger.mark_possible_dispatch",
+      "description": "Fence перед потенциальным действием",
+      "args": [
+        "task_id",
+        "owner",
+        "lease_token",
+        "target_id",
+        "operation_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "lease_token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.recover_pending_effects": {
+      "fn_id": "effect_ledger.EffectLedger.recover_pending_effects",
+      "description": "UNKNOWN_OUTCOME без повторного исполнения",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "list[dict]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.reconcile_synthetic": {
+      "fn_id": "effect_ledger.EffectLedger.reconcile_synthetic",
+      "description": "Только synthetic readback из отдельной БД",
+      "args": [
+        "target",
+        "operation_id"
+      ],
+      "inputs": {
+        "target": {
+          "type": "SyntheticSQLiteTarget",
+          "required": true,
+          "default": null
+        },
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EffectLedger.receipts_for_task": {
+      "fn_id": "effect_ledger.EffectLedger.receipts_for_task",
+      "description": "Неизменяемые receipts",
+      "args": [
+        "task_id"
+      ],
+      "inputs": {
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[dict]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
