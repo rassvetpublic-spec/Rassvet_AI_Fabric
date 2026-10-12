@@ -1,0 +1,75 @@
+{
+  "schema": "RAIF_W2_F2_0_CODE_CANDIDATE/1",
+  "as_of": "2026-10-12",
+  "repo": "rassvetpublic-spec/Rassvet_AI_Fabric",
+  "base_main": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+  "base_tree": "c8dd1691ffc04f937a0d2f14600925f4b890b5ae",
+  "branch": "raif-w2-durable-effect-ledger-20261012",
+  "predecessor": {
+    "pr": 5,
+    "merged_main_sha": "34e5f83652b65a4924fb48ff5aeeb90dde2783a7",
+    "main_windows_ci": 38185243827,
+    "windows_unittests": "481/481_PASS",
+    "postmerge_checkpoint_ag_sha": "6a97a7d7ad532c59d5540abc0e2f17b4e2ac3e92"
+  },
+  "w2_scope": "SYNTHETIC_ONLY_DRAFT_NO_REAL_EXTERNAL_EXECUTION",
+  "implemented_candidate": [
+    "Explicit FabricStore schema v2 only on fresh empty isolated DB",
+    "effect_operations unique(target_id,operation_id) keyed by fenced active task lease",
+    "PREPARED->MAY_HAVE_RUN before synthetic apply",
+    "expired lease and missing ACK -> UNKNOWN_OUTCOME + BLOCKED in same local transaction",
+    "no legacy requeue for a task with effect record, even after synthetic readback",
+    "PASS requires all operation receipts APPLIED_VERIFIED",
+    "SyntheticSQLiteTarget in separate file-backed SQLite with idempotent digest-safe apply",
+    "reconcile synthetic only; NO_EFFECT never accepted after MAY_HAVE_RUN",
+    "effect_receipts immutable update/delete triggers and deterministic evidence hash",
+    "W2 schema real runtime providers fail closed before claim",
+    "Windows Job Objects CREATE_SUSPENDED then AssignProcessToJobObject then ResumeThread",
+    "Owned Job kill-on-close, timeout termination and descendants count verification",
+    "Allowlisted four synthetic Python child cases, no arbitrary executable/process control"
+  ],
+  "tests": {
+    "new_effect_ledger_cases": 26,
+    "new_owned_job_cases": 7,
+    "postmerge_existing_windows_tests": 481,
+    "new_Windows_CI": "NOT_YET_RUN",
+    "independent_QA": "NOT_YET_RUN",
+    "physical_owner_Windows": "NOT_YET_RUN"
+  },
+  "files": [
+    "src/rai_fabric/effect_ledger.py",
+    "src/rai_fabric/effect_ledger.passport.json",
+    "src/rai_fabric/windows_owned_job.py",
+    "src/rai_fabric/windows_owned_job.passport.json",
+    "src/rai_fabric/store.py",
+    "src/rai_fabric/worker.py",
+    "src/CATALOG.md",
+    "tests/test_w2_effect_ledger.py",
+    "tests/test_w2_windows_owned_job.py",
+    "docs/W2_DURABLE_EFFECT_LEDGER.md",
+    "docs/ROADMAP.md"
+  ],
+  "not_implemented": [
+    "external provider target receipt adapter",
+    "real external action execution in W2",
+    "hardware powerloss or target side-effect attestation",
+    "Windows Job Object integration with live Codex or Antigravity",
+    "owner-host native readback",
+    "automatic schema migration for preexisting user databases"
+  ],
+  "owner_gates": {
+    "merge_into_main": false,
+    "production_run": false,
+    "host_W2_acceptance": false,
+    "independent_QA_pending": true
+  },
+  "protected": {
+    "user_checkout_C": "C:\\GIT\\Rassvet_AI_Fabric",
+    "last_reported_WIP": 134,
+    "source_checkout_touched": false,
+    "tower_changed": false,
+    "G2_closed": true,
+    "no_real_model_calls": true
+  },
+  "cursor": "RAIF/W2_F2_1_WINDOWS_CI_THEN_INDEPENDENT_QA"
+}

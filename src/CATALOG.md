@@ -14,6 +14,7 @@
 | `rai_fabric/codex_protocol.py` | Python | Офлайн-контракт обмена с Codex App Server: не запускает процессы и модели. |
 | `rai_fabric/codex_real_transport.py` | Python | Управляемый App Server: только initialize и необязательный thread/start. |
 | `rai_fabric/credential_store.py` | Python | Атомарное хранение проверенной OAuth-сессии под DPAPI текущего Windows SID. |
+| `rai_fabric/effect_ledger.py` | Python | W2: SQLite-журнал намерений и fail-closed восстановление внешних эффектов. |
 | `rai_fabric/gateway.py` | Python | Локальный шлюз инструментов только для чтения, без произвольных shell-команд. |
 | `rai_fabric/host_diagnostic_10_3.py` | Python | RAiF 10.3 bounded read-only Windows checkout diagnosis. |
 | `rai_fabric/host_gate_10_1b.py` | Python | Read-only Windows host preflight for Fabric 10.1B pinned-source acceptance. |
@@ -24,6 +25,7 @@
 | `rai_fabric/store.py` | Python | Транзакционное состояние задач; не использует код OMX или Superpowers. |
 | `rai_fabric/trusted_jwks.py` | Python | Доверенное получение ключей OpenAI по OIDC Discovery с fail-closed кешем. |
 | `rai_fabric/windows_acl.py` | Python | Windows DACL текущего пользователя и проверка reparse points для vault. |
+| `rai_fabric/windows_owned_job.py` | Python | W2-C: Windows Job Object для синтетических дочерних процессов. |
 | `rai_fabric/windows_vault.py` | Python | Заготовка защищённого Windows-хранилища: текущий пользователь DPAPI. |
 | `rai_fabric/worker.py` | Python | Явно включаемые исполнители, без веб-скрейпинга и платного API fallback. |
 | `rai_fabric/worktree_review.py` | Python | RAiF 10.1: Windows-only, offline, fail-closed Git worktree diff review. |

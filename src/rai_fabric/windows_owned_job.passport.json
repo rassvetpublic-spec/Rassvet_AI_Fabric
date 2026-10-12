@@ -1,0 +1,92 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "windows_owned_job",
+  "name": "W2 Windows Owned Job",
+  "version": "0.1.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "quality_gates",
+  "description": "W2-C: Windows Job Object для синтетических дочерних процессов.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_kernel": {
+      "fn_id": "windows_owned_job._kernel",
+      "description": "WinAPI с ограниченными правами",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Any"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_active_count": {
+      "fn_id": "windows_owned_job._active_count",
+      "description": "Число активных процессов owned Job",
+      "args": [
+        "api",
+        "job"
+      ],
+      "inputs": {
+        "api": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "job": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "run_synthetic_job": {
+      "fn_id": "windows_owned_job.run_synthetic_job",
+      "description": "Создать дочерний synthetic процесс suspended, подчинить Job и проверить завершение",
+      "args": [
+        "case",
+        "timeout_seconds",
+        "cwd"
+      ],
+      "inputs": {
+        "case": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "3.0"
+        },
+        "cwd": {
+          "type": "str | Path | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

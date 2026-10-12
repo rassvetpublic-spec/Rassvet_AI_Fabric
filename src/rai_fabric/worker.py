@@ -16,6 +16,13 @@ from .store import FabricError, FabricStore
 
 def run_one(store: FabricStore, provider: str, *, allow_external: bool = False,
             timeout_seconds: int = 300, owner: str | None = None) -> dict[str, Any]:
+    # W2 is explicitly opt-in for a fresh DB. External providers have no
+    # verified target receipt adapter yet: refuse BEFORE claiming or spawning.
+    version = store.db.execute(
+        "SELECT value FROM meta WHERE key='schema_version'"
+    ).fetchone()
+    if version and version[0] == "2" and provider not in {"mock", "codex-mock"}:
+        raise FabricError("W2: внешний worker заблокирован до verified effect adapter")
     if provider == "codex-app":
         raise FabricError("Драйвер Codex App Server не реализован в 0.1.0; задача не захвачена")
     if provider not in {"mock", "codex-mock", "antigravity"}:

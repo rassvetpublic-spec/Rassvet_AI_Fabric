@@ -288,6 +288,16 @@ class FabricStore:
             now = time.time()
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             self._assert_lease(row, owner, token, now)
+            if verdict == "PASS" and self.db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='effect_operations'"
+            ).fetchone():
+                unverified = self.db.execute(
+                    "SELECT 1 FROM effect_operations WHERE task_id=? "
+                    "AND phase!='APPLIED_VERIFIED' LIMIT 1", (task_id,)
+                ).fetchone()
+                if unverified:
+                    raise FabricError("W2: неподтверждённый внешний эффект блокирует PASS")
             self._checkpoint(task_id, "WORKER_RESULT", verdict, cursor,
                              {**evidence, "response_sha256": hashlib.sha256(response.encode()).hexdigest()})
             self.db.execute("""
@@ -323,7 +333,27 @@ class FabricStore:
             now = time.time()
             expired = [r[0] for r in self.db.execute(
                 "SELECT id FROM tasks WHERE status='RUNNING' AND lease_deadline<=?", (now,))]
+            ledger_active = bool(self.db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='effect_operations'"
+            ).fetchone())
             for task_id in expired:
+                if ledger_active:
+                    # MAY_HAVE_RUN persisted before dispatch; missing ACK is
+                    # UNKNOWN_OUTCOME, never automatic retry or PASS.
+                    ops = self.db.execute(
+                        "SELECT target_id,operation_id FROM effect_operations "
+                        "WHERE task_id=? AND phase='MAY_HAVE_RUN'", (task_id,)
+                    ).fetchall()
+                    for op in ops:
+                        self.db.execute(
+                            "UPDATE effect_operations SET phase='UNKNOWN_OUTCOME',updated_at=? "
+                            "WHERE target_id=? AND operation_id=?",
+                            (now, op["target_id"], op["operation_id"]),
+                        )
+                        self._event(task_id, "EFFECT_ACK_UNKNOWN",
+                                    {"target_id": op["target_id"],
+                                     "operation_id": op["operation_id"]})
                 self.db.execute("""
                   UPDATE tasks SET status='BLOCKED',lease_owner=NULL,lease_hash=NULL,
                         lease_deadline=NULL,updated_at=? WHERE id=?
@@ -340,6 +370,18 @@ class FabricStore:
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             if not row or row["status"] not in {"BLOCKED", "FAILED"}:
                 raise FabricError("Вернуть в очередь можно только задачи BLOCKED или FAILED")
+            if self.db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='effect_operations'"
+            ).fetchone():
+                prior_effect = self.db.execute(
+                    "SELECT 1 FROM effect_operations WHERE task_id=? LIMIT 1", (task_id,)
+                ).fetchone()
+                if prior_effect:
+                    raise FabricError(
+                        "W2: даже сверенный внешний эффект нельзя повторять через requeue; "
+                        "требуется отдельная задача и новый operation_id"
+                    )
             self.db.execute("UPDATE tasks SET status='QUEUED',cancel_requested=0,updated_at=? WHERE id=?",
                             (time.time(), task_id))
             self._event(task_id, "REQUEUED", {"acknowledgement": acknowledgement[:1024]})

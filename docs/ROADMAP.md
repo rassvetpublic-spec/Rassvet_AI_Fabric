@@ -60,7 +60,8 @@ RAI Fabric — среда разработки экосистемы `KAT9I_OS`, 
 - [x] **10.3:** PR #4 merged в `main@8dc6ee32...`, GitHub-hosted Windows CI #38049976872 **428/428 PASS**, очередь и Codex-mock PASS.
 - [x] **W1 изолированный Windows source:** 428/428 PASS на точном дереве `main`; исходный каталог C: с 134 tracked WIP не изменялся (по отчёту W1).
 - [x] **W1 final acceptance (только офлайн-ядро):** пользовательский Windows W1 428/428 PASS; отдельный W1-R2 RESULT 9/9 стадий PASS, `mock` и `codex-mock` PASS, финальный Git clean readback PASS на точном `main@8dc6ee32...`. Ранний блокер `task_id` вместо `id` устранён в изолированном тестовом harness; реальные провайдеры и power-loss не проверялись.
-- [ ] **10.4:** перенести BIGWAVE02 из `AG_pather@975c61a5...` — 3 новых файла + обновлённая `continuity.py` — с 28 negative tests; независимое CI точного PR и отдельный owner merge-gate.
+- [x] **10.4 BIGWAVE02 / BPR40:** PR #5 объединён в `main@34e5f83652b65a4924fb48ff5aeeb90dde2783a7`, точный Windows CI #38185243827 **481/481 PASS**, включая SQLite mock и Codex-mock. Реальный host-R3, внешний effect/readback, powerloss и process tree не приняты.
+- [ ] **W2 / 10.4–10.5 durable recovery (кандидат):** изолированный SQLite Effect Ledger, UNKNOWN_OUTCOME после потери ACK, запрет повторного requeue и Windows Job Objects только для собственных synthetic children. Код кандидатный; Windows CI, независимая QA и owner-host результаты принимаются отдельно. Контракт: [W2_DURABLE_EFFECT_LEDGER.md](W2_DURABLE_EFFECT_LEDGER.md).
 - [ ] **10.5:** foreground durable Windows-worker, cancellation, bounded child process и fail-closed UNKNOWN_OUTCOME после сбоя.
 - [ ] **10.6:** офлайн цикл development task → isolated diff → tests → independent review → PR, с явно закрытым owner gate.
 
