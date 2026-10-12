@@ -1,6 +1,7 @@
 """Adversarial CP54D cases: uncertain effects never become executable actions."""
 import hashlib
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -148,6 +149,43 @@ class ContinuityFaultsTests(unittest.TestCase):
                 c.persist_checkpoint(root, foreign)
             self.assertEqual(exc.exception.code, "CHECKPOINT_LINEAGE_MISMATCH")
 
+    def test_windows_toctou_handle_lock_and_directory_flush(self):
+        """Verify Windows handle lock prevents concurrent rename and executes metadata flush."""
+        if sys.platform != "win32":
+            return
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "target_dir"
+            root.mkdir()
+            renamed = Path(d) / "renamed_dir"
+
+            # Hook serialize_checkpoint to attempt renaming directory while handle lock is held
+            orig_serialize = c.serialize_checkpoint
+            rename_failed = []
+
+            def _concurrent_rename_hook(record):
+                try:
+                    root.rename(renamed)
+                except OSError as e:
+                    rename_failed.append(type(e).__name__)
+                return orig_serialize(record)
+
+            with patch.object(c, "serialize_checkpoint", side_effect=_concurrent_rename_hook):
+                c.persist_checkpoint(root, self.record(0))
+
+            # Concurrency check: rename must have been blocked while persist_checkpoint was active
+            self.assertTrue(len(rename_failed) == 1, "Concurrent rename must be blocked by Windows handle")
+            self.assertEqual(rename_failed[0], "PermissionError")
+            self.assertTrue(root.exists(), "Original directory must still exist")
+            self.assertFalse(renamed.exists(), "Renamed directory must not exist")
+
+            # Checkpoint file exists and is valid
+            self.assertEqual(c.load_checkpoint(root), self.record(0))
+
+            # After persist_checkpoint completes, handle is released and rename succeeds
+            root.rename(renamed)
+            self.assertTrue(renamed.exists(), "Directory can be renamed once write finishes")
+
 
 if __name__ == "__main__":
     unittest.main()
+
