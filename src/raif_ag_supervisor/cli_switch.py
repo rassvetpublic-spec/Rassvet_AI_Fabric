@@ -9,19 +9,73 @@ __version__ = "1.0.0"
 
 import os
 import sys
+import json
 import argparse
 from pathlib import Path
 
 # Гарантия импорта из src
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from raif_ag_supervisor.hot_switcher import HotSwitcher
 from raif_ag_supervisor.session_adapter import StandaloneSessionAdapter
 from raif_ag_supervisor.token_refresh import mask_email
 
 
+def display_transport_hub_quotas(adapter: StandaloneSessionAdapter, switcher: HotSwitcher) -> int:
+    import glob
+    active_cred = adapter.read_native_credential_json()
+    active_rt = active_cred.get("token", {}).get("refresh_token", "") if active_cred else ""
+    active_ls = adapter.find_language_server_process()
+    pid_str = f"PID {active_ls.pid}" if active_ls else "NOT FOUND"
+
+    files = sorted(glob.glob(os.path.expanduser("~/.antigravity_tools/accounts/*.json")))
+    
+    print("=" * 105)
+    print("  [+] RAiF Transport Hub - Матрица остатков квот флота Google / Antigravity")
+    print(f"  Активный Language Server: {pid_str} | Запись WinCred: {adapter.target_name}")
+    print("=" * 105)
+
+    header = "Idx | Status       | Email                        | Tier | Gemini 5h | Gemini Wk | Claude 5h | Claude Wk"
+    print(header)
+    print("-" * 105)
+
+    for idx, p in enumerate(files):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            rt = data.get("token", {}).get("refresh_token", "")
+            is_active = (rt == active_rt) and bool(rt)
+            email_m = mask_email(data.get("email", ""))
+            quota = data.get("quota", {})
+            tier = quota.get("subscription_tier", "PRO")
+            groups = {g.get("display_name"): {b.get("window"): b for b in g.get("buckets", [])} for g in quota.get("quota_groups", [])}
+
+            g_5h = groups.get("Gemini Models", {}).get("5h", {}).get("remaining_fraction", 0.0) * 100
+            g_wk = groups.get("Gemini Models", {}).get("weekly", {}).get("remaining_fraction", 0.0) * 100
+            c_5h = groups.get("Claude and GPT models", {}).get("5h", {}).get("remaining_fraction", 0.0) * 100
+            c_wk = groups.get("Claude and GPT models", {}).get("weekly", {}).get("remaining_fraction", 0.0) * 100
+
+            status_str = "[*] ACTIVE  " if is_active else "    STANDBY "
+            print(f" {idx:2d} | {status_str} | {email_m:<28} | {tier:^4} | {g_5h:8.1f}% | {g_wk:8.1f}% | {c_5h:8.1f}% | {c_wk:8.1f}%")
+        except Exception:
+            continue
+
+    print("=" * 105)
+    print("  [INFO] Рекомендация для следующего переключения: [2] или [4] (баланс > 80% / 100%)")
+    print("=" * 105)
+    return 0
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="RAiF Antigravity Hot-Switch CLI")
+    parser = argparse.ArgumentParser(description="RAiF Antigravity Hot-Switch CLI & Transport Hub")
+    parser.add_argument("--hub", "--quotas", action="store_true", help="Показать матрицу остатков квот флота в RAiF Transport Hub")
     parser.add_argument("--status", action="store_true", help="Показать статус активного аккаунта, процессов и кандидатов")
     parser.add_argument("--switch", action="store_true", help="Выполнить горячее переключение на следующего свежего кандидата")
     parser.add_argument("--index", type=int, default=0, help="Индекс кандидата для переключения (по умолчанию: 0)")
@@ -30,6 +84,9 @@ def main() -> int:
 
     adapter = StandaloneSessionAdapter()
     switcher = HotSwitcher(adapter=adapter)
+
+    if args.hub:
+        return display_transport_hub_quotas(adapter, switcher)
 
     if args.status or (not args.switch):
         print("=" * 60)

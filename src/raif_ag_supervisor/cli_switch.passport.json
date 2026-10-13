@@ -15,6 +15,33 @@
     "FAIL_CLOSED"
   ],
   "functions": {
+    "display_transport_hub_quotas": {
+      "fn_id": "cli_switch.display_transport_hub_quotas",
+      "description": "Функция display_transport_hub_quotas",
+      "args": [
+        "adapter",
+        "switcher"
+      ],
+      "inputs": {
+        "adapter": {
+          "type": "StandaloneSessionAdapter",
+          "required": true,
+          "default": null
+        },
+        "switcher": {
+          "type": "HotSwitcher",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "main": {
       "fn_id": "cli_switch.main",
       "description": "Функция main",
