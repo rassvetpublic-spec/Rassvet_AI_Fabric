@@ -1,0 +1,72 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "hot_switcher",
+  "name": "Hot Switcher",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "src.raif_ag_supervisor.hot_switcher - Высокоуровневый координатор горячей смены аккаунтов Antigravity.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "HotSwitchReport.safe_dict": {
+      "fn_id": "hot_switcher.HotSwitchReport.safe_dict",
+      "description": "Функция HotSwitchReport.safe_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HotSwitcher.list_candidate_profiles": {
+      "fn_id": "hot_switcher.HotSwitcher.list_candidate_profiles",
+      "description": "Возвращает список доступных профилей, отсортированных по свежести.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "List[FormattedAccountCredential]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HotSwitcher.switch_to_candidate": {
+      "fn_id": "hot_switcher.HotSwitcher.switch_to_candidate",
+      "description": "Выполняет переключение на указанный профиль кандидата.",
+      "args": [
+        "candidate_index",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "candidate_index": {
+          "type": "int",
+          "required": false,
+          "default": "0"
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "6.0"
+        }
+      },
+      "outputs": {
+        "return_type": "HotSwitchReport"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

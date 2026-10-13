@@ -1,0 +1,206 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "session_adapter",
+  "name": "Session Adapter",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "src.raif_ag_supervisor.session_adapter - Нативный адаптер сессий и горячей смены аккаунтов Antigravity.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "SwitchResult.safe_dict": {
+      "fn_id": "session_adapter.SwitchResult.safe_dict",
+      "description": "Функция SwitchResult.safe_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.read_native_credential_bytes": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.read_native_credential_bytes",
+      "description": "Чтение сырых байтов целевой записи Credential Manager.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Optional[bytes]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.read_native_credential_json": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.read_native_credential_json",
+      "description": "Чтение и валидация структуры JSON целевой записи.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.write_native_credential_bytes": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.write_native_credential_bytes",
+      "description": "Атомарная запись сырых байтов в target Credential Manager.",
+      "args": [
+        "raw_bytes",
+        "user_name"
+      ],
+      "inputs": {
+        "raw_bytes": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "user_name": {
+          "type": "str",
+          "required": false,
+          "default": "DEFAULT_USER_NAME"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.write_native_credential_json": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.write_native_credential_json",
+      "description": "Сериализация словаря в JSON и запись в Credential Manager.",
+      "args": [
+        "data",
+        "user_name"
+      ],
+      "inputs": {
+        "data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "user_name": {
+          "type": "str",
+          "required": false,
+          "default": "DEFAULT_USER_NAME"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.find_language_server_process": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.find_language_server_process",
+      "description": "Поиск активного процесса language_server.exe.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Optional[ProcessIdentity]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.terminate_language_server": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.terminate_language_server",
+      "description": "Безопасное завершение только дочернего процесса language_server.exe.",
+      "args": [
+        "pid"
+      ],
+      "inputs": {
+        "pid": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.wait_for_respawn": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.wait_for_respawn",
+      "description": "Ожидание появления нового language_server.exe с другим PID.",
+      "args": [
+        "old_pid",
+        "timeout_seconds",
+        "poll_interval_seconds"
+      ],
+      "inputs": {
+        "old_pid": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "6.0"
+        },
+        "poll_interval_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "0.2"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[int]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "StandaloneSessionAdapter.execute_hot_switch": {
+      "fn_id": "session_adapter.StandaloneSessionAdapter.execute_hot_switch",
+      "description": "Полный цикл горячей смены аккаунта по паттерну Child Respawn с гарантированным откатом.",
+      "args": [
+        "new_credential",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "new_credential": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "6.0"
+        }
+      },
+      "outputs": {
+        "return_type": "SwitchResult"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

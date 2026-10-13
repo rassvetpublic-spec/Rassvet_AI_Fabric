@@ -1,0 +1,158 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "token_refresh",
+  "name": "Token Refresh",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "src.raif_ag_supervisor.token_refresh - Управление свежестью и форматированием токенов Google OAuth для Antigravity.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "FormattedAccountCredential.safe_summary": {
+      "fn_id": "token_refresh.FormattedAccountCredential.safe_summary",
+      "description": "Функция FormattedAccountCredential.safe_summary",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "mask_email": {
+      "fn_id": "token_refresh.mask_email",
+      "description": "Маскирование email для безопасного логирования: user@domain.com -> u***r@domain.com.",
+      "args": [
+        "email"
+      ],
+      "inputs": {
+        "email": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "format_antigravity_credential_payload": {
+      "fn_id": "token_refresh.format_antigravity_credential_payload",
+      "description": "Формирует канонический JSON payload для Credential Manager gemini:antigravity.",
+      "args": [
+        "access_token",
+        "refresh_token",
+        "expiry_timestamp",
+        "id_token",
+        "auth_method"
+      ],
+      "inputs": {
+        "access_token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "refresh_token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "expiry_timestamp": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "id_token": {
+          "type": "str",
+          "required": false,
+          "default": "''"
+        },
+        "auth_method": {
+          "type": "str",
+          "required": false,
+          "default": "'consumer'"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "refresh_google_access_token": {
+      "fn_id": "token_refresh.refresh_google_access_token",
+      "description": "Прямое обновление access-токена через Google OAuth 2.0 endpoint по refresh-токену.",
+      "args": [
+        "refresh_token",
+        "client_id",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "refresh_token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "client_id": {
+          "type": "str",
+          "required": false,
+          "default": "GOOGLE_ANTIGRAVITY_CLIENT_ID"
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "6.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "load_cached_profiles": {
+      "fn_id": "token_refresh.load_cached_profiles",
+      "description": "Загружает локально сохраненные профили из директории кэша и форматирует их.",
+      "args": [
+        "accounts_dir",
+        "min_ttl_seconds"
+      ],
+      "inputs": {
+        "accounts_dir": {
+          "type": "Path",
+          "required": false,
+          "default": "DEFAULT_AGTOOLS_ACCOUNTS_DIR"
+        },
+        "min_ttl_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "120.0"
+        }
+      },
+      "outputs": {
+        "return_type": "List[FormattedAccountCredential]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
