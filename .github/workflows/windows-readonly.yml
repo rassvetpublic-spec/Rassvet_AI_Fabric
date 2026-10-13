@@ -66,12 +66,12 @@ jobs:
           $env:PYTHONUTF8 = '1'
           $env:PYTHONIOENCODING = 'utf-8'
           ./scripts/run-tests.ps1
-      - name: Проверить pytest-only сценарии супервизора (синтетические данные)
+      - name: Проверить pytest-only сценарии супервизора и планировщика (синтетические данные)
         shell: pwsh
         run: |
           $env:PYTHONUTF8 = '1'
           $env:PYTHONIOENCODING = 'utf-8'
-          python -m pytest -q tests/test_unified_supervisor.py
+          python -m pytest -q tests/test_unified_supervisor.py tests/test_scheduler.py
       - name: Проверить жизненный цикл задачи на mock
         shell: pwsh
         run: |
