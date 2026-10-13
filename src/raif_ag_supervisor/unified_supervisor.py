@@ -21,6 +21,7 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from .session_probe import running_components, windows_process_start_marker, ProcessIdentity
 from .windows_vault import WindowsCredentialVault
+from .hot_switcher import HotSwitcher, HotSwitchReport
 
 
 @dataclass(frozen=True)
@@ -186,6 +187,19 @@ class UnifiedSupervisor:
         self.astra_routing = AstraRoutingMechanism()
         self.cdp = CdpControllerMechanism()
         self.vault = WindowsCredentialVault()
+        self.hot_switcher = HotSwitcher()
+
+    def trigger_auto_failover_if_low(
+        self,
+        remaining_percent: float,
+        threshold_percent: float = 10.0,
+        candidate_index: int = 0,
+    ) -> Optional[Dict[str, Any]]:
+        """Автоматическое горячее переключение аккаунта при исчерпании квоты ниже порога."""
+        if remaining_percent < threshold_percent:
+            report = self.hot_switcher.switch_to_candidate(candidate_index=candidate_index)
+            return report.safe_dict()
+        return None
 
     def check_quota_and_alarm(self, accounts_quota: Dict[str, float], alarm_threshold_percent: float = 15.0) -> List[Dict[str, Any]]:
         """Проверка квот и генерация алармов при малом балансе."""

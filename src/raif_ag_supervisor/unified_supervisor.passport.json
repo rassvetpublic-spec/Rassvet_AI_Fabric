@@ -19,75 +19,284 @@
   "functions": {
     "BinaryPatchMechanism.probe_binary": {
       "fn_id": "unified_supervisor.BinaryPatchMechanism.probe_binary",
-      "description": "Проверка состояния сигнатуры без модификации файла",
-      "args": ["binary_path"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Проверка состояния сигнатуры без модификации файла.",
+      "args": [
+        "binary_path"
+      ],
+      "inputs": {
+        "binary_path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "BinaryPatchMechanism.apply_patch_no_backup": {
       "fn_id": "unified_supervisor.BinaryPatchMechanism.apply_patch_no_backup",
-      "description": "Применяет патч 6 байт без создания бэкапа по канону CP-31",
-      "args": ["binary_path"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Применяет патч 6 байт без создания бэкапа по канону CP-31.",
+      "args": [
+        "binary_path"
+      ],
+      "inputs": {
+        "binary_path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "AstraRoutingMechanism.bind_session": {
       "fn_id": "unified_supervisor.AstraRoutingMechanism.bind_session",
-      "description": "Мгновенная привязка сессии к аккаунту в RAM без перезапуска процесса",
-      "args": ["session_id", "account_id"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Мгновенная привязка сессии к аккаунту в RAM без перезапуска процесса.",
+      "args": [
+        "session_id",
+        "account_id"
+      ],
+      "inputs": {
+        "session_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "AstraRoutingMechanism.get_session_account": {
       "fn_id": "unified_supervisor.AstraRoutingMechanism.get_session_account",
-      "description": "Получение аккаунта активной сессии",
-      "args": ["session_id"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Функция AstraRoutingMechanism.get_session_account",
+      "args": [
+        "session_id"
+      ],
+      "inputs": {
+        "session_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "AstraRoutingMechanism.unbind_session": {
       "fn_id": "unified_supervisor.AstraRoutingMechanism.unbind_session",
-      "description": "Снятие привязки сессии",
-      "args": ["session_id"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Функция AstraRoutingMechanism.unbind_session",
+      "args": [
+        "session_id"
+      ],
+      "inputs": {
+        "session_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "CdpControllerMechanism.read_active_port": {
       "fn_id": "unified_supervisor.CdpControllerMechanism.read_active_port",
-      "description": "Чтение активного порта отладки из DevToolsActivePort",
-      "args": ["profile_dir"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Чтение активного порта отладки из DevToolsActivePort.",
+      "args": [
+        "profile_dir"
+      ],
+      "inputs": {
+        "profile_dir": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[int]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "CdpControllerMechanism.parse_usage_metadata": {
       "fn_id": "unified_supervisor.CdpControllerMechanism.parse_usage_metadata",
-      "description": "Извлечение точных серверных токенов Gemini API из usageMetadata",
-      "args": ["raw_json"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Извлечение 100% реальных серверных токенов Gemini API из usageMetadata.",
+      "args": [
+        "raw_json"
+      ],
+      "inputs": {
+        "raw_json": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, int]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "AntigravityProcessManager.get_running_status": {
       "fn_id": "unified_supervisor.AntigravityProcessManager.get_running_status",
-      "description": "Возвращает статус активных компонентов флота",
+      "description": "Возвращает статус активных компонентов флота.",
       "args": [],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "inputs": {},
+      "outputs": {
+        "return_type": "List[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "AntigravityProcessManager.stop_component_by_pid": {
       "fn_id": "unified_supervisor.AntigravityProcessManager.stop_component_by_pid",
-      "description": "Безопасная остановка процесса по PID через Win32 API",
-      "args": ["pid"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Безопасная остановка процесса по PID через Win32 API.",
+      "args": [
+        "pid"
+      ],
+      "inputs": {
+        "pid": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "UnifiedSupervisor.trigger_auto_failover_if_low": {
+      "fn_id": "unified_supervisor.UnifiedSupervisor.trigger_auto_failover_if_low",
+      "description": "Автоматическое горячее переключение аккаунта при исчерпании квоты ниже порога.",
+      "args": [
+        "remaining_percent",
+        "threshold_percent",
+        "candidate_index"
+      ],
+      "inputs": {
+        "remaining_percent": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "threshold_percent": {
+          "type": "float",
+          "required": false,
+          "default": "10.0"
+        },
+        "candidate_index": {
+          "type": "int",
+          "required": false,
+          "default": "0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "UnifiedSupervisor.check_quota_and_alarm": {
       "fn_id": "unified_supervisor.UnifiedSupervisor.check_quota_and_alarm",
-      "description": "Проверка квот и генерация алармов при малом балансе",
-      "args": ["accounts_quota", "alarm_threshold_percent"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Проверка квот и генерация алармов при малом балансе.",
+      "args": [
+        "accounts_quota",
+        "alarm_threshold_percent"
+      ],
+      "inputs": {
+        "accounts_quota": {
+          "type": "Dict[str, float]",
+          "required": true,
+          "default": null
+        },
+        "alarm_threshold_percent": {
+          "type": "float",
+          "required": false,
+          "default": "15.0"
+        }
+      },
+      "outputs": {
+        "return_type": "List[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "UnifiedSupervisor.find_active_transcripts": {
       "fn_id": "unified_supervisor.UnifiedSupervisor.find_active_transcripts",
-      "description": "Поиск файлов транскриптов бесед transcript.jsonl в каталоге brain",
-      "args": ["brain_dir"],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "description": "Поиск файлов транскриптов бесед transcript.jsonl в каталоге brain.",
+      "args": [
+        "brain_dir"
+      ],
+      "inputs": {
+        "brain_dir": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "List[Path]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "UnifiedSupervisor.run_mechanism_benchmark": {
       "fn_id": "unified_supervisor.UnifiedSupervisor.run_mechanism_benchmark",
-      "description": "Сравнительный бенчмарк 3 механизмов авторизации и переключения",
+      "description": "Сравнительный бенчмарк 3 механизмов авторизации и переключения.",
       "args": [],
-      "invariants": ["FAIL_CLOSED", "DETERMINISTIC"]
+      "inputs": {},
+      "outputs": {
+        "return_type": "List[MechanismBenchmarkResult]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     }
   }
 }

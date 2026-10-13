@@ -127,3 +127,34 @@ def test_mechanism_benchmark_suite():
     # Механизм 3 (CDP) - официальные токены usageMetadata
     assert benchmarks[2].mechanism_id == "mech_03_cdp_controller"
     assert benchmarks[2].token_tracking_source == "CDP_OFFICIAL_GEMINI_USAGE_METADATA"
+
+
+def test_auto_failover_trigger_when_low():
+    """Тестирование срабатывания автоматического failover при остатке квоты ниже порога."""
+    from unittest.mock import patch
+    from raif_ag_supervisor.hot_switcher import HotSwitchReport
+
+    supervisor = UnifiedSupervisor()
+    mock_report = HotSwitchReport(
+        success=True,
+        status="SUCCESS",
+        target_account_id="acc-target",
+        target_email_masked="u***r@gmail.com",
+        old_pid=111,
+        new_pid=222,
+        duration_ms=1800.0,
+        rolled_back=False,
+        details="Child respawned",
+    )
+
+    with patch.object(supervisor.hot_switcher, "switch_to_candidate", return_value=mock_report):
+        # 1. При 15% (порог 10%) - переключение не срабатывает
+        res_high = supervisor.trigger_auto_failover_if_low(remaining_percent=15.0, threshold_percent=10.0)
+        assert res_high is None
+
+        # 2. При 6% (порог 10%) - переключение срабатывает
+        res_low = supervisor.trigger_auto_failover_if_low(remaining_percent=6.0, threshold_percent=10.0)
+        assert res_low is not None
+        assert res_low["success"] is True
+        assert res_low["new_pid"] == 222
+
