@@ -1,16 +1,59 @@
-# Resolve a runnable Python; WindowsApps AppExecutionAliases can exist but fail (9009).
+# Resolve a real Python 3.11+ executable with a bounded managed probe (Windows / PowerShell 7).
+# W2 F2.2 candidate patch: no direct PowerShell `& py` and no unbounded PATH alias invocation.
 function Resolve-RAiFPython {
-    foreach ($commandName in @('py', 'python')) {
-        if (-not (Get-Command $commandName -ErrorAction SilentlyContinue)) { continue }
-        $prefixArgs = if ($commandName -eq 'py') { @('-3') } else { @() }
+    [CmdletBinding()]
+    param()
+    foreach ($commandName in @('py.exe', 'python.exe')) {
+        $application = Get-Command -Name $commandName -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -eq $application) { continue }
+        $launcher = [string]$application.Source
+        if (-not [IO.Path]::IsPathFullyQualified($launcher) -or -not [IO.File]::Exists($launcher)) { continue }
+        if ($launcher -match '(?i)[\\/]WindowsApps[\\/]') { continue }
+        $probeArguments = [Collections.Generic.List[string]]::new()
+        if ($commandName -eq 'py.exe') { [void]$probeArguments.Add('-3') }
+        foreach ($argument in @('-X', 'utf8', '-B', '-c', 'import sys; print(sys.executable if sys.version_info >= (3,11) else "")')) {
+            [void]$probeArguments.Add($argument)
+        }
+        $child = [Diagnostics.Process]::new()
+        $started = $false
         try {
-            $probeOutput = @(& $commandName @prefixArgs -c 'import sys; print("RAIF_PYTHON_READY" if sys.version_info >= (3, 11) else "RAIF_PYTHON_TOO_OLD")' 2>$null)
-            if ($LASTEXITCODE -eq 0 -and $probeOutput -contains 'RAIF_PYTHON_READY') {
-                return @{ FilePath = $commandName; Prefix = $prefixArgs }
+            $startInfo = [Diagnostics.ProcessStartInfo]::new()
+            $startInfo.FileName = $launcher
+            $startInfo.UseShellExecute = $false
+            $startInfo.CreateNoWindow = $true
+            $startInfo.RedirectStandardOutput = $true
+            $startInfo.RedirectStandardError = $true
+            $startInfo.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+            $startInfo.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+            foreach ($argument in $probeArguments) { [void]$startInfo.ArgumentList.Add($argument) }
+            foreach ($key in @('PYTHONHOME','PYTHONPATH','PYTHONINSPECT','PYTHONSTARTUP',
+                               'OPENAI_API_KEY','GEMINI_API_KEY','GOOGLE_API_KEY','ANTHROPIC_API_KEY',
+                               'AZURE_OPENAI_API_KEY','GITHUB_TOKEN','GH_TOKEN','RAI_LEASE_TOKEN')) {
+                [void]$startInfo.Environment.Remove($key)
             }
+            $child.StartInfo = $startInfo
+            $started = $child.Start()
+            if (-not $started) { continue }
+            $stdoutTask = $child.StandardOutput.ReadToEndAsync()
+            $stderrTask = $child.StandardError.ReadToEndAsync()
+            if (-not $child.WaitForExit(8000)) { continue }
+            if (-not ($stdoutTask.Wait(3000) -and $stderrTask.Wait(3000))) { continue }
+            if ($child.ExitCode -ne 0) { continue }
+            $resolved = $stdoutTask.GetAwaiter().GetResult().Trim()
+            if ([string]::IsNullOrWhiteSpace($resolved) -or $resolved.Contains("`n")) { continue }
+            if (-not [IO.Path]::IsPathFullyQualified($resolved) -or -not [IO.File]::Exists($resolved)) { continue }
+            if ($resolved -match '(?i)[\\/]WindowsApps[\\/]') { continue }
+            return @{ FilePath = $resolved; Prefix = @() }
         } catch {
-            # The candidate is absent, fails to start, or is only an AppExecutionAlias.
+            # A failed probe is not a working interpreter. Proceed only if its child is reaped.
+        } finally {
+            if ($started -and -not $child.HasExited) {
+                try { $child.Kill($true); [void]$child.WaitForExit(5000) } catch {}
+            }
+            $notReaped = ($started -and -not $child.HasExited)
+            $child.Dispose()
+            if ($notReaped) { throw 'RAIF_PYTHON_PROBE_CHILD_NOT_REAPED' }
         }
     }
-    throw 'Python 3.11+ was not found as a working executable (py -3 or python).'
+    throw 'RAIF_PYTHON_3_11_EXECUTABLE_NOT_RESOLVED'
 }
