@@ -12,16 +12,17 @@ control.fleet_common - Каноническая библиотека переи�
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 import os
 import sys
+import ast
 import json
 import hashlib
 import datetime
 import tempfile
 from pathlib import Path
-from typing import Any, Optional, NoReturn
+from typing import Any, Dict, Optional, Tuple, NoReturn
 
 
 def canonical_json(value: Any) -> str:
@@ -87,3 +88,71 @@ def fleet_fail(message: str, exit_code: int = 1) -> NoReturn:
     """Стандартизированный аварийный выход для CLI скриптов и барьеров флота."""
     sys.stderr.write(f"[FATAL] {message}\n")
     sys.exit(exit_code)
+
+
+def extract_code_version(py_path: Path | str) -> Tuple[Optional[str], bool]:
+    """Извлекает __version__ из AST и проверяет отсутствие устаревшего inline __passport__."""
+    path = Path(py_path)
+    if not path.exists():
+        return None, False
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace")
+        tree = ast.parse(content, filename=str(path))
+    except Exception:
+        return None, False
+
+    code_version = None
+    has_inline_passport = False
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    if target.id == "__version__":
+                        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                            code_version = node.value.value
+                    elif target.id == "__passport__":
+                        has_inline_passport = True
+    return code_version, has_inline_passport
+
+
+def extract_python_docstring(py_path: Path | str) -> str:
+    """Извлекает краткое описание Python-скрипта из sidecar-паспорта или docstring."""
+    path = Path(py_path)
+    sidecar = path.parent / f"{path.stem}.passport.json"
+    if sidecar.exists():
+        data = load_json(sidecar, default={})
+        desc = data.get("description", "").strip() if isinstance(data, dict) else ""
+        if desc and desc != f"Модуль {path.stem}":
+            return desc
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace")
+        module = ast.parse(content)
+        doc = ast.get_docstring(module)
+        if doc and doc.strip():
+            return doc.strip().split("\n")[0]
+        # Поиск первых комментариев
+        comments = []
+        for line in content.splitlines():
+            line_s = line.strip()
+            if line_s.startswith("#") and not line_s.startswith("#!") and "coding:" not in line_s:
+                c = line_s.lstrip("#").strip()
+                if c:
+                    comments.append(c)
+            elif comments and not line_s.startswith("#"):
+                break
+        if comments:
+            return " ".join(comments)[:100]
+    except Exception:
+        pass
+    return "_Описание отсутствует_"
+
+
+def load_sidecar_passport(py_path: Path | str) -> Optional[Dict[str, Any]]:
+    """Загружает sidecar-паспорт для указанного Python-модуля при его наличии."""
+    path = Path(py_path)
+    sidecar = path.parent / f"{path.stem}.passport.json"
+    if sidecar.exists():
+        data = load_json(sidecar)
+        if isinstance(data, dict):
+            return data
+    return None

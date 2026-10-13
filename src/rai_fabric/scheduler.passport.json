@@ -1,0 +1,167 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "scheduler",
+  "name": "Scheduler",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.scheduler - Автономный диспетчер очередей задач (Stage R26 / Issue #17).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "WorkerFleetScheduler.register_worker": {
+      "fn_id": "scheduler.WorkerFleetScheduler.register_worker",
+      "description": "Регистрирует нового исполнителя в пуле планировщика.",
+      "args": [
+        "name",
+        "provider",
+        "worker_id"
+      ],
+      "inputs": {
+        "name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "provider": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "worker_id": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "WorkerInfo"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetScheduler.unregister_worker": {
+      "fn_id": "scheduler.WorkerFleetScheduler.unregister_worker",
+      "description": "Удаляет исполнителя из пула.",
+      "args": [
+        "worker_id"
+      ],
+      "inputs": {
+        "worker_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetScheduler.get_idle_worker": {
+      "fn_id": "scheduler.WorkerFleetScheduler.get_idle_worker",
+      "description": "Возвращает свободного воркера для указанного провайдера.",
+      "args": [
+        "provider"
+      ],
+      "inputs": {
+        "provider": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[WorkerInfo]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetScheduler.tick": {
+      "fn_id": "scheduler.WorkerFleetScheduler.tick",
+      "description": "Один такт диспетчеризации: сканирование очереди, назначение и исполнение.",
+      "args": [
+        "store"
+      ],
+      "inputs": {
+        "store": {
+          "type": "Optional[FabricStore]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetScheduler.start": {
+      "fn_id": "scheduler.WorkerFleetScheduler.start",
+      "description": "Запуск фонового цикла планировщика.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetScheduler.stop": {
+      "fn_id": "scheduler.WorkerFleetScheduler.stop",
+      "description": "Остановка планировщика.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetScheduler.status_report": {
+      "fn_id": "scheduler.WorkerFleetScheduler.status_report",
+      "description": "Полный статус состояния диспетчера и воркеров.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "scheduler.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

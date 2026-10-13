@@ -2,11 +2,11 @@
   "schema": "BPR40_SIDECAR_PASSPORT/1.1",
   "module_id": "fleet_common",
   "name": "Fleet Common",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
   "layer": "tools",
   "description": "control.fleet_common - Каноническая библиотека переиспользуемых утилит флота CONTROL_TOWER.",
-  "author": "RAIF_DEVELOPER",
+  "author": "CONTROL_TOWER_DEVELOPER",
   "inputs": {},
   "outputs": {},
   "invariants": [
@@ -193,6 +193,69 @@
       },
       "outputs": {
         "return_type": "NoReturn"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "extract_code_version": {
+      "fn_id": "fleet_common.extract_code_version",
+      "description": "Извлекает __version__ из AST и проверяет отсутствие устаревшего inline __passport__.",
+      "args": [
+        "py_path"
+      ],
+      "inputs": {
+        "py_path": {
+          "type": "Path | str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[Optional[str], bool]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "extract_python_docstring": {
+      "fn_id": "fleet_common.extract_python_docstring",
+      "description": "Извлекает краткое описание Python-скрипта из sidecar-паспорта или docstring.",
+      "args": [
+        "py_path"
+      ],
+      "inputs": {
+        "py_path": {
+          "type": "Path | str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "load_sidecar_passport": {
+      "fn_id": "fleet_common.load_sidecar_passport",
+      "description": "Загружает sidecar-паспорт для указанного Python-модуля при его наличии.",
+      "args": [
+        "py_path"
+      ],
+      "inputs": {
+        "py_path": {
+          "type": "Path | str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
       },
       "invariants": [
         "FAIL_CLOSED",
