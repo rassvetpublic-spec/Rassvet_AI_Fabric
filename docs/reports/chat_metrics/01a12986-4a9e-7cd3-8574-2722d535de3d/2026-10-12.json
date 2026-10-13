@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "chat_id": "01a12986-4a9e-7cd3-8574-2722d535de3d",
+  "recorded_at": "2026-10-12T20:24:08Z",
+  "timezone": "Europe/Moscow",
+  "scope": "AVAILABLE_CHAT_CONTEXT_AND_SAVED_EVIDENCE",
+  "description": "Метрики чата о сборке BPR5, построчном разборе ядра и поиске через kat9i-indexer.",
+  "token_usage": {
+    "status": "UNKNOWN",
+    "input_tokens": null,
+    "cached_input_tokens": null,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "total_tokens": null,
+    "subagent_tokens": null,
+    "scope": "WHOLE_CHAT_INCLUDING_SUBAGENTS_AND_RETRIES",
+    "reason": "Фактическая usage-телеметрия этого чата недоступна. Размер файлов, число строк и лимиты аккаунта не заменяют счётчики токенов."
+  },
+  "resources": {
+    "elapsed_seconds": null,
+    "peak_memory_bytes": null,
+    "cost": null,
+    "status": "UNKNOWN"
+  },
+  "delivery": {
+    "core_lines": 89,
+    "core_bytes": 6042,
+    "normative_modules": 19,
+    "baseline_rule_ids": 683,
+    "unchanged_rules": 666,
+    "modified_rules": 17,
+    "all_rule_ids": 730,
+    "exports": 23,
+    "line_review_rows": 89,
+    "line_review_columns": 4,
+    "xlsx_exists": true
+  },
+  "validation": {
+    "classification": "SAVED_RUN_RESULTS_NOT_NEW_TEST_EXECUTION",
+    "package_regressions": {
+      "passed": 21,
+      "total": 21
+    },
+    "negative_cases": {
+      "passed": 13,
+      "total": 13
+    },
+    "project_tests_windows_utf8": {
+      "passed": 213,
+      "total": 213
+    },
+    "independent_reviews": {
+      "passed": 2,
+      "total": 2,
+      "scope": "DECLARATIVE_ARCHITECTURE_AND_PACKAGE_STRUCTURE"
+    },
+    "initial_project_run_errors": 1,
+    "initial_project_run_error_resolved": true,
+    "behavioral_benchmark_status": "NOT_RUN"
+  },
+  "native_kat9i_calls": {
+    "scope": "FOUR_COMPLETED_CALLS_VISIBLE_IN_RECENT_CHAT_HISTORY",
+    "search_knowledge_tool": 2,
+    "get_ako_by_id_tool": 2,
+    "total": 4,
+    "successful_responses": 4,
+    "database_records": {
+      "value": 282,
+      "classification": "EARLIER_DIRECT_READ_NOT_NATIVE_TOOL_COUNT"
+    },
+    "database_word_count": null
+  },
+  "incidents": [
+    {
+      "event": "RECOVERY_AFTER_INTERRUPTION",
+      "source": "verification/CHECKPOINT.json"
+    },
+    {
+      "event": "VALIDATOR_FALSE_PASS",
+      "status": "CORRECTED_AND_REVIEWED"
+    },
+    {
+      "event": "WINDOWS_CHILD_PROCESS_ENCODING",
+      "status": "RESOLVED_WITH_PROCESS_LOCAL_PYTHONUTF8"
+    },
+    {
+      "event": "OVERSIZED_SEARCH_OUTPUT",
+      "status": "REPORTED",
+      "note": "При первом поиске база читалась через терминал; после подключения выполнены нативные MCP-вызовы."
+    }
+  ],
+  "unknowns": [
+    "Полное число сообщений и вызовов инструментов за весь чат",
+    "Расход токенов каждого хода и субагентов",
+    "Общая длительность и стоимость",
+    "Количество слов в базе знаний"
+  ],
+  "evidence": [
+    "docs/BPR5/verification/REPORT.json",
+    "docs/BPR5/verification/CHECKPOINT.json",
+    "docs/BPR5_REVIEW/CHECKPOINT.json",
+    "Результаты четырёх нативных вызовов kat9i-indexer в текущей истории"
+  ],
+  "next_cursor": "BPR5/LINE_REVIEW/CORE_PENDING_USER_EDITS"
+}
