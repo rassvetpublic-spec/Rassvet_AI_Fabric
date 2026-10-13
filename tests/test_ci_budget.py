@@ -26,9 +26,12 @@ class BudgetCiTests(unittest.TestCase):
         self.assertIn("timeout-minutes: 12", content)
 
     def test_project_policy_is_in_russian(self):
-        content = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("Windows-only CI", content)
-        self.assertIn("не запускать CI на каждом commit", content)
+        # Политика экономии CI хранится в профильном документе; AGENTS.md — компактный вход BPR5.
+        content = (ROOT / "docs" / "GITHUB_ACTIONS_BUDGET.md").read_text(encoding="utf-8")
+        self.assertIn("Политика экономии GitHub Actions", content)
+        self.assertIn("Проект предназначен для Windows", content)
+        self.assertIn("не запускает CI", content)
+        self.assertIn("cancel-in-progress: true", content)
 
 
 if __name__ == "__main__":

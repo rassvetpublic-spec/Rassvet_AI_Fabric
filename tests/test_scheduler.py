@@ -33,28 +33,53 @@ def test_scheduler_worker_registration(temp_store):
     assert scheduler.get_idle_worker("mock") is None
 
 
-def test_scheduler_task_dispatch_fifo(temp_store):
-    scheduler = WorkerFleetScheduler(temp_store)
+def test_scheduler_task_dispatch_fifo(temp_store, tmp_path: Path):
+    # Один воркер и один слот на такт: порядок двух задач проверяется наблюдаемо.
+    scheduler = WorkerFleetScheduler(
+        temp_store, config=SchedulerConfig(max_concurrent_workers=1)
+    )
     scheduler.register_worker("MockWorker-01", "mock")
 
-    # Создание задачи в очереди
-    task = temp_store.submit(
-        objective="Автономная сборка тестового артефакта",
+    first = temp_store.submit(
+        objective="Первая задача FIFO",
         provider="mock",
-        workspace="C:/GIT/Rassvet_AI_Fabric",
+        workspace=str(tmp_path),
+        task_id="fifo-z-first",
     )
-    assert task["status"] == "QUEUED"
+    second = temp_store.submit(
+        objective="Вторая задача FIFO",
+        provider="mock",
+        workspace=str(tmp_path),
+        task_id="fifo-a-second",
+    )
+    # Устраняем зависимость порядка от разрешения часов Windows.
+    with temp_store.atomic():
+        temp_store.db.execute(
+            "UPDATE tasks SET created_at=? WHERE id=?",
+            (100.0, first["id"]),
+        )
+        temp_store.db.execute(
+            "UPDATE tasks SET created_at=? WHERE id=?",
+            (200.0, second["id"]),
+        )
 
-    # Запуск одного такта диспетчеризации
-    tick_result = scheduler.tick()
-    assert tick_result["dispatched_count"] == 1
-    assert task["id"] in tick_result["dispatched_tasks"]
+    first_tick = scheduler.tick()
+    assert first_tick["dispatched_count"] == 1
+    assert first_tick["dispatched_tasks"] == [first["id"]]
+    assert temp_store.get(first["id"])["status"] == "COMPLETE"
+    assert temp_store.get(second["id"])["status"] == "QUEUED"
 
-    # Проверка завершения задачи в store
-    finished_task = temp_store.get(task["id"])
-    assert finished_task["status"] == "COMPLETE"
-    res_raw = temp_store.db.execute("SELECT result_json FROM tasks WHERE id=?", (task["id"],)).fetchone()[0]
-    assert "Имитатор принял задачу" in res_raw
+    second_tick = scheduler.tick()
+    assert second_tick["dispatched_count"] == 1
+    assert second_tick["dispatched_tasks"] == [second["id"]]
+    assert temp_store.get(second["id"])["status"] == "COMPLETE"
+
+    for task_id in (first["id"], second["id"]):
+        row = temp_store.db.execute(
+            "SELECT result_json FROM tasks WHERE id=?", (task_id,)
+        ).fetchone()
+        assert row is not None
+        assert "Имитатор принял задачу" in row[0]
 
 
 def test_scheduler_account_rotation(temp_store):
