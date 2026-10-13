@@ -68,27 +68,7 @@
         "DETERMINISTIC"
       ]
     },
-    "_unique_pairs": {
-      "fn_id": "oauth_exchange._unique_pairs",
-      "description": "Функция _unique_pairs",
-      "args": [
-        "pairs"
-      ],
-      "inputs": {
-        "pairs": {
-          "type": "list[tuple[str, Any]]",
-          "required": true,
-          "default": null
-        }
-      },
-      "outputs": {
-        "return_type": "dict[str, Any]"
-      },
-      "invariants": [
-        "FAIL_CLOSED",
-        "DETERMINISTIC"
-      ]
-    },
+
     "_reject_constant": {
       "fn_id": "oauth_exchange._reject_constant",
       "description": "Функция _reject_constant",
