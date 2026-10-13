@@ -1,0 +1,345 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "ipc_channel",
+  "name": "Ipc Channel",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "transport.ipc_channel - Интерфейсы и канонические структуры данных реального IPC-транспорта RAiF.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "_canonical_json": {
+      "fn_id": "ipc_channel._canonical_json",
+      "description": "Детерминированная сериализация в компактный JSON со стабильным порядком ключей.",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_sha256_text": {
+      "fn_id": "ipc_channel._sha256_text",
+      "description": "Вычисление SHA-256 дайджеста текстовой строки.",
+      "args": [
+        "text"
+      ],
+      "inputs": {
+        "text": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_utc_now_iso": {
+      "fn_id": "ipc_channel._utc_now_iso",
+      "description": "Текущее время в формате ISO 8601 UTC.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.calculate_signature": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.calculate_signature",
+      "description": "Вычисляет детерминированный SHA-256 дайджест содержимого пакета.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.sign": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.sign",
+      "description": "Генерирует и сохраняет цифровую подпись конверта.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.verify_signature": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.verify_signature",
+      "description": "Проверяет соответствие цифровой подписи фактическому содержимому.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.to_dict": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.to_dict",
+      "description": "Преобразование конверта в словарь для передачи по сети/каналу.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.to_json": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.to_json",
+      "description": "Преобразование в строку JSON.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.to_bytes": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.to_bytes",
+      "description": "Преобразование в байты UTF-8.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.from_dict": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.from_dict",
+      "description": "Восстановление конверта из словаря с опциональной валидацией подписи.",
+      "args": [
+        "data",
+        "verify"
+      ],
+      "inputs": {
+        "data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "verify": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
+        }
+      },
+      "outputs": {
+        "return_type": "TransportMessageEnvelope"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.from_json": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.from_json",
+      "description": "Восстановление конверта из строки или байт JSON.",
+      "args": [
+        "raw",
+        "verify"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "str | bytes",
+          "required": true,
+          "default": null
+        },
+        "verify": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
+        }
+      },
+      "outputs": {
+        "return_type": "TransportMessageEnvelope"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TransportMessageEnvelope.create": {
+      "fn_id": "ipc_channel.TransportMessageEnvelope.create",
+      "description": "Фабричный метод создания нового подписанного конверта.",
+      "args": [
+        "payload_type",
+        "payload",
+        "channel",
+        "source",
+        "headers"
+      ],
+      "inputs": {
+        "payload_type": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "payload": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "channel": {
+          "type": "str",
+          "required": false,
+          "default": "'raif_transport'"
+        },
+        "source": {
+          "type": "str",
+          "required": false,
+          "default": "'raif_transport'"
+        },
+        "headers": {
+          "type": "Optional[Dict[str, str]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "TransportMessageEnvelope"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ITransportChannel.status": {
+      "fn_id": "ipc_channel.ITransportChannel.status",
+      "description": "Текущий статус канала.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "TransportStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ITransportChannel.connect": {
+      "fn_id": "ipc_channel.ITransportChannel.connect",
+      "description": "Установление соединения. Возвращает True при успехе.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ITransportChannel.disconnect": {
+      "fn_id": "ipc_channel.ITransportChannel.disconnect",
+      "description": "Закрытие соединения и освобождение ресурсов.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ITransportChannel.is_connected": {
+      "fn_id": "ipc_channel.ITransportChannel.is_connected",
+      "description": "Проверка активности соединения.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ITransportChannel.send": {
+      "fn_id": "ipc_channel.ITransportChannel.send",
+      "description": "Отправка конверта. Возвращает True при подтверждённой доставке в сокет/буфер.",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ITransportChannel.receive": {
+      "fn_id": "ipc_channel.ITransportChannel.receive",
+      "description": "Приём очередного конверта сообщений с заданным тайм-аутом в секундах.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

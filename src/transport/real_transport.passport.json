@@ -1,0 +1,617 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "real_transport",
+  "name": "Real Transport",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "transport.real_transport - Боевой IPC-транспорт Rassvet AI Fabric (Stage R25).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "NamedPipeServer.start": {
+      "fn_id": "real_transport.NamedPipeServer.start",
+      "description": "Запуск прослушивания входящих IPC-подключений.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeServer.broadcast": {
+      "fn_id": "real_transport.NamedPipeServer.broadcast",
+      "description": "Рассылка сообщения всем активным подключенным клиентам.",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeServer.receive": {
+      "fn_id": "real_transport.NamedPipeServer.receive",
+      "description": "Чтение очередного полученного сообщения из очереди сервера.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeServer.stop": {
+      "fn_id": "real_transport.NamedPipeServer.stop",
+      "description": "Остановка сервера и закрытие всех сокетов.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeServer.stats": {
+      "fn_id": "real_transport.NamedPipeServer.stats",
+      "description": "Функция NamedPipeServer.stats",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeClient.status": {
+      "fn_id": "real_transport.NamedPipeClient.status",
+      "description": "Функция NamedPipeClient.status",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "TransportStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeClient.connect": {
+      "fn_id": "real_transport.NamedPipeClient.connect",
+      "description": "Функция NamedPipeClient.connect",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeClient.disconnect": {
+      "fn_id": "real_transport.NamedPipeClient.disconnect",
+      "description": "Функция NamedPipeClient.disconnect",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeClient.is_connected": {
+      "fn_id": "real_transport.NamedPipeClient.is_connected",
+      "description": "Функция NamedPipeClient.is_connected",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeClient.send": {
+      "fn_id": "real_transport.NamedPipeClient.send",
+      "description": "Функция NamedPipeClient.send",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NamedPipeClient.receive": {
+      "fn_id": "real_transport.NamedPipeClient.receive",
+      "description": "Функция NamedPipeClient.receive",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackServer.queue_size": {
+      "fn_id": "real_transport.HttpFallbackServer.queue_size",
+      "description": "Функция HttpFallbackServer.queue_size",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackServer.enqueue_message": {
+      "fn_id": "real_transport.HttpFallbackServer.enqueue_message",
+      "description": "Функция HttpFallbackServer.enqueue_message",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackServer.dequeue_message": {
+      "fn_id": "real_transport.HttpFallbackServer.dequeue_message",
+      "description": "Функция HttpFallbackServer.dequeue_message",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackServer.start": {
+      "fn_id": "real_transport.HttpFallbackServer.start",
+      "description": "Функция HttpFallbackServer.start",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackServer.stop": {
+      "fn_id": "real_transport.HttpFallbackServer.stop",
+      "description": "Функция HttpFallbackServer.stop",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackClient.status": {
+      "fn_id": "real_transport.HttpFallbackClient.status",
+      "description": "Функция HttpFallbackClient.status",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "TransportStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackClient.connect": {
+      "fn_id": "real_transport.HttpFallbackClient.connect",
+      "description": "Функция HttpFallbackClient.connect",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackClient.disconnect": {
+      "fn_id": "real_transport.HttpFallbackClient.disconnect",
+      "description": "Функция HttpFallbackClient.disconnect",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackClient.is_connected": {
+      "fn_id": "real_transport.HttpFallbackClient.is_connected",
+      "description": "Функция HttpFallbackClient.is_connected",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackClient.send": {
+      "fn_id": "real_transport.HttpFallbackClient.send",
+      "description": "Функция HttpFallbackClient.send",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HttpFallbackClient.receive": {
+      "fn_id": "real_transport.HttpFallbackClient.receive",
+      "description": "Функция HttpFallbackClient.receive",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FleetMetricsBridge.emit_event": {
+      "fn_id": "real_transport.FleetMetricsBridge.emit_event",
+      "description": "Отправка события в пайп метрик или сохранение в RAM-буфере при недоступности.",
+      "args": [
+        "event_type",
+        "data",
+        "source"
+      ],
+      "inputs": {
+        "event_type": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "source": {
+          "type": "str",
+          "required": false,
+          "default": "'raif_transport'"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FleetMetricsBridge.emit_heartbeat": {
+      "fn_id": "real_transport.FleetMetricsBridge.emit_heartbeat",
+      "description": "Генерация пульса (Heartbeat) компонента системы.",
+      "args": [
+        "component",
+        "status",
+        "metadata"
+      ],
+      "inputs": {
+        "component": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "status": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "metadata": {
+          "type": "Optional[Dict[str, Any]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FleetMetricsBridge.close": {
+      "fn_id": "real_transport.FleetMetricsBridge.close",
+      "description": "Функция FleetMetricsBridge.close",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FleetMetricsBridge.buffered_count": {
+      "fn_id": "real_transport.FleetMetricsBridge.buffered_count",
+      "description": "Функция FleetMetricsBridge.buffered_count",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.active_channel_name": {
+      "fn_id": "real_transport.RealTransportAdapter.active_channel_name",
+      "description": "Функция RealTransportAdapter.active_channel_name",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.is_connected": {
+      "fn_id": "real_transport.RealTransportAdapter.is_connected",
+      "description": "Функция RealTransportAdapter.is_connected",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.start": {
+      "fn_id": "real_transport.RealTransportAdapter.start",
+      "description": "Инициализация и подключение к первичному каналу (или fallback).",
+      "args": [
+        "start_heartbeat"
+      ],
+      "inputs": {
+        "start_heartbeat": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.send": {
+      "fn_id": "real_transport.RealTransportAdapter.send",
+      "description": "Отправка конверта через активный транспортный канал с регистрацией метрики.",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.receive": {
+      "fn_id": "real_transport.RealTransportAdapter.receive",
+      "description": "Приём очередного сообщения из активного канала.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.register_supervisor_status": {
+      "fn_id": "real_transport.RealTransportAdapter.register_supervisor_status",
+      "description": "Трансляция агрегированного статуса UnifiedSupervisor в CONTROL_TOWER.",
+      "args": [
+        "supervisor_data"
+      ],
+      "inputs": {
+        "supervisor_data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.route_model_request": {
+      "fn_id": "real_transport.RealTransportAdapter.route_model_request",
+      "description": "Маршрутизация запроса к модели через ASTRA-роутинг или IPC-конвейер.",
+      "args": [
+        "target_account",
+        "prompt",
+        "session_id"
+      ],
+      "inputs": {
+        "target_account": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "prompt": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "session_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "RealTransportAdapter.stop": {
+      "fn_id": "real_transport.RealTransportAdapter.stop",
+      "description": "Остановка всех каналов и фоновых потоков.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
