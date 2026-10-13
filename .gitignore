@@ -44,3 +44,4 @@ Thumbs.db
 /RAiF_AG_*_RESULT_*.zip
 /RAiF_*_RESULT_*.zip
 /_RAIF_RUNTIME/
+.pytest_tmp/
