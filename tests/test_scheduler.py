@@ -33,7 +33,7 @@ def test_scheduler_worker_registration(temp_store):
     assert scheduler.get_idle_worker("mock") is None
 
 
-def test_scheduler_task_dispatch_fifo(temp_store):
+def test_scheduler_task_dispatch_fifo(temp_store, tmp_path: Path):
     scheduler = WorkerFleetScheduler(temp_store)
     scheduler.register_worker("MockWorker-01", "mock")
 
@@ -41,7 +41,7 @@ def test_scheduler_task_dispatch_fifo(temp_store):
     task = temp_store.submit(
         objective="Автономная сборка тестового артефакта",
         provider="mock",
-        workspace="C:/GIT/Rassvet_AI_Fabric",
+        workspace=str(tmp_path),
     )
     assert task["status"] == "QUEUED"
 
