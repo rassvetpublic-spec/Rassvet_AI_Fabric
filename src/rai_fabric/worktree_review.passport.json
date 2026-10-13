@@ -15,27 +15,6 @@
     "FAIL_CLOSED"
   ],
   "functions": {
-    "sha256": {
-      "fn_id": "worktree_review.sha256",
-      "description": "Функция sha256",
-      "args": [
-        "data"
-      ],
-      "inputs": {
-        "data": {
-          "type": "bytes",
-          "required": true,
-          "default": null
-        }
-      },
-      "outputs": {
-        "return_type": "str"
-      },
-      "invariants": [
-        "FAIL_CLOSED",
-        "DETERMINISTIC"
-      ]
-    },
     "_windows_only": {
       "fn_id": "worktree_review._windows_only",
       "description": "Функция _windows_only",
@@ -169,6 +148,12 @@
           "required": true,
           "default": null
         },
+        "args": {
+          "type": "str",
+          "required": false,
+          "default": null,
+          "kind": "VAR_POSITIONAL"
+        },
         "timeout": {
           "type": "int",
           "required": false,
@@ -178,12 +163,6 @@
           "type": "Path | None",
           "required": false,
           "default": "None"
-        },
-        "args": {
-          "type": "str",
-          "required": false,
-          "default": null,
-          "kind": "VAR_POSITIONAL"
         }
       },
       "outputs": {

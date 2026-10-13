@@ -53,8 +53,12 @@ class ReviewBlocked(Exception):
         self.code = code
 
 
-def sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+try:
+    from rai_fabric.fleet_common import sha256_bytes
+except ImportError:
+    from fleet_common import sha256_bytes  # type: ignore
+
+sha256 = sha256_bytes
 
 
 def _windows_only() -> None:

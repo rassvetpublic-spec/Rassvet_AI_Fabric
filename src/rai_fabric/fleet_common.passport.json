@@ -1,0 +1,203 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "fleet_common",
+  "name": "Fleet Common",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "control.fleet_common - Каноническая библиотека переиспользуемых утилит флота CONTROL_TOWER.",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "canonical_json": {
+      "fn_id": "fleet_common.canonical_json",
+      "description": "Детерминированная сериализация в компактный JSON со стабильным порядком ключей.",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "sha256_bytes": {
+      "fn_id": "fleet_common.sha256_bytes",
+      "description": "Вычисление SHA-256 хэша для произвольной последовательности байт.",
+      "args": [
+        "data"
+      ],
+      "inputs": {
+        "data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "sha256_text": {
+      "fn_id": "fleet_common.sha256_text",
+      "description": "Вычисление SHA-256 хэша для произвольной текстовой строки.",
+      "args": [
+        "text"
+      ],
+      "inputs": {
+        "text": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "sha256_digest": {
+      "fn_id": "fleet_common.sha256_digest",
+      "description": "Вычисление SHA-256 хэша для произвольной структуры данных через canonical_json.",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "utc_now_iso": {
+      "fn_id": "fleet_common.utc_now_iso",
+      "description": "Получение текущего времени UTC в стандартном ISO 8601 формате.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "load_json": {
+      "fn_id": "fleet_common.load_json",
+      "description": "Безопасное чтение JSON-файла с возвратом значения по умолчанию при отсутствии или ошибке.",
+      "args": [
+        "path",
+        "default"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path | str",
+          "required": true,
+          "default": null
+        },
+        "default": {
+          "type": "Any",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Any"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "atomic_write_json": {
+      "fn_id": "fleet_common.atomic_write_json",
+      "description": "Атомарная запись JSON через временный файл для защиты от повреждений при сбоях.",
+      "args": [
+        "path",
+        "data",
+        "indent"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path | str",
+          "required": true,
+          "default": null
+        },
+        "data": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "indent": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "2"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "fleet_fail": {
+      "fn_id": "fleet_common.fleet_fail",
+      "description": "Стандартизированный аварийный выход для CLI скриптов и барьеров флота.",
+      "args": [
+        "message",
+        "exit_code"
+      ],
+      "inputs": {
+        "message": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "exit_code": {
+          "type": "int",
+          "required": false,
+          "default": "1"
+        }
+      },
+      "outputs": {
+        "return_type": "NoReturn"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
