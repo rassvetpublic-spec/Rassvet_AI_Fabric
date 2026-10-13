@@ -91,10 +91,11 @@
     {
       "audit_id": "delete_audit_13877a32",
       "session_id": "13877a32-96e8-465c-9c6c-a4e9ddf9a66d",
-      "timestamp": "2026-10-13T07:52:00+03:00",
+      "timestamp": "2026-10-13T08:39:00+03:00",
       "primary_repo": "KAT9I_OS",
       "canonical_path": "История/delete_audit_13877a32-96e8-465c-9c6c-a4e9ddf9a66d.md",
-      "scope": "Sequential MTD execution, MCP StdIO, fleet convergence",
+      "secondary_path": "CONTROL_TOWER: checkpoints/delete_audit_13877a32.md",
+      "scope": "Universal /del skill, legacy audit migration, registry validation in tower_self_audit, 92/92 PASS",
       "context_preservation_pct": 100.0,
       "status": "SEALED"
     },
