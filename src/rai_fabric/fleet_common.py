@@ -15,7 +15,7 @@ control.fleet_common - Каноническая библиотека переи�
 
 from __future__ import annotations
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 import os
 import sys
@@ -232,3 +232,39 @@ def load_sidecar_passport(py_path: Path | str) -> Optional[Dict[str, Any]]:
         if isinstance(data, dict):
             return data
     return None
+
+
+def get_repo_root(anchor: Path | str | None = None) -> Path:
+    """Универсальное определение корня репозитория по маркеру .git или переданному якорю."""
+    current = Path(anchor).resolve() if anchor else Path(__file__).resolve()
+    for parent in [current] + list(current.parents):
+        if (parent / ".git").exists():
+            return parent
+    return current.parent
+
+
+def read_cli_body(path: str) -> str:
+    """Безопасное чтение тела запроса из файла или stdin ('-')."""
+    if path == "-":
+        return sys.stdin.read()
+    return Path(path).read_text(encoding="utf-8")
+
+
+def write_cli_json_result(result: Dict[str, Any], output: Optional[Path | str] = None) -> None:
+    """Унифицированный вывод JSON результата в файл или stdout."""
+    text = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+    if output:
+        Path(output).write_text(text, encoding="utf-8")
+    else:
+        print(text, end="")
+
+
+def safe_dict(obj: Any) -> Dict[str, Any]:
+    """Безопасное приведение объекта к словарю без утечки приватных полей."""
+    if hasattr(obj, "safe_dict") and callable(obj.safe_dict):
+        return obj.safe_dict()
+    if isinstance(obj, dict):
+        return {k: v for k, v in obj.items() if not str(k).startswith("_")}
+    if hasattr(obj, "__dict__"):
+        return {k: v for k, v in obj.__dict__.items() if not str(k).startswith("_")}
+    return {"value": str(obj)}

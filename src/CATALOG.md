@@ -7,6 +7,7 @@
 |---|---|---|
 | `rai_fabric/__init__.py` | Python | Rassvet AI Fabric: независимый прототип системы оркестрации. |
 | `rai_fabric/__main__.py` | Python | Модуль __main__ |
+| `rai_fabric/claude_vertex_transport.py` | Python | rai_fabric.claude_vertex_transport - Адаптер транспорта для моделей Claude через Google Cloud Vertex AI (CP-55). |
 | `rai_fabric/cli.py` | Python | Явное локальное управление: задания и токены не отправляются в API без согласия. |
 | `rai_fabric/codex_live_executor.py` | Python | Один разрешённый Codex App Server turn -> один файл -> локальный unittest. |
 | `rai_fabric/codex_mock_server.py` | Python | Подставной процесс App Server для офлайн-интеграционных тестов. |
@@ -14,8 +15,9 @@
 | `rai_fabric/codex_protocol.py` | Python | Офлайн-контракт обмена с Codex App Server: не запускает процессы и модели. |
 | `rai_fabric/codex_real_transport.py` | Python | Управляемый App Server: только initialize и необязательный thread/start. |
 | `rai_fabric/credential_store.py` | Python | Атомарное хранение проверенной OAuth-сессии под DPAPI текущего Windows SID. |
-| `rai_fabric/dev_cycle_10_6.py` | Python | RAiF 10.6: synthetic-only offline dev task -> isolated diff -> tests -> independent QA and DRAFT-PR request. |
+| `rai_fabric/dev_cycle_10_6.py` | Python | 10.6: Windows-only synthetic development task -> detached worktree -> bounded static mock tests -> independent QA request -> DRAFT PR intent; no auto-push/merge/provider. |
 | `rai_fabric/effect_ledger.py` | Python | W2: SQLite-журнал намерений и fail-closed восстановление внешних эффектов. |
+| `rai_fabric/failover_router.py` | Python | rai_fabric.failover_router - Автономный отказоустойчивый роутер запросов с каскадным переключением (CP-55). |
 | `rai_fabric/fleet_common.py` | Python | control.fleet_common - Каноническая библиотека переиспользуемых утилит флота CONTROL_TOWER. |
 | `rai_fabric/foreground_w2.py` | Python | Windows-only foreground worker: cancellation, durable effect evidence and no replay. |
 | `rai_fabric/gateway.py` | Python | Локальный шлюз инструментов только для чтения, без произвольных shell-команд. |
@@ -25,6 +27,7 @@
 | `rai_fabric/oauth_exchange.py` | Python | Офлайн-контракт OAuth code exchange и refresh для подписного ChatGPT. |
 | `rai_fabric/oauth_identity.py` | Python | Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов. |
 | `rai_fabric/oauth_readiness.py` | Python | Подготовка авторизации ChatGPT по подписке без сети и доступа к секретам. |
+| `rai_fabric/scheduler.py` | Python | rai_fabric.scheduler - Автономный диспетчер очередей задач (Stage R26 / Issue #17). |
 | `rai_fabric/store.py` | Python | Транзакционное состояние задач; не использует код OMX или Superpowers. |
 | `rai_fabric/transport.py` | Python | rai_fabric.transport - Мост обратной совместимости для пакета transport (Stage R25). |
 | `rai_fabric/trusted_jwks.py` | Python | Доверенное получение ключей OpenAI по OIDC Discovery с fail-closed кешем. |
@@ -37,10 +40,12 @@
 | `raif_ag_supervisor/__main__.py` | Python | Minimal non-destructive command line interface for RAiF AG Supervisor. |
 | `raif_ag_supervisor/accounts_cli.py` | Python | Windows-only local account vault operations with privacy-safe output. |
 | `raif_ag_supervisor/audit.py` | Python | CP-54C1/54D strict redact-by-construction stage audit. |
+| `raif_ag_supervisor/cli_switch.py` | Python | src.raif_ag_supervisor.cli_switch - Консольный интерфейс безопасной горячей смены аккаунтов Antigravity. |
 | `raif_ag_supervisor/continuity.py` | Python | CP-54D: offline checkpoint integrity and non-replaying resume planner. |
 | `raif_ag_supervisor/core.py` | Python | Dependency-free, testable core. No credentials, no binary patches, no network. |
 | `raif_ag_supervisor/diagnostics.py` | Python | Read-only diagnostic summary for Antigravity Standalone on Windows. |
 | `raif_ag_supervisor/filelock.py` | Python | Advisory exclusive file locking for registry mutation. |
+| `raif_ag_supervisor/hot_switcher.py` | Python | src.raif_ag_supervisor.hot_switcher - Высокоуровневый координатор горячей смены аккаунтов Antigravity. |
 | `raif_ag_supervisor/identity_observer.py` | Python | CP-54B3: bounded, opt-in, local-only active-session evidence observer. |
 | `raif_ag_supervisor/importer.py` | Python | Pure validation of exported account manifests. Does not persist credentials. |
 | `raif_ag_supervisor/native_rpc.py` | Python | Minimal read-only observer for a running Antigravity Language Server. |
@@ -49,8 +54,10 @@
 | `raif_ag_supervisor/quota_observer.py` | Python | Sanitized observations from the internal Standalone HTTPS quota RPC. |
 | `raif_ag_supervisor/registry.py` | Python | Crash-recoverable registry of opaque account IDs, without credentials. |
 | `raif_ag_supervisor/rollback_harness.py` | Python | CP-54C1 offline-only rollback fault harness. |
+| `raif_ag_supervisor/session_adapter.py` | Python | src.raif_ag_supervisor.session_adapter - Нативный адаптер сессий и горячей смены аккаунтов Antigravity. |
 | `raif_ag_supervisor/session_evidence.py` | Python | CP-54C1: non-identifying process evidence for offline planning. |
 | `raif_ag_supervisor/session_probe.py` | Python | Read-only Windows process discovery. No process modification or token access. |
+| `raif_ag_supervisor/token_refresh.py` | Python | src.raif_ag_supervisor.token_refresh - Управление свежестью и форматированием токенов Google OAuth для Antigravity. |
 | `raif_ag_supervisor/transaction.py` | Python | Transactional import into a user-controlled credential vault. |
 | `raif_ag_supervisor/unified_supervisor.py` | Python | Унифицированный супервизор Antigravity и контроллер процессов (Rassvet_AI_Fabric#13). |
 | `raif_ag_supervisor/vault.py` | Python | Vault abstraction: no secrets in checkpoints, logs or account registry. |

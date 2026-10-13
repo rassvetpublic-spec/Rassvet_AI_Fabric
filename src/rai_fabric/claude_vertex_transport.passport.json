@@ -1,0 +1,160 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "claude_vertex_transport",
+  "name": "Claude Vertex Transport",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.claude_vertex_transport - Адаптер транспорта для моделей Claude через Google Cloud Vertex AI (CP-55).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "ClaudeVertexTransport.status": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.status",
+      "description": "Текущий статус транспортного канала.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "TransportStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.sent_count": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.sent_count",
+      "description": "Количество успешно отправленных сообщений.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.rate_limit_count": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.rate_limit_count",
+      "description": "Счётчик зарегистрированных событий превышения квоты.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.connect": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.connect",
+      "description": "Инициализация клиента Vertex AI (или использование mock-клиента).",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.disconnect": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.disconnect",
+      "description": "Закрытие канала и сброс состояния.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.is_connected": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.is_connected",
+      "description": "Проверка активности соединения.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.probe": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.probe",
+      "description": "Быстрый healthcheck модели для проверки доступности квоты.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "3.0"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.send": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.send",
+      "description": "Отправка сообщения через Claude Vertex AI канал.",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ClaudeVertexTransport.receive": {
+      "fn_id": "claude_vertex_transport.ClaudeVertexTransport.receive",
+      "description": "Получение ответа из входящей очереди.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

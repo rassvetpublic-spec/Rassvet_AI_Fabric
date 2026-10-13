@@ -1,0 +1,199 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "failover_router",
+  "name": "Failover Router",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.failover_router - Автономный отказоустойчивый роутер запросов с каскадным переключением (CP-55).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "FailoverRouter.status": {
+      "fn_id": "failover_router.FailoverRouter.status",
+      "description": "Статус роутера: DEGRADED при работе в fallback, CONNECTED при штатной работе.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "TransportStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.fallback_active": {
+      "fn_id": "failover_router.FailoverRouter.fallback_active",
+      "description": "Флаг активности аварийного режима переключения на Claude.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.current_tier": {
+      "fn_id": "failover_router.FailoverRouter.current_tier",
+      "description": "Текущий активный уровень маршрутизации: primary, haiku или sonnet.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.model_switches_total": {
+      "fn_id": "failover_router.FailoverRouter.model_switches_total",
+      "description": "Общее количество зарегистрированных переключений моделей.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.connect": {
+      "fn_id": "failover_router.FailoverRouter.connect",
+      "description": "Инициализация и подключение всех сконфигурированных каналов.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.disconnect": {
+      "fn_id": "failover_router.FailoverRouter.disconnect",
+      "description": "Отключение всех каналов роутера.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.is_connected": {
+      "fn_id": "failover_router.FailoverRouter.is_connected",
+      "description": "Проверка активности хотя бы одного рабочего канала.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.probe_primary": {
+      "fn_id": "failover_router.FailoverRouter.probe_primary",
+      "description": "Проверка доступности первичного канала (Gemini).",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "3.0"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.check_and_restore_primary": {
+      "fn_id": "failover_router.FailoverRouter.check_and_restore_primary",
+      "description": "Проверка восстановления основной модели и автоматический возврат на неё.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.send": {
+      "fn_id": "failover_router.FailoverRouter.send",
+      "description": "Отправка сообщения с обработкой отказов и автоматическим переключением.",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.receive": {
+      "fn_id": "failover_router.FailoverRouter.receive",
+      "description": "Получение ответа из объединённой очереди.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "FailoverRouter.get_metrics": {
+      "fn_id": "failover_router.FailoverRouter.get_metrics",
+      "description": "Получение среза метрик Zero SSD Wear из оперативной памяти.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
