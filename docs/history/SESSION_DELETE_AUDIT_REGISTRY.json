@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "standard": "BPR5 NextGen (v5.1.0-alpha / R3.3) / SKILL del",
+  "generated_at": "2026-10-13T08:35:00+03:00",
+  "fleet_audits": [
+    {
+      "audit_id": "delete_audit_20260916",
+      "session_id": "prototype_stage0",
+      "timestamp": "2026-09-16T06:54:00+03:00",
+      "primary_repo": "KAT9I_OS",
+      "canonical_path": "История/delete_audit_20260916.md",
+      "scope": "KAT9I_OS Initial Prototype",
+      "context_preservation_pct": 99.0,
+      "status": "ARCHIVED_MIGRATED"
+    },
+    {
+      "audit_id": "delete_audit_20261012",
+      "session_id": "stage2h_closeout",
+      "timestamp": "2026-10-12T06:25:00+03:00",
+      "primary_repo": "KAT9I_OS",
+      "canonical_path": "История/delete_audit_20261012.md",
+      "scope": "KAT9I_OS Stage 2A-2H Archaeology Closeout",
+      "context_preservation_pct": 100.0,
+      "status": "ARCHIVED_MIGRATED"
+    },
+    {
+      "audit_id": "delete_audit_baf3c23b",
+      "session_id": "baf3c23b-47e6-4e0b-80af-92fa1432bf8a",
+      "timestamp": "2026-10-12T08:46:00+03:00",
+      "primary_repo": "KAT9I_OS",
+      "canonical_path": "История/delete_audit_baf3c23b.md",
+      "scope": "KAT9I_OS Architecture Verification",
+      "context_preservation_pct": 100.0,
+      "status": "ARCHIVED_MIGRATED"
+    },
+    {
+      "audit_id": "delete_audit_20261013_044000",
+      "session_id": "41869f48-c115-4050-bb1b-f21c853c80f9",
+      "timestamp": "2026-10-13T04:40:00+03:00",
+      "primary_repo": "CONTROL_TOWER",
+      "canonical_path": "checkpoints/delete_audit_20261013_044000.md",
+      "secondary_path": "KAT9I_OS: История/delete_audit_20261013_044000.md",
+      "scope": "Tri-Tower Integrity Shield & MCP Transport",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_20261013_053900",
+      "session_id": "d62113ec-bb85-4f9c-990b-90852b68e008",
+      "timestamp": "2026-10-13T05:39:00+03:00",
+      "primary_repo": "Rassvet_AI_Fabric",
+      "canonical_path": "docs/history/delete_audit_20261013_053900.md",
+      "relocated_from": "KAT9I_OS/История (мусорная копия устранена)",
+      "scope": "RAiF W2 F2.2 & 10.6 Dev Cycle & QA Audits",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_20261013_062500",
+      "session_id": "675870a3-34b1-4aa8-8fd3-07fcec9448a0",
+      "timestamp": "2026-10-13T06:25:00+03:00",
+      "primary_repo": "KAT9I_OS",
+      "canonical_path": "История/delete_audit_20261013_062500.md",
+      "scope": "KAT9I_OS Audit Artifact & CKS-CI & Fleet Debt Audit",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_20261013_065300",
+      "session_id": "host_cleanup_c_drive",
+      "timestamp": "2026-10-13T06:53:00+03:00",
+      "primary_repo": "CONTROL_TOWER",
+      "canonical_path": "checkpoints/delete_audit_20261013_065300.md",
+      "relocated_from": "KAT9I_OS/История (дубликат устранён)",
+      "scope": "C: Drive ballast cleanup, NTFS junctions & Antigravity runtime",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_d03dc506",
+      "session_id": "d03dc506-395a-4f71-8383-a91e7c11723c",
+      "timestamp": "2026-10-13T07:18:00+03:00",
+      "primary_repo": "CONTROL_TOWER",
+      "canonical_path": "checkpoints/delete_audit_d03dc506.md",
+      "secondary_path": "CKS: docs/history/delete_audit_d03dc506.md",
+      "scope": "DEBT-01 (PID isolation), DEBT-02 (BPR40), DEBT-03 (CKS benchmarks), Actions Budget Shield",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_13877a32",
+      "session_id": "13877a32-96e8-465c-9c6c-a4e9ddf9a66d",
+      "timestamp": "2026-10-13T07:52:00+03:00",
+      "primary_repo": "KAT9I_OS",
+      "canonical_path": "История/delete_audit_13877a32-96e8-465c-9c6c-a4e9ddf9a66d.md",
+      "scope": "Sequential MTD execution, MCP StdIO, fleet convergence",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_20261013_081600",
+      "session_id": "675870a3-34b1-4aa8-8fd3-07fcec9448a0",
+      "timestamp": "2026-10-13T08:16:00+03:00",
+      "primary_repo": "CONTROL_TOWER",
+      "canonical_path": "checkpoints/delete_audit_20261013_081600.md",
+      "relocated_from": "KAT9I_OS/История (дубликат устранён)",
+      "scope": "GitHub Actions Budget Shield (28 workflows), Checkpoints 1-3, DEBT-01/02/05",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    },
+    {
+      "audit_id": "delete_audit_20261013_082500",
+      "session_id": "f6cc77da-f348-453c-ac79-71e21ac958e3",
+      "timestamp": "2026-10-13T08:25:00+03:00",
+      "primary_repo": "CONTROL_TOWER",
+      "canonical_path": "checkpoints/delete_audit_20261013_082500.md",
+      "relocated_from": "CONTROL_TOWER/История (мусорная папка удалена)",
+      "scope": "BPR5 R3.3 Core & Output Contract, SemVer 1.1.0, Vector AKO 2170 nodes",
+      "context_preservation_pct": 100.0,
+      "status": "SEALED"
+    }
+  ]
+}
