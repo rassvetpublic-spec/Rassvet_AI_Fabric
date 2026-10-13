@@ -15,7 +15,8 @@
 | `rai_fabric/codex_real_transport.py` | Python | Управляемый App Server: только initialize и необязательный thread/start. |
 | `rai_fabric/credential_store.py` | Python | Атомарное хранение проверенной OAuth-сессии под DPAPI текущего Windows SID. |
 | `rai_fabric/effect_ledger.py` | Python | W2: SQLite-журнал намерений и fail-closed восстановление внешних эффектов. |
-| `rai_fabric/foreground_w2.py` | Python | W2/10.5: foreground worker, owned Windows Job, cancellation and durable synthetic receipt. |
+| `rai_fabric/fleet_common.py` | Python | control.fleet_common - Каноническая библиотека переиспользуемых утилит флота CONTROL_TOWER. |
+| `rai_fabric/foreground_w2.py` | Python | Windows-only foreground worker: cancellation, durable effect evidence and no replay. |
 | `rai_fabric/gateway.py` | Python | Локальный шлюз инструментов только для чтения, без произвольных shell-команд. |
 | `rai_fabric/host_diagnostic_10_3.py` | Python | RAiF 10.3 bounded read-only Windows checkout diagnosis. |
 | `rai_fabric/host_gate_10_1b.py` | Python | Read-only Windows host preflight for Fabric 10.1B pinned-source acceptance. |
@@ -24,9 +25,10 @@
 | `rai_fabric/oauth_identity.py` | Python | Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов. |
 | `rai_fabric/oauth_readiness.py` | Python | Подготовка авторизации ChatGPT по подписке без сети и доступа к секретам. |
 | `rai_fabric/store.py` | Python | Транзакционное состояние задач; не использует код OMX или Superpowers. |
+| `rai_fabric/transport.py` | Python | rai_fabric.transport - Мост обратной совместимости для пакета transport (Stage R25). |
 | `rai_fabric/trusted_jwks.py` | Python | Доверенное получение ключей OpenAI по OIDC Discovery с fail-closed кешем. |
 | `rai_fabric/windows_acl.py` | Python | Windows DACL текущего пользователя и проверка reparse points для vault. |
-| `rai_fabric/windows_owned_job.py` | Python | W2-C: Windows Job Object для синтетических дочерних процессов. |
+| `rai_fabric/windows_owned_job.py` | Python | W2-C: owned Windows Job с bounded отменой собственных synthetic children. |
 | `rai_fabric/windows_vault.py` | Python | Заготовка защищённого Windows-хранилища: текущий пользователь DPAPI. |
 | `rai_fabric/worker.py` | Python | Явно включаемые исполнители, без веб-скрейпинга и платного API fallback. |
 | `rai_fabric/worktree_review.py` | Python | RAiF 10.1: Windows-only, offline, fail-closed Git worktree diff review. |
@@ -49,6 +51,10 @@
 | `raif_ag_supervisor/session_evidence.py` | Python | CP-54C1: non-identifying process evidence for offline planning. |
 | `raif_ag_supervisor/session_probe.py` | Python | Read-only Windows process discovery. No process modification or token access. |
 | `raif_ag_supervisor/transaction.py` | Python | Transactional import into a user-controlled credential vault. |
+| `raif_ag_supervisor/unified_supervisor.py` | Python | Унифицированный супервизор Antigravity и контроллер процессов (Rassvet_AI_Fabric#13). |
 | `raif_ag_supervisor/vault.py` | Python | Vault abstraction: no secrets in checkpoints, logs or account registry. |
 | `raif_ag_supervisor/verification.py` | Python | Evidence-based acceptance gate for live Standalone account switching. |
 | `raif_ag_supervisor/windows_vault.py` | Python | Windows Credential Manager adapter for RAiF-owned generic credentials. |
+| `transport/__init__.py` | Python | transport - Пакет реального межпроцессного транспорта (IPC) Rassvet AI Fabric (Stage R25). |
+| `transport/ipc_channel.py` | Python | transport.ipc_channel - Интерфейсы и канонические структуры данных реального IPC-транспорта RAiF. |
+| `transport/real_transport.py` | Python | transport.real_transport - Боевой IPC-транспорт Rassvet AI Fabric (Stage R25). |
