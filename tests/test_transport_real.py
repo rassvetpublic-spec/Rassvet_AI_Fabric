@@ -199,6 +199,15 @@ class TestHttpFallbackGateway(unittest.TestCase):
         self.assertEqual(msg.message_id, envelope.message_id)
         self.assertEqual(msg.payload["task_id"], "TASK_10_7_001")
 
+    def test_ui_dashboard_endpoint(self):
+        import urllib.request
+        req = urllib.request.Request(f"http://127.0.0.1:{self.fallback_port}/ui")
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertIn("text/html", resp.headers.get("Content-Type", ""))
+            content = resp.read().decode("utf-8")
+            self.assertIn("RAiF 10.7 Transport Dashboard", content)
+
 
 class TestFleetMetricsBridge(unittest.TestCase):
     """Тесты стриминга метрик в сокет fleet_metrics и RAM-буфера (Zero SSD Wear)."""

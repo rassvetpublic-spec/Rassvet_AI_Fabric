@@ -368,6 +368,71 @@ class _HttpTransportHandler(BaseHTTPRequestHandler):
                 "messages_in_queue": qsize,
                 "uptime_seconds": round(time.time() - start_t, 2) if start_t else 0.0,
             })
+        elif self.path in ("/ui", "/dashboard"):
+            html = """<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RAiF 10.7 Transport Dashboard</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 24px; }
+.card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.badge-up { background: #238636; color: #fff; }
+.badge-pipe { background: #1f6feb; color: #fff; }
+h1, h2, h3 { color: #58a6ff; margin-top: 0; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #21262d; }
+th { color: #8b949e; }
+.metric-value { font-size: 24px; font-weight: 700; color: #58a6ff; margin-top: 8px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<h1>🚀 Rassvet AI Fabric — Боевой IPC-транспорт (Stage R25)</h1>
+<div class="grid">
+  <div class="card">
+    <div style="color: #8b949e; font-size: 13px;">СТАТУС ТРАНСПОРТА</div>
+    <div style="margin-top: 8px;"><span class="badge badge-up" id="transport-status">UP</span></div>
+  </div>
+  <div class="card">
+    <div style="color: #8b949e; font-size: 13px;">АКТИВНЫЙ КАНАЛ</div>
+    <div style="margin-top: 8px;"><span class="badge badge-pipe" id="active-channel">NAMED PIPE</span></div>
+  </div>
+  <div class="card">
+    <div style="color: #8b949e; font-size: 13px;">ОЧЕРЕДЬ СООБЩЕНИЙ (RAM)</div>
+    <div class="metric-value" id="queue-size">0</div>
+  </div>
+  <div class="card">
+    <div style="color: #8b949e; font-size: 13px;">ВРЕМЯ РАБОТЫ (UPTIME)</div>
+    <div class="metric-value" id="uptime">0s</div>
+  </div>
+</div>
+<div class="card">
+  <h3>🔌 Параметры топологии флота</h3>
+  <table>
+    <tr><th>Параметр</th><th>Значение</th><th>Назначение</th></tr>
+    <tr><td>Primary Channel</td><td><code>\\\\.\\pipe\\raif_transport</code></td><td>Высокопроизводительный локальный Windows Named Pipe</td></tr>
+    <tr><td>Fallback Port</td><td><code>127.0.0.1:18892</code></td><td>Локальный HTTP/JSON-RPC резервный шлюз</td></tr>
+    <tr><td>Telemetry Bridge</td><td><code>\\\\.\\pipe\\fleet_metrics</code></td><td>Потоковый сбор метрик флота (Zero SSD Wear)</td></tr>
+    <tr><td>Standard</td><td><code>BPR5 NextGen R3.3 / Stage R25</code></td><td>Канонический протокол CONTROL_TOWER</td></tr>
+  </table>
+</div>
+<script>
+async function refresh() {
+  try {
+    const res = await fetch('/status');
+    const data = await res.json();
+    document.getElementById('queue-size').innerText = data.messages_in_queue;
+    document.getElementById('uptime').innerText = Math.round(data.uptime_seconds) + 's';
+  } catch (e) {}
+}
+setInterval(refresh, 2000);
+refresh();
+</script>
+</body>
+</html>"""
+            self._respond_html(200, html)
         elif self.path == "/poll":
             msg = app.dequeue_message(timeout=1.0) if app else None
             if msg is not None:
@@ -399,6 +464,17 @@ class _HttpTransportHandler(BaseHTTPRequestHandler):
                 self._respond_json(400, {"error": "INVALID_ENVELOPE", "detail": str(exc)})
         else:
             self._respond_json(404, {"error": "NOT_FOUND"})
+
+    def _respond_html(self, status_code: int, html_content: str) -> None:
+        try:
+            body = html_content.encode("utf-8")
+            self.send_response(status_code)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def _respond_json(self, status_code: int, data: Dict[str, Any]) -> None:
         try:
@@ -714,8 +790,14 @@ class RealTransportAdapter:
 
     def send(self, envelope: TransportMessageEnvelope) -> bool:
         """Отправка конверта через активный транспортный канал с регистрацией метрики."""
+        # 1. Если мы находимся в режиме fallback, пытаемся вернуть первичный Named Pipe
+        if self._channel_name != "NAMED_PIPE":
+            if self.named_pipe_client.connect():
+                self._active_channel = self.named_pipe_client
+                self._channel_name = "NAMED_PIPE"
+
+        # 2. Если соединения нет, пробуем установить
         if not self.is_connected:
-            # Попытка быстрого восстановления
             if self.named_pipe_client.connect():
                 self._active_channel = self.named_pipe_client
                 self._channel_name = "NAMED_PIPE"
@@ -727,6 +809,14 @@ class RealTransportAdapter:
 
         assert self._active_channel is not None
         success = self._active_channel.send(envelope)
+
+        # 3. Мгновенный failover на резервный HTTP канал при сбое первичного канала
+        if not success and self._channel_name == "NAMED_PIPE":
+            if self.http_client.connect():
+                self._active_channel = self.http_client
+                self._channel_name = "HTTP_FALLBACK"
+                success = self._active_channel.send(envelope)
+
         if success:
             self.metrics_bridge.emit_event(
                 "transport_send_success",
