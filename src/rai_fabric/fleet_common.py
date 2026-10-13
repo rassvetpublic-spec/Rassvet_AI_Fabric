@@ -5,14 +5,17 @@ control.fleet_common - Каноническая библиотека переи�
   1. Канонизация JSON (canonical_json) и детерминированное вычисление дайджестов (sha256_digest, sha256_text);
   2. Единый формат временных меток UTC (utc_now_iso);
   3. Атомарное безопасное сохранение и чтение JSON (atomic_write_json, load_json);
-  4. Стандартизированный обработчик фатальных ошибок (fleet_fail).
+  4. Строгий разбор JSON без дублирования ключей (unique_json_pairs, load_strict_json);
+  5. Безопасное освобождение ресурсов (safe_close);
+  6. Унифицированное извлечение заголовка (first_line);
+  7. Стандартизированный обработчик фатальных ошибок (fleet_fail).
 
-Стандарт: BPR5 NextGen (v5.1.0-alpha / R3.2) / Zero SSD Wear / RAM-First.
+Стандарт: BPR5 NextGen (v5.1.0-alpha / R3.3) / Zero SSD Wear / RAM-First.
 """
 
 from __future__ import annotations
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 import os
 import sys
@@ -22,7 +25,7 @@ import hashlib
 import datetime
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, NoReturn
+from typing import Any, Dict, Optional, Tuple, NoReturn, Union, List, Callable
 
 
 def canonical_json(value: Any) -> str:
@@ -88,6 +91,79 @@ def fleet_fail(message: str, exit_code: int = 1) -> NoReturn:
     """Стандартизированный аварийный выход для CLI скриптов и барьеров флота."""
     sys.stderr.write(f"[FATAL] {message}\n")
     sys.exit(exit_code)
+
+
+def first_line(body: Any) -> str:
+    """Извлекает первую непустую строку из текста или строкового представления объекта."""
+    lines = str(body or "").splitlines()
+    for line in lines:
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
+def unique_json_pairs(
+    pairs: List[Tuple[str, Any]],
+    error_factory: Optional[Callable[[str], Exception]] = None,
+) -> Dict[str, Any]:
+    """
+    Хук для json.loads(object_pairs_hook=...), запрещающий дублирование ключей (RFC 7159).
+    Вызывает исключение при обнаружении повторного поля.
+    """
+    result: Dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            if error_factory is not None:
+                raise error_factory(key)
+            raise ValueError(f"Duplicate JSON key detected: '{key}'")
+        result[key] = value
+    return result
+
+
+def make_unique_pairs_hook(
+    error_factory: Callable[[str], Exception],
+) -> Callable[[List[Tuple[str, Any]]], Dict[str, Any]]:
+    """Создает object_pairs_hook для json.loads с кастомным генератором исключений."""
+    def _hook(pairs: List[Tuple[str, Any]]) -> Dict[str, Any]:
+        return unique_json_pairs(pairs, error_factory=error_factory)
+    return _hook
+
+
+def load_strict_json(raw: Union[str, bytes], limit: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Строгий разбор JSON:
+      - Проверяет лимит длины байт (если задан limit);
+      - Запрещает дублирование ключей;
+      - Запрещает нестандартные NaN / Infinity константы;
+      - Гарантирует возвращение словаря (dict).
+    """
+    if isinstance(raw, str):
+        raw_bytes = raw.encode("utf-8")
+    else:
+        raw_bytes = raw
+
+    if limit is not None and len(raw_bytes) > limit:
+        raise ValueError(f"JSON payload exceeds byte limit of {limit} bytes (got {len(raw_bytes)})")
+
+    decoded_text = raw_bytes.decode("utf-8")
+    parsed = json.loads(
+        decoded_text,
+        object_pairs_hook=unique_json_pairs,
+        parse_constant=lambda c: (_ for _ in ()).throw(ValueError(f"Invalid JSON constant: {c}")),
+    )
+    if not isinstance(parsed, dict):
+        raise ValueError(f"Expected JSON object (dict), got {type(parsed).__name__}")
+    return parsed
+
+
+def safe_close(resource: Any) -> None:
+    """Безопасное закрытие ресурсов без проброса исключений."""
+    if resource is not None and hasattr(resource, "close") and callable(getattr(resource, "close")):
+        try:
+            resource.close()
+        except Exception:
+            pass
 
 
 def extract_code_version(py_path: Path | str) -> Tuple[Optional[str], bool]:

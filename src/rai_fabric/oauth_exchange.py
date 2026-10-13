@@ -20,6 +20,7 @@ from .oauth_readiness import (
 from .oauth_identity import VerifiedIdentity, confirmed_plan_scope
 from .credential_store import LoadedCredential
 from .store import FabricError
+from .fleet_common import unique_json_pairs
 
 _MAX_RESPONSE = 512 * 1024
 _MAX_TOKEN = 131072
@@ -91,12 +92,7 @@ def _validate_token(value: Any, field_name: str) -> str:
 
 
 def _unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result = {}
-    for key, value in pairs:
-        if key in result:
-            raise TokenExchangeError("Повторяющееся поле в ответе OAuth")
-        result[key] = value
-    return result
+    return unique_json_pairs(pairs, error_factory=lambda key: TokenExchangeError("Повторяющееся поле в ответе OAuth"))
 
 
 def _reject_constant(value: str) -> None:

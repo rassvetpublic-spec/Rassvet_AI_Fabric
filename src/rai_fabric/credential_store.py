@@ -19,6 +19,7 @@ from typing import Mapping, Any
 from .oauth_identity import ISSUER, VerifiedIdentity
 from .windows_vault import (VaultError, WindowsUserDPAPI, credential_record_key,
                             default_vault_root)
+from .fleet_common import make_unique_pairs_hook
 
 _MAX_PLAINTEXT = 512 * 1024
 _MAX_CIPHERTEXT = 4 * 1024 * 1024
@@ -73,20 +74,15 @@ def _validate_credential(identity: VerifiedIdentity, value: Mapping[str, Any]) -
     return dict(value)
 
 
+_unique_envelope_hook = make_unique_pairs_hook(lambda name: VaultError("Повторяющееся поле защищённой записи"))
+
+
 def _parse_envelope(data: bytes, identity: VerifiedIdentity) -> LoadedCredential:
     if not isinstance(data, bytes) or not 2 <= len(data) <= _MAX_PLAINTEXT:
         raise VaultError("Некорректный размер защищённой записи")
 
-    def unique(items):
-        out = {}
-        for name, value in items:
-            if name in out:
-                raise VaultError("Повторяющееся поле защищённой записи")
-            out[name] = value
-        return out
-
     try:
-        item = json.loads(data.decode("utf-8"), object_pairs_hook=unique)
+        item = json.loads(data.decode("utf-8"), object_pairs_hook=_unique_envelope_hook)
     except (TypeError, ValueError, UnicodeError):
         raise VaultError("Повреждён формат защищённой записи") from None
     if not isinstance(item, dict) or set(item) != {"schema", "revision", "credentials"}:

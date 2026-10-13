@@ -9,3 +9,4 @@
    - 2. Safe Sync Gate: `PRIVACY > SECURITY > DATA_INTEGRITY > KNOWLEDGE > AUTO-SYNC`.
    - 3. Роли: `HARVESTER` -> `DESTROYER` -> `SEALER`. `UNKNOWN != PASS`.
 4. **On-Demand модули и спецификации:** Модули m01-m20, паспорта sidecar, метрики и bubble-up предложений читаются по требованию из навыка [bpr5-protocol](file:///C:/Users/alexa/.gemini/config/plugins/fleet-bpr5-protocol/skills/bpr5-protocol/SKILL.md) или ядра `protocols/bpr5/BPR5/CORE.yaml`.
+5. **Политика CI/CD:** Windows-only CI, не запускать CI на каждом commit.

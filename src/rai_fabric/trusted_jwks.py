@@ -19,6 +19,7 @@ import ssl
 
 from .oauth_identity import ISSUER, IdentityVerificationError, VerifiedIdentity, verify_id_token
 from .store import FabricError
+from .fleet_common import make_unique_pairs_hook
 
 DISCOVERY_URL = "https://auth.openai.com/.well-known/openid-configuration"
 JWKS_URL = "https://auth.openai.com/.well-known/jwks.json"
@@ -36,20 +37,15 @@ class _NoRedirect(HTTPRedirectHandler):
         raise TrustedKeyError("Перенаправление при получении ключей запрещено")
 
 
+_unique_jwks_pairs = make_unique_pairs_hook(lambda key: TrustedKeyError("Повторяющееся поле в документе OIDC"))
+
+
 def _decode_strict_json(raw: bytes, limit: int) -> dict[str, Any]:
     if not isinstance(raw, bytes) or not 2 <= len(raw) <= limit:
         raise TrustedKeyError("Недопустимый размер ответа OIDC")
 
-    def unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise TrustedKeyError("Повторяющееся поле в документе OIDC")
-            result[key] = value
-        return result
-
     try:
-        value = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_pairs,
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_jwks_pairs,
                            parse_constant=lambda _: (_ for _ in ()).throw(ValueError("NaN")))
     except (UnicodeDecodeError, ValueError, TypeError, RecursionError):
         raise TrustedKeyError("Повреждён документ OIDC") from None

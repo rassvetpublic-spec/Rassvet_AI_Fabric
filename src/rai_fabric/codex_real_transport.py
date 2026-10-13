@@ -18,6 +18,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
+from .fleet_common import unique_json_pairs
 
 _MAX_LINE = 262144
 _MAX_MESSAGES = 128
@@ -33,12 +34,7 @@ class SafeProtocolError(Exception):
 
 
 def _unique_json(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for k, v in pairs:
-        if k in out:
-            raise SafeProtocolError("DUPLICATE_JSON_KEY")
-        out[k] = v
-    return out
+    return unique_json_pairs(pairs, error_factory=lambda key: SafeProtocolError("DUPLICATE_JSON_KEY"))
 
 
 def _bad_json_number(value: str) -> None:

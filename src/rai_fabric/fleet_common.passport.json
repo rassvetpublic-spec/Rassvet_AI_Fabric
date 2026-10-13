@@ -2,7 +2,7 @@
   "schema": "BPR40_SIDECAR_PASSPORT/1.1",
   "module_id": "fleet_common",
   "name": "Fleet Common",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
   "layer": "tools",
   "description": "control.fleet_common - Каноническая библиотека переиспользуемых утилит флота CONTROL_TOWER.",
@@ -193,6 +193,123 @@
       },
       "outputs": {
         "return_type": "NoReturn"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "first_line": {
+      "fn_id": "fleet_common.first_line",
+      "description": "Извлекает первую непустую строку из текста или строкового представления объекта.",
+      "args": [
+        "body"
+      ],
+      "inputs": {
+        "body": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "unique_json_pairs": {
+      "fn_id": "fleet_common.unique_json_pairs",
+      "description": "Хук для json.loads(object_pairs_hook=...), запрещающий дублирование ключей (RFC 7159).",
+      "args": [
+        "pairs",
+        "error_factory"
+      ],
+      "inputs": {
+        "pairs": {
+          "type": "List[Tuple[str, Any]]",
+          "required": true,
+          "default": null
+        },
+        "error_factory": {
+          "type": "Optional[Callable[[str], Exception]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "make_unique_pairs_hook": {
+      "fn_id": "fleet_common.make_unique_pairs_hook",
+      "description": "Создает object_pairs_hook для json.loads с кастомным генератором исключений.",
+      "args": [
+        "error_factory"
+      ],
+      "inputs": {
+        "error_factory": {
+          "type": "Callable[[str], Exception]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Callable[[List[Tuple[str, Any]]], Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "load_strict_json": {
+      "fn_id": "fleet_common.load_strict_json",
+      "description": "Строгий разбор JSON:",
+      "args": [
+        "raw",
+        "limit"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "Union[str, bytes]",
+          "required": true,
+          "default": null
+        },
+        "limit": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "safe_close": {
+      "fn_id": "fleet_common.safe_close",
+      "description": "Безопасное закрытие ресурсов без проброса исключений.",
+      "args": [
+        "resource"
+      ],
+      "inputs": {
+        "resource": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
       },
       "invariants": [
         "FAIL_CLOSED",
