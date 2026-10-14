@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "chat_id": "3589fd43-a6ce-4d5a-98b1-ee15bbdbd7d6",
-  "recorded_at": "2026-10-15T01:00:00+03:00",
+  "recorded_at": "2026-10-15T02:35:00+03:00",
   "timezone": "Europe/Moscow",
   "scope": "AVAILABLE_CHAT_CONTEXT_AND_SAVED_EVIDENCE",
-  "description": "Метрики автономной сессии флота Рассвет: Local GPU daemon (RTX 5070 Ti), DistributedWorkerPool, Windows Service, Tri-Tower Parity, Stages R25-R30, Multi-Model Pool, P2P LAN, Model Replicator.",
+  "description": "Метрики автономной сессии флота Рассвет: Local GPU daemon (RTX 5070 Ti), DistributedWorkerPool, Windows Service, Tri-Tower Parity, Stages R25-R32, Multi-Model Pool, P2P LAN, Model Replicator, NVMe KV-Cache, BFT Consensus.",
   "token_usage": {
     "status": "RECORDED_BENCHMARK_AND_INFERENCE",
     "gpu_benchmark_tokens_per_sec": 1264.37,
@@ -17,22 +17,25 @@
     "gpu_model": "NVIDIA GeForce RTX 5070 Ti",
     "vram_total_mb": 16376,
     "vram_allocated_pool_mb": 14000,
+    "nvme_kv_cache_block_size": 4096,
     "gpu_temperature_celsius": 50,
     "power_draw_watts": 27.5,
     "service_memory_mb": 8.2,
     "status": "OPERATIONAL"
   },
   "delivery": {
-    "proposals_total": 26,
-    "proposals_completed": 26,
+    "proposals_total": 29,
+    "proposals_completed": 29,
     "proposals_completion_pct": 100.0,
-    "stages_covered": ["R25", "R26", "R27", "R28", "R29", "R30"],
+    "stages_covered": ["R25", "R26", "R27", "R28", "R29", "R30", "R31", "R32"],
     "specifications_added": [
       "docs/STAGE_R26_AUTONOMOUS_SCHEDULER.md",
       "docs/STAGE_R27_DISTRIBUTED_NODE_DISCOVERY.md",
       "docs/STAGE_R28_P2P_MERKLE_EXCHANGE.md",
       "docs/STAGE_R29_CROSS_HOST_P2P.md",
-      "docs/STAGE_R30_LOCAL_MODEL_REPLICATION.md"
+      "docs/STAGE_R30_LOCAL_MODEL_REPLICATION.md",
+      "docs/STAGE_R31_HARDWARE_KV_CACHE.md",
+      "docs/STAGE_R32_BFT_CONSENSUS.md"
     ],
     "modules_created_or_updated": [
       "src/rai_fabric/local_gpu_transport.py",
@@ -44,6 +47,8 @@
       "src/rai_fabric/p2p_merkle.py",
       "src/rai_fabric/p2p_lan_sync.py",
       "src/rai_fabric/model_replicator.py",
+      "src/rai_fabric/nvme_kv_cache.py",
+      "src/rai_fabric/bft_consensus.py",
       "src/raif_ag_supervisor/cli_switch.py",
       "scripts/local-gpu-daemon.py"
     ]
@@ -51,10 +56,10 @@
   "validation": {
     "classification": "UNIT_AND_STRESS_TEST_EXECUTION",
     "test_suite": {
-      "passed": 54,
-      "total": 54,
+      "passed": 65,
+      "total": 65,
       "failed": 0,
-      "elapsed_seconds": 13.74
+      "elapsed_seconds": 14.02
     },
     "sidecar_contract_suite": {
       "passed": 4,
@@ -72,6 +77,7 @@
     "tri_tower_merkle_parity": {
       "checkpoints_verified": 145,
       "merkle_root": "a3f3f20596f2f81b45cad6547c660b5123403c1927a647fa2828653939ade39f",
+      "bft_quorum": "3_OF_4_VALIDATORS",
       "status": "PASS"
     },
     "gates": {
