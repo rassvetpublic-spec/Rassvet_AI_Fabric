@@ -263,7 +263,8 @@ class TestFailoverRouter(unittest.TestCase):
     def test_metrics_snapshot(self):
         primary = DummyMockChannel("gemini_primary", should_fail=False)
         haiku = DummyMockChannel("claude_haiku", should_fail=False)
-        router = FailoverRouter(primary_channel=primary, haiku_channel=haiku)
+        local_gpu = DummyMockChannel("local_gpu_daemon", should_fail=False)
+        router = FailoverRouter(primary_channel=primary, haiku_channel=haiku, local_gpu_channel=local_gpu)
         router.connect()
 
         metrics = router.get_metrics()
@@ -271,6 +272,48 @@ class TestFailoverRouter(unittest.TestCase):
         self.assertFalse(metrics["fallback_active"])
         self.assertEqual(metrics["current_tier"], "primary")
         self.assertEqual(metrics["primary_status"], "CONNECTED")
+        self.assertEqual(metrics["local_gpu_status"], "CONNECTED")
+
+    def test_cascade_to_local_gpu_when_cloud_exhausted(self):
+        primary = DummyMockChannel("gemini_primary", should_fail=True, fail_code="RATE_LIMITED")
+        haiku = DummyMockChannel("claude_haiku", should_fail=True, fail_code="SERVICE_UNAVAILABLE")
+        sonnet = DummyMockChannel("claude_sonnet", should_fail=True, fail_code="RATE_LIMITED")
+        local_gpu = DummyMockChannel("local_gpu_daemon", should_fail=False)
+
+        router = FailoverRouter(
+            primary_channel=primary,
+            haiku_channel=haiku,
+            sonnet_channel=sonnet,
+            local_gpu_channel=local_gpu,
+        )
+        router.connect()
+
+        env = TransportMessageEnvelope.create(payload_type="command", payload={"query": "test_gpu_fallback"})
+        self.assertTrue(router.send(env))
+        self.assertTrue(router.fallback_active)
+        self.assertEqual(router.current_tier, "local_gpu")
+        self.assertEqual(len(local_gpu.history), 1)
+
+        resp = router.receive(timeout=0.1)
+        self.assertIsNotNone(resp)
+        self.assertEqual(resp.source, "local_gpu_daemon")
+
+    def test_cascade_to_local_gpu_without_sonnet(self):
+        primary = DummyMockChannel("gemini_primary", should_fail=True, fail_code="RATE_LIMITED")
+        haiku = DummyMockChannel("claude_haiku", should_fail=True, fail_code="RATE_LIMITED")
+        local_gpu = DummyMockChannel("local_gpu_daemon", should_fail=False)
+
+        router = FailoverRouter(
+            primary_channel=primary,
+            haiku_channel=haiku,
+            local_gpu_channel=local_gpu,
+        )
+        router.connect()
+
+        env = TransportMessageEnvelope.create(payload_type="command", payload={"query": "direct_to_gpu"})
+        self.assertTrue(router.send(env))
+        self.assertEqual(router.current_tier, "local_gpu")
+        self.assertEqual(len(local_gpu.history), 1)
 
 
 if __name__ == "__main__":

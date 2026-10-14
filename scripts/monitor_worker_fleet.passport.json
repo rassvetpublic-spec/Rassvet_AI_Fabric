@@ -1,0 +1,122 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "monitor_worker_fleet",
+  "name": "Monitor Worker Fleet",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "scripts.monitor_worker_fleet - Мониторинг фонового диспетчера задач WorkerFleet в SQLite (Stage R0.5 / Issue #17).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "get_fleet_live_status": {
+      "fn_id": "monitor_worker_fleet.get_fleet_live_status",
+      "description": "Сбор живой телеметрии фонового диспетчера и очереди задач из SQLite.",
+      "args": [
+        "db_path"
+      ],
+      "inputs": {
+        "db_path": {
+          "type": "Path",
+          "required": true
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "submit_synthetic_batch": {
+      "fn_id": "monitor_worker_fleet.submit_synthetic_batch",
+      "description": "Подача пакета синтетических задач в очередь FabricStore.",
+      "args": [
+        "db_path",
+        "count",
+        "workspace"
+      ],
+      "inputs": {
+        "db_path": {
+          "type": "Path",
+          "required": true
+        },
+        "count": {
+          "type": "int",
+          "required": false,
+          "default": "3"
+        },
+        "workspace": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "List[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "watch_queue_processing": {
+      "fn_id": "monitor_worker_fleet.watch_queue_processing",
+      "description": "Мониторинг обработки очереди задач фоновым диспетчером в реальном времени.",
+      "args": [
+        "db_path",
+        "expected_task_ids",
+        "timeout",
+        "poll_interval"
+      ],
+      "inputs": {
+        "db_path": {
+          "type": "Path",
+          "required": true
+        },
+        "expected_task_ids": {
+          "type": "Optional[List[str]]",
+          "required": false,
+          "default": "None"
+        },
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "15.0"
+        },
+        "poll_interval": {
+          "type": "float",
+          "required": false,
+          "default": "0.3"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "monitor_worker_fleet.main",
+      "description": "Точка входа командной строки",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
