@@ -32,7 +32,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 
 from rai_fabric.distributed_pool import DistributedWorkerPool
 from rai_fabric.fleet_common import write_cli_json_result
-from rai_fabric.local_gpu_transport import LocalGpuTransport
+from rai_fabric.local_gpu_transport import LocalGpuTransport, query_gpu_telemetry
 
 logger = logging.getLogger("raif.stress_distributed_pool")
 
@@ -44,7 +44,7 @@ def run_stress_test(
     prompt_prefix: str = "def solve_batch_item",
 ) -> Dict[str, Any]:
     """Выполнение сквозного стресс-теста пула воркеров."""
-    transport = LocalGpuTransport(host="127.0.0.1", port=11434)
+    transport = LocalGpuTransport(endpoint_url="http://127.0.0.1:11434")
     pool = DistributedWorkerPool(gpu_transport=transport)
 
     # Регистрация воркеров
@@ -76,7 +76,7 @@ def run_stress_test(
     avg_latency_ms = round(sum(r.get("duration_ms", 0.0) for r in successful) / len(successful), 2) if successful else 0.0
     tokens_per_sec = round((total_tokens / (total_duration_ms / 1000.0)), 2) if total_duration_ms > 0 else 0.0
 
-    gpu_telemetry = transport.query_gpu_telemetry()
+    gpu_telemetry = query_gpu_telemetry()
     pool_status = pool.get_pool_status()
 
     report = {
