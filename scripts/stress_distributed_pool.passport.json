@@ -1,0 +1,18 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "stress_distributed_pool",
+  "name": "Stress Distributed Pool",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "scripts",
+  "description": "Сквозной стресс-тест пула воркеров DistributedWorkerPool с реальным GPU-инференсом (Stage R0.6)",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "FAIL_CLOSED",
+    "WINDOWS_ONLY",
+    "SHARED_BOUNDED_PYTHON_RESOLVER",
+    "NO_REAL_PROVIDER_CALLS"
+  ]
+}

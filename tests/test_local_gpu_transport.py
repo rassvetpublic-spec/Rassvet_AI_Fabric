@@ -122,7 +122,39 @@ class TestLocalGpuTransport(unittest.TestCase):
         self.assertIn("initial_telemetry", res)
         self.assertIn("final_telemetry", res)
 
+    def test_calibrate_vram_profile(self):
+        import importlib.util
+        from pathlib import Path
+        daemon_path = Path(__file__).resolve().parent.parent / "scripts" / "local-gpu-daemon.py"
+        spec = importlib.util.spec_from_file_location("local_gpu_daemon", daemon_path)
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        cal = mod.calibrate_vram_profile()
+        self.assertIsInstance(cal, dict)
+        self.assertIn("profile", cal)
+        self.assertIn("recommended_quantization", cal)
+        self.assertIn("context_limit", cal)
+        self.assertIn("vram_free_mb", cal)
+        self.assertIn(cal["recommended_quantization"], ("Q5_K_M", "Q4_K_M", "Q4_0"))
+
+    def test_daemon_synthesis_and_cascade_prompt(self):
+        import importlib.util
+        from pathlib import Path
+        daemon_path = Path(__file__).resolve().parent.parent / "scripts" / "local-gpu-daemon.py"
+        spec = importlib.util.spec_from_file_location("local_gpu_daemon", daemon_path)
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        res = mod.synthesize_code_response(prompt="Показать каскад отказоустойчивости 4 ярусов")
+        self.assertIn("Tier 4", res["response"])
+        self.assertIn("eval_count", res)
+        self.assertTrue(res["done"])
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

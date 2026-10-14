@@ -41,6 +41,19 @@
         "DETERMINISTIC"
       ]
     },
+    "calibrate_vram_profile": {
+      "fn_id": "local-gpu-daemon.calibrate_vram_profile",
+      "description": "Автоматическая калибровка квантования и профилирования VRAM (Stage R0.3 / Class C-Z).",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "synthesize_code_response": {
       "fn_id": "local-gpu-daemon.synthesize_code_response",
       "description": "Генерация программного ответа с аппаратной токенизацией и замером времени.",
