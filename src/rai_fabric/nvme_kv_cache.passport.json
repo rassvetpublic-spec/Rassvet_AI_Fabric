@@ -1,0 +1,132 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "nvme_kv_cache",
+  "name": "Nvme_KV_Cache",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "rai_fabric.nvme_kv_cache - Аппаратный KV-кэш префиксов на NVMe с защитой от износа SSD (Stage R31).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "ZERO_SSD_WEAR"
+  ],
+  "functions": {
+    "NvmeKVCacheManager.compute_key": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.compute_key",
+      "description": "Детерминированный ключ записи sha256(model_id + '::' + prompt_prefix).",
+      "args": [
+        "model_id",
+        "prompt_prefix"
+      ],
+      "inputs": {
+        "model_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "prompt_prefix": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvmeKVCacheManager.put": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.put",
+      "description": "Сохранение полезной нагрузки префикса в блочный кэш.",
+      "args": [
+        "model_id",
+        "prompt_prefix",
+        "payload"
+      ],
+      "inputs": {
+        "model_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "prompt_prefix": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "payload": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "ZERO_SSD_WEAR"
+      ]
+    },
+    "NvmeKVCacheManager.get": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.get",
+      "description": "Извлечение префикса из кэша с проверкой CRC32 (Fail-closed).",
+      "args": [
+        "model_id",
+        "prompt_prefix"
+      ],
+      "inputs": {
+        "model_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "prompt_prefix": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "ZERO_SSD_WEAR"
+      ]
+    },
+    "NvmeKVCacheManager.get_metrics": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.get_metrics",
+      "description": "Телеметрия работы аппаратного кэша.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvmeKVCacheManager.clear": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.clear",
+      "description": "Полная очистка кэша.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
+    }
+  }
+}

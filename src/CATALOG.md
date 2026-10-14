@@ -28,6 +28,7 @@
 | `rai_fabric/mcp_server.py` | Python | MCP-сервер по stdio: только чтение, согласование протокола 2025-11-25. |
 | `rai_fabric/model_replicator.py` | Python | rai_fabric.model_replicator - Распределённая P2P-репликация тяжёлых моделей нейросетей по LAN (Stage R30 / R1.0). |
 | `rai_fabric/node_discovery.py` | Python | rai_fabric.node_discovery - Децентрализованный реестр и сетевой шлюз Discovery узлов флота (Stage R27 / R0.7). |
+| `rai_fabric/nvme_kv_cache.py` | Python | rai_fabric.nvme_kv_cache - Аппаратный KV-кэш префиксов на NVMe с защитой от износа SSD (Stage R31). |
 | `rai_fabric/oauth_exchange.py` | Python | Офлайн-контракт OAuth code exchange и refresh для подписного ChatGPT. |
 | `rai_fabric/oauth_identity.py` | Python | Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов. |
 | `rai_fabric/oauth_readiness.py` | Python | Подготовка авторизации ChatGPT по подписке без сети и доступа к секретам. |
