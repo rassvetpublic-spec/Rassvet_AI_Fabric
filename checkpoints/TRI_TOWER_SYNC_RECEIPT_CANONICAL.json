@@ -1,7 +1,7 @@
 {
   "protocol": "BPR5_NEXTGEN_R3.3",
   "stage": "RAIF_R0_4_TRI_TOWER_PARITY",
-  "timestamp": 1791994614.9724114,
+  "timestamp": 1791996188.990484,
   "merkle_root": "a3f3f20596f2f81b45cad6547c660b5123403c1927a647fa2828653939ade39f",
   "checkpoints_count": 145,
   "towers": {

@@ -1,0 +1,172 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "local-gpu-daemon",
+  "name": "Local-Gpu-Daemon",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "scripts.local-gpu-daemon - Легковесный фоновый HTTP-сервер локального GPU-инференса (Stage R0.3).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "detect_gpu_hardware": {
+      "fn_id": "local-gpu-daemon.detect_gpu_hardware",
+      "description": "Аппаратный опрос характеристик локального GPU через nvidia-smi.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "get_live_gpu_telemetry": {
+      "fn_id": "local-gpu-daemon.get_live_gpu_telemetry",
+      "description": "Замер мгновенной аппаратной телеметрии GPU (температура, VRAM, энергопотребление).",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "synthesize_code_response": {
+      "fn_id": "local-gpu-daemon.synthesize_code_response",
+      "description": "Генерация программного ответа с аппаратной токенизацией и замером времени.",
+      "args": [
+        "prompt",
+        "model"
+      ],
+      "inputs": {
+        "prompt": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "model": {
+          "type": "str",
+          "required": false,
+          "default": "DEFAULT_MODEL"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuHttpHandler.do_GET": {
+      "fn_id": "local-gpu-daemon.LocalGpuHttpHandler.do_GET",
+      "description": "Функция LocalGpuHttpHandler.do_GET",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuHttpHandler.do_POST": {
+      "fn_id": "local-gpu-daemon.LocalGpuHttpHandler.do_POST",
+      "description": "Функция LocalGpuHttpHandler.do_POST",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuHttpHandler.log_message": {
+      "fn_id": "local-gpu-daemon.LocalGpuHttpHandler.log_message",
+      "description": "Функция LocalGpuHttpHandler.log_message",
+      "args": [
+        "format",
+        "*args"
+      ],
+      "inputs": {
+        "format": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "args": {
+          "type": "Any",
+          "required": false,
+          "default": null,
+          "kind": "VAR_POSITIONAL"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "run_local_gpu_server": {
+      "fn_id": "local-gpu-daemon.run_local_gpu_server",
+      "description": "Запуск легковесного HTTP-сервера инференса на указанном хосте и порту.",
+      "args": [
+        "host",
+        "port",
+        "model_name"
+      ],
+      "inputs": {
+        "host": {
+          "type": "str",
+          "required": false,
+          "default": "DEFAULT_HOST"
+        },
+        "port": {
+          "type": "int",
+          "required": false,
+          "default": "DEFAULT_PORT"
+        },
+        "model_name": {
+          "type": "str",
+          "required": false,
+          "default": "DEFAULT_MODEL"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "local-gpu-daemon.main",
+      "description": "Точка входа командной строки для запуска локального GPU-демона.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
