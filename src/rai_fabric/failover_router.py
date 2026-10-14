@@ -38,15 +38,17 @@ class FailoverRouter(ITransportChannel):
         primary_channel: ITransportChannel,
         haiku_channel: ITransportChannel,
         sonnet_channel: Optional[ITransportChannel] = None,
+        local_gpu_channel: Optional[ITransportChannel] = None,
         retry_budget: int = 2,
     ) -> None:
         self.primary_channel = primary_channel
         self.haiku_channel = haiku_channel
         self.sonnet_channel = sonnet_channel
+        self.local_gpu_channel = local_gpu_channel
         self.retry_budget = max(1, retry_budget)
 
         self._fallback_active: bool = False
-        self._current_fallback_tier: str = "none"  # "none", "haiku", "sonnet"
+        self._current_fallback_tier: str = "none"  # "none", "haiku", "sonnet", "local_gpu"
         self._fallback_start_ts: float = 0.0
         self._fallback_duration_seconds: float = 0.0
         self._model_switches_total: int = 0
@@ -82,7 +84,8 @@ class FailoverRouter(ITransportChannel):
         p_ok = self.primary_channel.connect()
         h_ok = self.haiku_channel.connect()
         s_ok = self.sonnet_channel.connect() if self.sonnet_channel else True
-        return p_ok and h_ok and s_ok
+        g_ok = self.local_gpu_channel.connect() if self.local_gpu_channel else True
+        return p_ok and h_ok and s_ok and g_ok
 
     def disconnect(self) -> None:
         """Отключение всех каналов роутера."""
@@ -90,6 +93,8 @@ class FailoverRouter(ITransportChannel):
         self.haiku_channel.disconnect()
         if self.sonnet_channel:
             self.sonnet_channel.disconnect()
+        if self.local_gpu_channel:
+            self.local_gpu_channel.disconnect()
 
     def is_connected(self) -> bool:
         """Проверка активности хотя бы одного рабочего канала."""
@@ -99,6 +104,8 @@ class FailoverRouter(ITransportChannel):
             return self.haiku_channel.is_connected()
         if self._current_fallback_tier == "sonnet" and self.sonnet_channel:
             return self.sonnet_channel.is_connected()
+        if self._current_fallback_tier == "local_gpu" and self.local_gpu_channel:
+            return self.local_gpu_channel.is_connected()
         return False
 
     def probe_primary(self, timeout: float = 3.0) -> bool:
@@ -159,8 +166,10 @@ class FailoverRouter(ITransportChannel):
                 logger.warning("Haiku fallback channel error (%s): %s", err.code, err)
                 if self.sonnet_channel is not None:
                     self._activate_fallback("sonnet")
+                elif self.local_gpu_channel is not None:
+                    self._activate_fallback("local_gpu")
                 else:
-                    raise TransportError("FAILOVER_EXHAUSTED", f"Haiku failed and no Sonnet tier configured: {err}")
+                    raise TransportError("FAILOVER_EXHAUSTED", f"Haiku failed and no subsequent tier configured: {err}")
 
         # 3. Попытка отправки через Fallback Tier 2: Claude Sonnet
         if self._fallback_active and self._current_fallback_tier == "sonnet" and self.sonnet_channel:
@@ -171,7 +180,21 @@ class FailoverRouter(ITransportChannel):
                     return True
             except TransportError as err:
                 logger.error("Sonnet fallback channel error (%s): %s", err.code, err)
-                raise TransportError("FAILOVER_EXHAUSTED", f"All fallback tiers exhausted: {err}")
+                if self.local_gpu_channel is not None:
+                    self._activate_fallback("local_gpu")
+                else:
+                    raise TransportError("FAILOVER_EXHAUSTED", f"All cloud fallback tiers exhausted: {err}")
+
+        # 4. Попытка отправки через Fallback Tier 3: Local GPU Daemon (127.0.0.1:11434)
+        if self._fallback_active and self._current_fallback_tier == "local_gpu" and self.local_gpu_channel:
+            try:
+                success = self.local_gpu_channel.send(envelope)
+                if success:
+                    self._drain_channel_response(self.local_gpu_channel)
+                    return True
+            except TransportError as err:
+                logger.error("Local GPU fallback channel error (%s): %s", err.code, err)
+                raise TransportError("FAILOVER_EXHAUSTED", f"All fallback tiers (including Local GPU) exhausted: {err}")
 
         raise TransportError("FAILOVER_EXHAUSTED", "All primary and fallback model channels failed")
 
@@ -181,7 +204,7 @@ class FailoverRouter(ITransportChannel):
         self._current_fallback_tier = tier
         self._fallback_start_ts = time.time()
         self._model_switches_total += 1
-        logger.info("Activated Claude failover tier: %s", tier)
+        logger.info("Activated failover tier: %s", tier)
 
     def _drain_channel_response(self, channel: ITransportChannel, max_items: int = 10) -> None:
         """Считывание ответов из подлежащего канала во внутреннюю очередь (с ограничением max_items)."""
@@ -204,7 +227,9 @@ class FailoverRouter(ITransportChannel):
 
         # Если пусто, опрашиваем активный канал
         active_channel = self.primary_channel if not self._fallback_active else (
-            self.haiku_channel if self._current_fallback_tier == "haiku" else self.sonnet_channel
+            self.haiku_channel if self._current_fallback_tier == "haiku" else (
+                self.sonnet_channel if self._current_fallback_tier == "sonnet" else self.local_gpu_channel
+            )
         )
         if active_channel:
             return active_channel.receive(timeout=timeout)
@@ -225,4 +250,5 @@ class FailoverRouter(ITransportChannel):
             "primary_status": self.primary_channel.status.value,
             "haiku_status": self.haiku_channel.status.value,
             "sonnet_status": self.sonnet_channel.status.value if self.sonnet_channel else "NONE",
+            "local_gpu_status": self.local_gpu_channel.status.value if self.local_gpu_channel else "NONE",
         }

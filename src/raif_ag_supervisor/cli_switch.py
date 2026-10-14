@@ -74,15 +74,45 @@ def get_transport_hub_quotas_data(adapter: StandaloneSessionAdapter, switcher: H
         except Exception:
             continue
 
+    # Динамический расчет рекомендации ротации и проверка аварийного исчерпания пула
+    failover_threshold = 10.0
+    healthy_accounts = [
+        a for a in accounts
+        if not a.get("is_active") and a.get("gemini_5h", 0) >= failover_threshold and a.get("gemini_weekly", 0) >= 5.0
+    ]
+    all_exhausted = (
+        len(accounts) > 0
+        and not healthy_accounts
+        and (not active_account or active_account.get("gemini_5h", 0) < failover_threshold)
+    )
+
+    active_target = adapter.target_name
+    if all_exhausted:
+        recommendation = "🚨 АВАРИЙНЫЙ РЕЖИМ: Все 9 аккаунтов пула исчерпаны (<10%). Активирован резервный Local GPU Daemon (127.0.0.1:11434, qwen2.5-coder:7b)"
+        active_target = "local_gpu:127.0.0.1:11434"
+    elif healthy_accounts:
+        best_ids = [
+            str(a["id"])
+            for a in sorted(
+                healthy_accounts,
+                key=lambda x: (x.get("gemini_5h", 0), x.get("gemini_weekly", 0)),
+                reverse=True,
+            )[:2]
+        ]
+        recommendation = f"Рекомендация: переключение на аккаунт [{'/'.join(best_ids)}] (баланс > 80% / 100%)"
+    else:
+        recommendation = "Активный аккаунт в норме, резервные профили готовы"
+
     return {
         "status": "OK",
         "active_pid": pid,
-        "active_target": adapter.target_name,
+        "active_target": active_target,
         "active_account": active_account,
         "auto_failover_enabled": True,
-        "failover_threshold_percent": 10.0,
+        "failover_threshold_percent": failover_threshold,
+        "all_cloud_exhausted": all_exhausted,
         "accounts": accounts,
-        "recommendation": "Рекомендация: переключение на аккаунт [2] или [4] (баланс > 80% / 100%)",
+        "recommendation": recommendation,
         "timestamp": time.time(),
     }
 
