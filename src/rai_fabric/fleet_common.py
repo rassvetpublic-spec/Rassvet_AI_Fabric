@@ -15,7 +15,7 @@ control.fleet_common - Каноническая библиотека переи�
 
 from __future__ import annotations
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 import os
 import sys
@@ -25,7 +25,7 @@ import hashlib
 import datetime
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, NoReturn, Union, List, Callable
+from typing import Any, Dict, Optional, Tuple, NoReturn, Union, List, Callable, Set
 
 
 def canonical_json(value: Any) -> str:
@@ -308,4 +308,86 @@ def ensure_dir(path: Union[str, Path]) -> Path:
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+DEFAULT_EXCLUDE_DIRS: Set[str] = {
+    ".git", ".pytest_cache", ".ruff_cache", "__pycache__",
+    "venv", ".venv", "env", ".env", "node_modules", "archive", "build", "dist"
+}
+
+
+def is_file_eligible(
+    p: Union[str, Path],
+    include_tests: bool = False,
+    exclude_dirs: Optional[Set[str]] = None,
+) -> bool:
+    """Проверяет пригодность файла для AST-анализа и валидации паспортов."""
+    path = Path(p)
+    if not path.is_file() or path.suffix != ".py":
+        return False
+    if path.name.startswith("__init__"):
+        return False
+    if not include_tests and (path.name.startswith("test_") or path.name.endswith("_test.py")):
+        return False
+    excludes = set(exclude_dirs) if exclude_dirs else set(DEFAULT_EXCLUDE_DIRS)
+    if not include_tests:
+        excludes = excludes | {"tests", "test", "specimens"}
+    for part in path.parts:
+        if part in excludes:
+            return False
+    return True
+
+
+def collect_dir_files(
+    directory: Union[str, Path],
+    include_tests: bool = False,
+    exclude_dirs: Optional[Set[str]] = None,
+) -> List[Path]:
+    """Рекурсивно собирает все подходящие .py файлы в каталоге."""
+    d = Path(directory)
+    if not d.exists() or not d.is_dir():
+        return []
+    return [
+        p for p in sorted(d.rglob("*.py"))
+        if is_file_eligible(p, include_tests=include_tests, exclude_dirs=exclude_dirs)
+    ]
+
+
+def compute_module_metrics(py_path: Union[str, Path]) -> Dict[str, Any]:
+    """Вычисляет криптографические и структурные метрики модуля: SHA-256 (LF), bytes, LOC, классы, функции."""
+    p = Path(py_path)
+    if not p.exists() or not p.is_file():
+        return {}
+    raw_text = p.read_text(encoding="utf-8", errors="replace")
+    normalized_bytes = raw_text.replace("\r\n", "\n").encode("utf-8")
+    code_sha256 = hashlib.sha256(normalized_bytes).hexdigest()
+    loc = len(raw_text.splitlines())
+    file_bytes = p.stat().st_size
+
+    classes_count = 0
+    functions_count = 0
+    try:
+        tree = ast.parse(raw_text, filename=str(p))
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
+                classes_count += 1
+                for m in node.body:
+                    if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and not m.name.startswith("_"):
+                        functions_count += 1
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and not node.name.startswith("__"):
+                functions_count += 1
+    except Exception:
+        pass
+
+    return {
+        "code_sha256": code_sha256,
+        "bytes": file_bytes,
+        "loc": loc,
+        "classes_count": classes_count,
+        "functions_count": functions_count,
+        "slo_target_ms": 50.0,
+        "telemetry_binding": "ako_index.db::mcp_invocations,mcp_tool_stats,self_learning_signals,inbox_records",
+        "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+
 
