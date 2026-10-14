@@ -195,6 +195,26 @@
         "FAIL_CLOSED",
         "DETERMINISTIC"
       ]
+    },
+    "NodeDiscoveryRegistry.discover_local_gpu_node": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.discover_local_gpu_node",
+      "description": "Опрос локального HTTP-демона инференса и автоматическая регистрация COMPUTE_NODE.",
+      "args": [
+        "endpoint"
+      ],
+      "inputs": {
+        "endpoint": {
+          "type": "str",
+          "required": false,
+          "default": "'http://127.0.0.1:11434'"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
     }
   }
 }

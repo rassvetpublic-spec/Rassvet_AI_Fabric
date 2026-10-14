@@ -30,6 +30,7 @@
 | `rai_fabric/oauth_exchange.py` | Python | Офлайн-контракт OAuth code exchange и refresh для подписного ChatGPT. |
 | `rai_fabric/oauth_identity.py` | Python | Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов. |
 | `rai_fabric/oauth_readiness.py` | Python | Подготовка авторизации ChatGPT по подписке без сети и доступа к секретам. |
+| `rai_fabric/p2p_merkle.py` | Python | rai_fabric.p2p_merkle - Одноранговый (Peer-to-Peer) протокол сверки и обмена Merkle-квитанциями (Stage R28 / R0.8). |
 | `rai_fabric/parity_cron.py` | Python | rai_fabric.parity_cron - Автоматический фоновый планировщик аудита паритета Трёх Башен (Stage R26 / R0.4). |
 | `rai_fabric/scheduler.py` | Python | rai_fabric.scheduler - Автономный диспетчер очередей задач (Stage R26 / Issue #17). |
 | `rai_fabric/service_runner.py` | Python | rai_fabric.service_runner - Диспетчер автономной фоновой службы Windows для WorkerFleetScheduler (Stage R0.5). |

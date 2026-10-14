@@ -1,0 +1,154 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "p2p_merkle",
+  "name": "P2P Merkle Exchange",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.p2p_merkle - Одноранговый (Peer-to-Peer) протокол сверки и обмена Merkle-квитанциями (Stage R28 / R0.8).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "hash_pair": {
+      "fn_id": "p2p_merkle.hash_pair",
+      "description": "Детерминированное вычисление SHA-256 хеша пары узлов.",
+      "args": [
+        "left",
+        "right"
+      ],
+      "inputs": {
+        "left": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "right": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "P2PMerkleExchange.create_sync_offer": {
+      "fn_id": "p2p_merkle.P2PMerkleExchange.create_sync_offer",
+      "description": "Формирование P2PMerkleOffer на основе текущего состояния контрольных точек.",
+      "args": [
+        "node_id"
+      ],
+      "inputs": {
+        "node_id": {
+          "type": "str",
+          "required": false,
+          "default": "'local-node'"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "P2PMerkleExchange.compare_offers": {
+      "fn_id": "p2p_merkle.P2PMerkleExchange.compare_offers",
+      "description": "Сравнение локального и удалённого оффера с выявлением дельты.",
+      "args": [
+        "local_offer",
+        "remote_offer"
+      ],
+      "inputs": {
+        "local_offer": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "remote_offer": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "P2PMerkleExchange.generate_merkle_proof": {
+      "fn_id": "p2p_merkle.P2PMerkleExchange.generate_merkle_proof",
+      "description": "Генерация криптографического пути доказательства (Merkle Proof) для чекпойнта.",
+      "args": [
+        "checkpoint_name",
+        "items"
+      ],
+      "inputs": {
+        "checkpoint_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "items": {
+          "type": "Dict[str, str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "P2PMerkleExchange.verify_merkle_proof": {
+      "fn_id": "p2p_merkle.P2PMerkleExchange.verify_merkle_proof",
+      "description": "Детерминированная валидация пути Merkle Proof против ожидаемого корня.",
+      "args": [
+        "file_hash",
+        "proof_path",
+        "expected_root"
+      ],
+      "inputs": {
+        "file_hash": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "proof_path": {
+          "type": "List[Dict[str, str]]",
+          "required": true,
+          "default": null
+        },
+        "expected_root": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

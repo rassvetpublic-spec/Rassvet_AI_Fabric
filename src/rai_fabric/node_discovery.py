@@ -162,3 +162,27 @@ class NodeDiscoveryRegistry:
             "nodes": nodes_copy,
             "timestamp": now,
         }
+
+    def discover_local_gpu_node(self, endpoint: str = "http://127.0.0.1:11434") -> Optional[Dict[str, Any]]:
+        """Опрос локального HTTP-демона инференса и автоматическая регистрация COMPUTE_NODE."""
+        import urllib.request
+        clean_ep = endpoint.rstrip("/")
+        try:
+            req = urllib.request.Request(f"{clean_ep}/api/node/discovery", headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                if resp.status == 200:
+                    import json
+                    data = json.loads(resp.read().decode("utf-8"))
+                    node_id = data.get("node_id", "node-gpu-rtx5070ti-01")
+                    self.register_node(
+                        node_id=node_id,
+                        role="COMPUTE_NODE",
+                        endpoint=clean_ep,
+                        capabilities=data.get("capabilities", ["inference", "code-eval"]),
+                        resources=data.get("resources", {}),
+                    )
+                    return self.get_node(node_id)
+        except Exception:
+            pass
+        return None
+

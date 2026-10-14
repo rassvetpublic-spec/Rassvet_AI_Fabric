@@ -853,6 +853,34 @@ class LocalGpuHttpHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
 
+        if self.path in ("/api/node/discovery", "/api/node/discovery/"):
+            gpu = detect_gpu_hardware()
+            tel = get_live_gpu_telemetry()
+            node_data = {
+                "node_id": "node-gpu-rtx5070ti-01",
+                "role": "COMPUTE_NODE",
+                "endpoint": f"http://{DEFAULT_HOST}:{DEFAULT_PORT}",
+                "capabilities": ["inference", "code-eval", "streaming", "ollama-compat"],
+                "resources": {
+                    "gpu_model": gpu.get("name", "NVIDIA GeForce RTX 5070 Ti"),
+                    "vram_total_mb": gpu.get("vram_mb", 16303),
+                    "vram_used_mb": tel.get("memory_used_mb", 1254),
+                    "temperature_c": tel.get("temperature_c", 50),
+                    "power_draw_w": tel.get("power_draw_w", 27.0),
+                },
+                "status": "ONLINE",
+                "protocol": "BPR5_NEXTGEN_R3.3",
+                "stage": "STAGE_R27_DISCOVERY",
+                "timestamp": time.time(),
+            }
+            body = json.dumps(node_data, indent=2, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
         if self.path in ("/api/tags", "/api/tags/"):
             gpu = detect_gpu_hardware()
             cal = calibrate_vram_profile()

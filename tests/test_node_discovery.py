@@ -5,6 +5,7 @@ tests/test_node_discovery.py - 100% offline-safe тесты децентрали
 
 from __future__ import annotations
 
+import json
 import time
 import pytest
 from rai_fabric.node_discovery import NodeDiscoveryRegistry
@@ -87,3 +88,28 @@ class TestNodeDiscoveryRegistry:
         assert topo["online_nodes"] == 3
         assert topo["role_distribution"]["COMPUTE_NODE"] == 2
         assert topo["role_distribution"]["STORAGE_NODE"] == 1
+
+    def test_discover_local_gpu_node_mocked(self) -> None:
+        from unittest.mock import patch, MagicMock
+        registry = NodeDiscoveryRegistry()
+
+        mock_payload = {
+            "node_id": "node-gpu-rtx5070ti-01",
+            "role": "COMPUTE_NODE",
+            "capabilities": ["inference", "code-eval"],
+            "resources": {"gpu_model": "NVIDIA GeForce RTX 5070 Ti", "vram_total_mb": 16303},
+        }
+
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.read.return_value = json.dumps(mock_payload).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            node = registry.discover_local_gpu_node("http://127.0.0.1:11434")
+
+        assert node is not None
+        assert node["node_id"] == "node-gpu-rtx5070ti-01"
+        assert node["role"] == "COMPUTE_NODE"
+        assert node["resources"]["gpu_model"] == "NVIDIA GeForce RTX 5070 Ti"
+        assert registry.get_node("node-gpu-rtx5070ti-01") is not None
