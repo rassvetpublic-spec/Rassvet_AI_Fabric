@@ -168,3 +168,32 @@ def test_http_api_multi_model_and_embeddings():
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_conversational_synthesis_and_greetings():
+    """Тест естественного диалога и кодогенерации без ложного вывода криптоконверта."""
+    synthesize_code_response = daemon_module.synthesize_code_response
+
+    # 1. Приветствие не должно возвращать криптографический конверт
+    r_hello = synthesize_code_response("привет")
+    assert "Привет" in r_hello["response"]
+    assert "RTX 5070 Ti" in r_hello["response"]
+    assert "verify_execution_envelope" not in r_hello["response"]
+
+    # 2. Идентичность
+    r_who = synthesize_code_response("кто ты")
+    assert "локальный ассистент" in r_who["response"] or "Tier 4" in r_who["response"]
+    assert "verify_execution_envelope" not in r_who["response"]
+
+    # 3. Возможности
+    r_help = synthesize_code_response("что умеешь")
+    assert "Кодогенерация" in r_help["response"] or "возможности" in r_help["response"].lower()
+
+    # 4. Кодогенерация сортировки
+    r_sort = synthesize_code_response("напиши функцию быстрой сортировки")
+    assert "quicksort" in r_sort["response"]
+
+    # 5. Общий диалог
+    r_general = synthesize_code_response("какая погода сегодня?")
+    assert "какая погода сегодня?" in r_general["response"]
+    assert "verify_execution_envelope" not in r_general["response"]
