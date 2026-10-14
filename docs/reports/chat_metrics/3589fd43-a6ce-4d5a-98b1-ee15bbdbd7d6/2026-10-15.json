@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "chat_id": "3589fd43-a6ce-4d5a-98b1-ee15bbdbd7d6",
-  "recorded_at": "2026-10-15T00:24:00+03:00",
+  "recorded_at": "2026-10-15T01:00:00+03:00",
   "timezone": "Europe/Moscow",
   "scope": "AVAILABLE_CHAT_CONTEXT_AND_SAVED_EVIDENCE",
-  "description": "Метрики автономной сессии флота Рассвет: Local GPU daemon (RTX 5070 Ti), DistributedWorkerPool, Windows Service, Tri-Tower Parity, Stages R26-R28.",
+  "description": "Метрики автономной сессии флота Рассвет: Local GPU daemon (RTX 5070 Ti), DistributedWorkerPool, Windows Service, Tri-Tower Parity, Stages R25-R30, Multi-Model Pool, P2P LAN, Model Replicator.",
   "token_usage": {
     "status": "RECORDED_BENCHMARK_AND_INFERENCE",
     "gpu_benchmark_tokens_per_sec": 1264.37,
@@ -16,20 +16,23 @@
   "resources": {
     "gpu_model": "NVIDIA GeForce RTX 5070 Ti",
     "vram_total_mb": 16376,
+    "vram_allocated_pool_mb": 14000,
     "gpu_temperature_celsius": 50,
     "power_draw_watts": 27.5,
     "service_memory_mb": 8.2,
     "status": "OPERATIONAL"
   },
   "delivery": {
-    "proposals_total": 23,
-    "proposals_completed": 23,
+    "proposals_total": 26,
+    "proposals_completed": 26,
     "proposals_completion_pct": 100.0,
-    "stages_covered": ["R25", "R26", "R27", "R28"],
+    "stages_covered": ["R25", "R26", "R27", "R28", "R29", "R30"],
     "specifications_added": [
       "docs/STAGE_R26_AUTONOMOUS_SCHEDULER.md",
       "docs/STAGE_R27_DISTRIBUTED_NODE_DISCOVERY.md",
-      "docs/STAGE_R28_P2P_MERKLE_EXCHANGE.md"
+      "docs/STAGE_R28_P2P_MERKLE_EXCHANGE.md",
+      "docs/STAGE_R29_CROSS_HOST_P2P.md",
+      "docs/STAGE_R30_LOCAL_MODEL_REPLICATION.md"
     ],
     "modules_created_or_updated": [
       "src/rai_fabric/local_gpu_transport.py",
@@ -39,16 +42,24 @@
       "src/rai_fabric/parity_cron.py",
       "src/rai_fabric/node_discovery.py",
       "src/rai_fabric/p2p_merkle.py",
-      "src/raif_ag_supervisor/cli_switch.py"
+      "src/rai_fabric/p2p_lan_sync.py",
+      "src/rai_fabric/model_replicator.py",
+      "src/raif_ag_supervisor/cli_switch.py",
+      "scripts/local-gpu-daemon.py"
     ]
   },
   "validation": {
     "classification": "UNIT_AND_STRESS_TEST_EXECUTION",
     "test_suite": {
-      "passed": 40,
-      "total": 40,
+      "passed": 54,
+      "total": 54,
       "failed": 0,
-      "elapsed_seconds": 11.78
+      "elapsed_seconds": 13.74
+    },
+    "sidecar_contract_suite": {
+      "passed": 4,
+      "total": 4,
+      "status": "PASS"
     },
     "fabricstore_queue_benchmark": {
       "total_tasks": 120,
