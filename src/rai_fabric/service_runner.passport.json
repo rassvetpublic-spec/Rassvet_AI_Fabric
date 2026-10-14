@@ -1,0 +1,79 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "service_runner",
+  "name": "Service Runner",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.service_runner - Диспетчер автономной фоновой службы Windows для WorkerFleetScheduler (Stage R0.5).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "WorkerFleetServiceRunner.is_running": {
+      "fn_id": "service_runner.WorkerFleetServiceRunner.is_running",
+      "description": "Функция WorkerFleetServiceRunner.is_running",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetServiceRunner.run": {
+      "fn_id": "service_runner.WorkerFleetServiceRunner.run",
+      "description": "Основной цикл исполнения службы.",
+      "args": [
+        "max_ticks"
+      ],
+      "inputs": {
+        "max_ticks": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetServiceRunner.stop": {
+      "fn_id": "service_runner.WorkerFleetServiceRunner.stop",
+      "description": "Сигнал остановки службы.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "WorkerFleetServiceRunner.get_status": {
+      "fn_id": "service_runner.WorkerFleetServiceRunner.get_status",
+      "description": "Чтение статуса службы по PID и heartbeat.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

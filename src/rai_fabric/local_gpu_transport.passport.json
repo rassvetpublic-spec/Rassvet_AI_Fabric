@@ -1,0 +1,173 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "local_gpu_transport",
+  "name": "Local Gpu Transport",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.local_gpu_transport - Адаптер локального GPU-инференса для RTX 5070 Ti / Ollama (Stage R0.3).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "detect_local_gpu": {
+      "fn_id": "local_gpu_transport.detect_local_gpu",
+      "description": "Безопасное определение характеристик локального GPU без сбоя при отсутствии оборудования.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.status": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.status",
+      "description": "Функция LocalGpuTransport.status",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "TransportStatus"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.gpu_info": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.gpu_info",
+      "description": "Функция LocalGpuTransport.gpu_info",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.sent_count": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.sent_count",
+      "description": "Функция LocalGpuTransport.sent_count",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.connect": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.connect",
+      "description": "Инициализация соединения с локальным runtime.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.disconnect": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.disconnect",
+      "description": "Закрытие канала.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.is_connected": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.is_connected",
+      "description": "Функция LocalGpuTransport.is_connected",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.probe": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.probe",
+      "description": "Проверка доступности локального HTTP API сервера (Ollama /api/tags).",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "2.0"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.send": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.send",
+      "description": "Отправка промпта на локальный GPU-инференс.",
+      "args": [
+        "envelope"
+      ],
+      "inputs": {
+        "envelope": {
+          "type": "TransportMessageEnvelope",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuTransport.receive": {
+      "fn_id": "local_gpu_transport.LocalGpuTransport.receive",
+      "description": "Функция LocalGpuTransport.receive",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

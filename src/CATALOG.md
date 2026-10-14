@@ -23,13 +23,16 @@
 | `rai_fabric/gateway.py` | Python | Локальный шлюз инструментов только для чтения, без произвольных shell-команд. |
 | `rai_fabric/host_diagnostic_10_3.py` | Python | RAiF 10.3 bounded read-only Windows checkout diagnosis. |
 | `rai_fabric/host_gate_10_1b.py` | Python | Read-only Windows host preflight for Fabric 10.1B pinned-source acceptance. |
+| `rai_fabric/local_gpu_transport.py` | Python | rai_fabric.local_gpu_transport - Адаптер локального GPU-инференса для RTX 5070 Ti / Ollama (Stage R0.3). |
 | `rai_fabric/mcp_server.py` | Python | MCP-сервер по stdio: только чтение, согласование протокола 2025-11-25. |
 | `rai_fabric/oauth_exchange.py` | Python | Офлайн-контракт OAuth code exchange и refresh для подписного ChatGPT. |
 | `rai_fabric/oauth_identity.py` | Python | Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов. |
 | `rai_fabric/oauth_readiness.py` | Python | Подготовка авторизации ChatGPT по подписке без сети и доступа к секретам. |
 | `rai_fabric/scheduler.py` | Python | rai_fabric.scheduler - Автономный диспетчер очередей задач (Stage R26 / Issue #17). |
+| `rai_fabric/service_runner.py` | Python | rai_fabric.service_runner - Диспетчер автономной фоновой службы Windows для WorkerFleetScheduler (Stage R0.5). |
 | `rai_fabric/store.py` | Python | Транзакционное состояние задач; не использует код OMX или Superpowers. |
 | `rai_fabric/transport.py` | Python | rai_fabric.transport - Мост обратной совместимости для пакета transport (Stage R25). |
+| `rai_fabric/tri_tower_sync.py` | Python | rai_fabric.tri_tower_sync - Адаптер синхронизации чекпойнтов и квитанций Трёх Башен (Stage R0.4). |
 | `rai_fabric/trusted_jwks.py` | Python | Доверенное получение ключей OpenAI по OIDC Discovery с fail-closed кешем. |
 | `rai_fabric/windows_acl.py` | Python | Windows DACL текущего пользователя и проверка reparse points для vault. |
 | `rai_fabric/windows_owned_job.py` | Python | W2-C: owned Windows Job с bounded отменой собственных synthetic children. |

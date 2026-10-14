@@ -1,0 +1,74 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "tri_tower_sync",
+  "name": "Tri Tower Sync",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.tri_tower_sync - Адаптер синхронизации чекпойнтов и квитанций Трёх Башен (Stage R0.4).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "calculate_merkle_root": {
+      "fn_id": "tri_tower_sync.calculate_merkle_root",
+      "description": "Вычисление детерминированного корня дерева Меркла от отсортированных SHA-256 хешей.",
+      "args": [
+        "file_hashes"
+      ],
+      "inputs": {
+        "file_hashes": {
+          "type": "List[str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TriTowerSyncAdapter.audit_checkpoints": {
+      "fn_id": "tri_tower_sync.TriTowerSyncAdapter.audit_checkpoints",
+      "description": "Сканирование контрольных точек и вычисление криптографического Merkle-дайджеста.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TriTowerSyncAdapter.generate_sync_receipt": {
+      "fn_id": "tri_tower_sync.TriTowerSyncAdapter.generate_sync_receipt",
+      "description": "Генерация канонической квитанции паритета Трёх Башен (Zero SSD Wear).",
+      "args": [
+        "target_dest"
+      ],
+      "inputs": {
+        "target_dest": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
