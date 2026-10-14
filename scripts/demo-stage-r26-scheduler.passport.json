@@ -1,0 +1,32 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "demo-stage-r26-scheduler",
+  "name": "Demo-Stage-R26-Scheduler",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "scripts.demo-stage-r26-scheduler - Живая демонстрация планировщика Stage R26 (Issue #17).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "run_live_demonstration": {
+      "fn_id": "demo-stage-r26-scheduler.run_live_demonstration",
+      "description": "Функция run_live_demonstration",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

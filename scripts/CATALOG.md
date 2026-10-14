@@ -7,6 +7,7 @@
 |---|---|---|
 | `Clone-RaiF-10_1-Safe-R2.ps1` | PowerShell | Безопасный клон и инспекция существующего каталога на Windows |
 | `demo-codex-mock.ps1` | PowerShell | SQLite codex-mock использует единый ограниченный Python resolver без WindowsApps alias |
+| `demo-stage-r26-scheduler.py` | Python | scripts.demo-stage-r26-scheduler - Живая демонстрация планировщика Stage R26 (Issue #17). |
 | `demo-worktree-review.ps1` | PowerShell | Локальная детерминированная валидация рабочих деревьев на Windows |
 | `demo.ps1` | PowerShell | Интеграционный smoke-тест RAiF 10.2C с надежным разрешением Python |
 | `QA-Clone-RaiF-10_1-Static-R2.ps1` | PowerShell | Статическая проверка запускатора клонирования штатным парсером PowerShell |
