@@ -2,10 +2,10 @@
   "schema": "BPR40_SIDECAR_PASSPORT/1.1",
   "module_id": "local-gpu-daemon",
   "name": "Local-Gpu-Daemon",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
   "layer": "tools",
-  "description": "scripts.local-gpu-daemon - Легковесный фоновый HTTP-сервер локального GPU-инференса (Stage R0.3).",
+  "description": "scripts.local-gpu-daemon - Легковесный фоновый HTTP-сервер локального GPU-инференса (Stage R0.3 / R29).",
   "author": "RAIF_DEVELOPER",
   "inputs": {},
   "outputs": {},
@@ -46,6 +46,33 @@
       "description": "Автоматическая калибровка квантования и профилирования VRAM (Stage R0.3 / Class C-Z).",
       "args": [],
       "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "synthesize_embedding_response": {
+      "fn_id": "local-gpu-daemon.synthesize_embedding_response",
+      "description": "Детерминированная генерация нормализованного векторного эмбеддинга (Ollama API / Embeddings).",
+      "args": [
+        "prompt",
+        "model"
+      ],
+      "inputs": {
+        "prompt": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "model": {
+          "type": "str",
+          "required": false,
+          "default": "bge-m3"
+        }
+      },
       "outputs": {
         "return_type": "Dict[str, Any]"
       },

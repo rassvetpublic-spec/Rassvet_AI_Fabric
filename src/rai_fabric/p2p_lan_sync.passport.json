@@ -1,0 +1,298 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "p2p_lan_sync",
+  "name": "P2p_Lan_Sync",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "rai_fabric.p2p_lan_sync - Протокол кросс-хостовой P2P Merkle-синхронизации и автообнаружения узлов в LAN (Stage R29 / R0.9).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "ZERO_SSD_WEAR"
+  ],
+  "functions": {
+    "LanBeacon.to_dict": {
+      "fn_id": "p2p_lan_sync.LanBeacon.to_dict",
+      "description": "Сериализация маяка в словарь.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanBeacon.to_bytes": {
+      "fn_id": "p2p_lan_sync.LanBeacon.to_bytes",
+      "description": "Кодирование маяка в JSON-байты.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanBeacon.from_dict": {
+      "fn_id": "p2p_lan_sync.LanBeacon.from_dict",
+      "description": "Десериализация маяка из словаря.",
+      "args": [
+        "data"
+      ],
+      "inputs": {
+        "data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "LanBeacon"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanBeacon.from_bytes": {
+      "fn_id": "p2p_lan_sync.LanBeacon.from_bytes",
+      "description": "Декодирование маяка из сырых байтов.",
+      "args": [
+        "raw"
+      ],
+      "inputs": {
+        "raw": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[LanBeacon]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanPeerDiscovery.register_peer": {
+      "fn_id": "p2p_lan_sync.LanPeerDiscovery.register_peer",
+      "description": "Регистрация или обновление пира по полученному маяку.",
+      "args": [
+        "beacon"
+      ],
+      "inputs": {
+        "beacon": {
+          "type": "LanBeacon",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanPeerDiscovery.register_synthetic_peer": {
+      "fn_id": "p2p_lan_sync.LanPeerDiscovery.register_synthetic_peer",
+      "description": "Регистрация синтетического пира для детерминированного тестирования без сети.",
+      "args": [
+        "peer_data"
+      ],
+      "inputs": {
+        "peer_data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanPeerDiscovery.purge_expired_peers": {
+      "fn_id": "p2p_lan_sync.LanPeerDiscovery.purge_expired_peers",
+      "description": "Удаление устаревших записей пиров, превысивших TTL.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanPeerDiscovery.get_active_peers": {
+      "fn_id": "p2p_lan_sync.LanPeerDiscovery.get_active_peers",
+      "description": "Получение списка актуальных незаэкспиренных пиров.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "List[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanPeerDiscovery.broadcast_beacon": {
+      "fn_id": "p2p_lan_sync.LanPeerDiscovery.broadcast_beacon",
+      "description": "Отправка широковещательного UDP-пакета.",
+      "args": [
+        "beacon",
+        "target_ip"
+      ],
+      "inputs": {
+        "beacon": {
+          "type": "LanBeacon",
+          "required": true,
+          "default": null
+        },
+        "target_ip": {
+          "type": "str",
+          "required": false,
+          "default": "255.255.255.255"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LanPeerDiscovery.receive_beacon_packet": {
+      "fn_id": "p2p_lan_sync.LanPeerDiscovery.receive_beacon_packet",
+      "description": "Обработка входящего пакета маяка.",
+      "args": [
+        "raw_bytes",
+        "sender_addr"
+      ],
+      "inputs": {
+        "raw_bytes": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "sender_addr": {
+          "type": "Tuple[str, int]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[LanBeacon]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CrossHostP2PSyncManager.create_local_beacon": {
+      "fn_id": "p2p_lan_sync.CrossHostP2PSyncManager.create_local_beacon",
+      "description": "Формирование актуального маяка на основе локального Merkle-состояния.",
+      "args": [
+        "host",
+        "port"
+      ],
+      "inputs": {
+        "host": {
+          "type": "str",
+          "required": false,
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "int",
+          "required": false,
+          "default": "11434"
+        }
+      },
+      "outputs": {
+        "return_type": "LanBeacon"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CrossHostP2PSyncManager.evaluate_peer_parity": {
+      "fn_id": "p2p_lan_sync.CrossHostP2PSyncManager.evaluate_peer_parity",
+      "description": "Сравнение локального оффера с оффером удалённого пира.",
+      "args": [
+        "peer_offer"
+      ],
+      "inputs": {
+        "peer_offer": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "CrossHostP2PSyncManager.reconcile_with_peer": {
+      "fn_id": "p2p_lan_sync.CrossHostP2PSyncManager.reconcile_with_peer",
+      "description": "Антиэнтропийное разрешение дельты с пиром.",
+      "args": [
+        "peer_offer",
+        "fetch_checkpoint_fn"
+      ],
+      "inputs": {
+        "peer_offer": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        },
+        "fetch_checkpoint_fn": {
+          "type": "Optional[Callable[[str], Optional[Dict[str, Any]]]]",
+          "required": false,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "ZERO_SSD_WEAR"
+      ]
+    },
+    "CrossHostP2PSyncManager.get_fleet_lan_topology": {
+      "fn_id": "p2p_lan_sync.CrossHostP2PSyncManager.get_fleet_lan_topology",
+      "description": "Сводная топология узлов флота в локальной сети с оценкой паритета.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
