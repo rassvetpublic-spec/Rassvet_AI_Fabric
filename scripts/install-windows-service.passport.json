@@ -1,0 +1,18 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "install-windows-service",
+  "name": "Install Windows Service Runner",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "scripts",
+  "description": "Развёртывание и управление фоновой службой диспетчера задач Rassvet AI Fabric (Stage R0.5)",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "FAIL_CLOSED",
+    "WINDOWS_ONLY",
+    "SHARED_BOUNDED_PYTHON_RESOLVER",
+    "NO_REAL_PROVIDER_CALLS"
+  ]
+}

@@ -90,6 +90,39 @@ class TestLocalGpuTransport(unittest.TestCase):
         self.assertFalse(res)
         self.assertEqual(transport.status, TransportStatus.DEGRADED)
 
+    def test_query_gpu_telemetry(self):
+        from rai_fabric.local_gpu_transport import query_gpu_telemetry
+        telemetry = query_gpu_telemetry()
+        self.assertIsInstance(telemetry, dict)
+        self.assertIn("available", telemetry)
+        if telemetry["available"]:
+            self.assertIsNotNone(telemetry["temperature_c"])
+            self.assertIsNotNone(telemetry["memory_used_mb"])
+            self.assertIsNotNone(telemetry["memory_total_mb"])
+
+    def test_local_gpu_benchmark_run(self):
+        from rai_fabric.local_gpu_transport import LocalGpuBenchmark
+        mock = MagicMock()
+        mock.generate.return_value = {
+            "text": "benchmark_result",
+            "eval_count": 25,
+            "total_duration_ms": 10.0,
+            "gpu_accelerated": True,
+        }
+        mock.probe.return_value = True
+
+        transport = LocalGpuTransport(mock_client=mock)
+        bench = LocalGpuBenchmark(transport=transport)
+        res = bench.run_benchmark(iterations=3, prompt="Test prompt")
+
+        self.assertEqual(res["iterations"], 3)
+        self.assertEqual(len(res["latencies_ms"]), 3)
+        self.assertEqual(res["total_tokens"], 75)
+        self.assertGreater(res["tokens_per_sec"], 0)
+        self.assertIn("initial_telemetry", res)
+        self.assertIn("final_telemetry", res)
+
 
 if __name__ == "__main__":
     unittest.main()
+

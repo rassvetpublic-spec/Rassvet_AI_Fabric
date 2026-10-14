@@ -181,3 +181,54 @@ class WorkerFleetServiceRunner:
             }
         except Exception as exc:
             return {"status": "ERROR", "error": str(exc)}
+
+
+def main() -> int:
+    """Точка входа CLI для управления фоновой службой WorkerFleetServiceRunner."""
+    parser = argparse.ArgumentParser(description="Rassvet AI Fabric Worker Fleet Service Runner (Stage R0.5)")
+    parser.add_argument("--daemon", action="store_true", help="Run service continuously in background")
+    parser.add_argument("--status", action="store_true", help="Check status of running service")
+    parser.add_argument("--stop", action="store_true", help="Request graceful stop of service")
+    parser.add_argument("--max-ticks", type=int, default=None, help="Stop service after N scheduler ticks")
+    parser.add_argument("--poll-interval", type=float, default=1.0, help="Polling interval in seconds")
+    parser.add_argument("--db-path", type=str, default=".rai-fabric/state.sqlite3", help="Database path")
+    parser.add_argument("--pid-file", type=str, default=None, help="PID file path")
+    parser.add_argument("--json", action="store_true", help="Output status in JSON format")
+    args = parser.parse_args()
+
+    runner = WorkerFleetServiceRunner(
+        db_path=args.db_path,
+        pid_file=args.pid_file,
+        poll_interval=args.poll_interval,
+    )
+
+    if args.status:
+        st = runner.get_status()
+        if args.json:
+            print(json.dumps(st, indent=2, ensure_ascii=False))
+        else:
+            print(f"Service status: {st.get('status')} (PID: {st.get('pid')})")
+            if st.get("heartbeat"):
+                print(f"Heartbeat: {st['heartbeat']}")
+        return 0
+
+    if args.stop:
+        st = runner.get_status()
+        if st.get("status") == "RUNNING" and st.get("pid"):
+            try:
+                os.kill(st["pid"], signal.SIGTERM)
+                print(f"Sent stop signal to PID {st['pid']}")
+                return 0
+            except Exception as exc:
+                print(f"Failed to stop service: {exc}", file=sys.stderr)
+                return 1
+        else:
+            print("Service is not running.")
+            return 0
+
+    return runner.run(max_ticks=args.max_ticks)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+

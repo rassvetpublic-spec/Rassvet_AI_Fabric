@@ -1,0 +1,59 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "sync_tri_tower_receipt",
+  "name": "Sync Tri Tower Receipt",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "scripts.sync_tri_tower_receipt - Сквозная генерация и верификация квитанции Трёх Башен (Stage R0.4).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "run_sync_receipt_cli": {
+      "fn_id": "sync_tri_tower_receipt.run_sync_receipt_cli",
+      "description": "Генерация и печать квитанции паритета Трёх Башен.",
+      "args": [
+        "target_dest",
+        "as_json"
+      ],
+      "inputs": {
+        "target_dest": {
+          "type": "str | None",
+          "required": false,
+          "default": "None"
+        },
+        "as_json": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "sync_tri_tower_receipt.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

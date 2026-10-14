@@ -1,0 +1,71 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "benchmark_local_gpu",
+  "name": "Benchmark Local Gpu",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "scripts.benchmark_local_gpu - Стресс-бенчмарк локального GPU-инференса и телеметрии (Stage R0.3).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "run_benchmark_cli": {
+      "fn_id": "benchmark_local_gpu.run_benchmark_cli",
+      "description": "Исполнение бенчмарка из командной строки с форматированным выводом.",
+      "args": [
+        "iterations",
+        "prompt",
+        "force_mock",
+        "as_json"
+      ],
+      "inputs": {
+        "iterations": {
+          "type": "int",
+          "required": false,
+          "default": "5"
+        },
+        "prompt": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        },
+        "force_mock": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        },
+        "as_json": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "benchmark_local_gpu.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

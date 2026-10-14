@@ -62,6 +62,22 @@ class TestWorkerFleetServiceRunner(unittest.TestCase):
         st = runner.get_status()
         self.assertEqual(st["status"], "STOPPED")
 
+    def test_main_cli_status_and_ticks(self):
+        import sys
+        from unittest.mock import patch
+        from rai_fabric.service_runner import main
+
+        # Тест флага --status
+        with patch.object(sys, "argv", ["service_runner", "--status", "--db-path", str(self.db_path), "--pid-file", str(self.pid_file)]):
+            code = main()
+            self.assertEqual(code, 0)
+
+        # Тест флага --max-ticks
+        with patch.object(sys, "argv", ["service_runner", "--max-ticks", "1", "--poll-interval", "0.01", "--db-path", str(self.db_path), "--pid-file", str(self.pid_file)]):
+            code = main()
+            self.assertEqual(code, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
+

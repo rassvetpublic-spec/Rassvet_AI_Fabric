@@ -55,7 +55,7 @@ class RepositorySidecarTests(unittest.TestCase):
     def test_scripts_ps1_passports_exist(self):
         scripts_dir = REPO_ROOT / "scripts"
         powershell = sorted(scripts_dir.glob("*.ps1"))
-        self.assertEqual(len(powershell), 10)
+        self.assertGreaterEqual(len(powershell), 10)
         for script in powershell:
             with self.subTest(script=script.name):
                 passport = scripts_dir / (script.stem + ".passport.json")

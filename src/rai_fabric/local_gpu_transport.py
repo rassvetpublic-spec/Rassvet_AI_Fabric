@@ -23,7 +23,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from transport.ipc_channel import (
     ITransportChannel,
@@ -73,6 +73,43 @@ def detect_local_gpu() -> Dict[str, Any]:
             logger.debug("nvidia-smi query failed: %s", exc)
 
     return gpu_info
+
+
+def query_gpu_telemetry() -> Dict[str, Any]:
+    """Опрос оперативной телеметрии GPU (VRAM used/total, температура, потребление энергии)."""
+    telemetry: Dict[str, Any] = {
+        "available": False,
+        "temperature_c": None,
+        "memory_used_mb": None,
+        "memory_total_mb": None,
+        "power_draw_w": None,
+    }
+    nvidia_smi = shutil.which("nvidia-smi")
+    if nvidia_smi:
+        try:
+            res = subprocess.run(
+                [
+                    nvidia_smi,
+                    "--query-gpu=temperature.gpu,memory.used,memory.total,power.draw",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=3,
+                check=True,
+            )
+            line = res.stdout.strip()
+            if line:
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) >= 4:
+                    telemetry["available"] = True
+                    telemetry["temperature_c"] = int(float(parts[0]))
+                    telemetry["memory_used_mb"] = int(float(parts[1]))
+                    telemetry["memory_total_mb"] = int(float(parts[2]))
+                    telemetry["power_draw_w"] = float(parts[3])
+        except Exception as exc:
+            logger.debug("nvidia-smi telemetry query failed: %s", exc)
+    return telemetry
 
 
 class LocalGpuTransport(ITransportChannel):
@@ -205,3 +242,88 @@ class LocalGpuTransport(ITransportChannel):
             return self._inbox.get(block=True, timeout=timeout)
         except queue.Empty:
             return None
+
+
+class LocalGpuBenchmark:
+    """Бенчмарк производительности локального инференса и телеметрии GPU."""
+
+    def __init__(self, transport: Optional[LocalGpuTransport] = None) -> None:
+        self.transport = transport or LocalGpuTransport()
+
+    def run_benchmark(
+        self,
+        iterations: int = 5,
+        prompt: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Запуск стресс-прогона генерации с замером задержки, скорости токенов и дельты телеметрии."""
+        if not self.transport.is_connected():
+            self.transport.connect()
+
+        prompt_text = (
+            prompt
+            or "Write a deterministic hash verification function in Python with docstrings."
+        )
+        initial_telemetry = query_gpu_telemetry()
+
+        latencies_ms: List[float] = []
+        total_tokens = 0
+        start_total = time.time()
+
+        for i in range(iterations):
+            env = TransportMessageEnvelope.create(
+                payload_type="command",
+                payload={"prompt": f"{prompt_text} [Iteration {i+1}]"},
+            )
+            t0 = time.time()
+            self.transport.send(env)
+            resp = self.transport.receive(timeout=30.0)
+            t_diff = (time.time() - t0) * 1000.0
+            latencies_ms.append(round(t_diff, 2))
+
+            if resp and "reply" in resp.payload:
+                total_tokens += resp.payload["reply"].get("eval_count", 0)
+
+        total_duration_sec = time.time() - start_total
+        final_telemetry = query_gpu_telemetry()
+
+        avg_latency = (
+            round(sum(latencies_ms) / len(latencies_ms), 2) if latencies_ms else 0.0
+        )
+        min_latency = min(latencies_ms) if latencies_ms else 0.0
+        max_latency = max(latencies_ms) if latencies_ms else 0.0
+        tokens_per_sec = (
+            round(total_tokens / total_duration_sec, 2)
+            if total_duration_sec > 0
+            else 0.0
+        )
+
+        vram_delta = None
+        if (
+            initial_telemetry.get("memory_used_mb") is not None
+            and final_telemetry.get("memory_used_mb") is not None
+        ):
+            vram_delta = final_telemetry["memory_used_mb"] - initial_telemetry["memory_used_mb"]
+
+        temp_delta = None
+        if (
+            initial_telemetry.get("temperature_c") is not None
+            and final_telemetry.get("temperature_c") is not None
+        ):
+            temp_delta = final_telemetry["temperature_c"] - initial_telemetry["temperature_c"]
+
+        return {
+            "iterations": iterations,
+            "total_duration_ms": round(total_duration_sec * 1000.0, 2),
+            "latencies_ms": latencies_ms,
+            "avg_latency_ms": avg_latency,
+            "min_latency_ms": min_latency,
+            "max_latency_ms": max_latency,
+            "total_tokens": total_tokens,
+            "tokens_per_sec": tokens_per_sec,
+            "initial_telemetry": initial_telemetry,
+            "final_telemetry": final_telemetry,
+            "vram_delta_mb": vram_delta,
+            "temp_delta_c": temp_delta,
+            "gpu_accelerated": self.transport.gpu_info.get("available", False),
+        }
+

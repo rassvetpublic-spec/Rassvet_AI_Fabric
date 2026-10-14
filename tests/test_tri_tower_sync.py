@@ -91,6 +91,24 @@ class TestTriTowerSync(unittest.TestCase):
             self.assertEqual(gates["KNOWLEDGE"], "PASS")
             self.assertEqual(gates["AUTO_SYNC"], "STANDBY")
 
+    def test_seal_receipt_and_verify_parity(self):
+        with tempfile.TemporaryDirectory(prefix="raif_seal_repo_") as tmp:
+            repo_path = Path(tmp)
+            cp_dir = repo_path / "checkpoints"
+            cp_dir.mkdir(parents=True)
+            (cp_dir / "cp_01.md").write_text("# Checkpoint A", encoding="utf-8")
+
+            adapter = TriTowerSyncAdapter(repo_root=repo_path)
+            out_file = adapter.seal_receipt()
+            self.assertTrue(out_file.exists())
+            self.assertEqual(out_file.name, "TRI_TOWER_SYNC_RECEIPT_CANONICAL.json")
+
+            parity = adapter.verify_parity_status()
+            self.assertEqual(parity["status"], "PASS")
+            self.assertEqual(parity["checkpoints_count"], 1)
+            self.assertTrue(parity["has_checkpoints"])
+
 
 if __name__ == "__main__":
     unittest.main()
+
