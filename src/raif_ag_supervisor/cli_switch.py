@@ -117,6 +117,64 @@ def get_transport_hub_quotas_data(adapter: StandaloneSessionAdapter, switcher: H
     }
 
 
+def check_and_auto_failover(
+    adapter: StandaloneSessionAdapter,
+    switcher: HotSwitcher,
+    threshold: float = 10.0,
+    force: bool = False,
+) -> Dict[str, Any]:
+    """
+    Автоматическая проверка остатка квоты активного аккаунта и ротация при < threshold%.
+    Если остаток ниже порога, выбирается наилучший доступный кандидат пула.
+    """
+    quota_data = get_transport_hub_quotas_data(adapter, switcher)
+    active = quota_data.get("active_account")
+    accounts = quota_data.get("accounts", [])
+
+    current_gemini = active.get("gemini_5h", 0.0) if active else 0.0
+    needs_switch = force or (active is not None and current_gemini < threshold)
+
+    if not needs_switch:
+        return {
+            "status": "HEALTHY",
+            "switched": False,
+            "reason": f"Active account quota {current_gemini}% is above threshold {threshold}%",
+            "active_account": active,
+            "threshold": threshold,
+        }
+
+    # Поиск кандидатов с остатком квоты >= threshold%
+    candidates = [
+        a for a in accounts
+        if not a.get("is_active") and a.get("gemini_5h", 0.0) >= threshold
+    ]
+
+    if not candidates:
+        return {
+            "status": "ALL_EXHAUSTED",
+            "switched": False,
+            "reason": "All available fleet accounts are exhausted (<10%). Fallback to Local GPU required.",
+            "fallback_target": "local_gpu:127.0.0.1:11434",
+            "threshold": threshold,
+        }
+
+    # Сортировка по Gemini 5h, затем по недельной квоте
+    candidates.sort(key=lambda x: (x.get("gemini_5h", 0.0), x.get("gemini_weekly", 0.0)), reverse=True)
+    best_candidate = candidates[0]
+    target_index = best_candidate["index"]
+
+    report = switcher.switch_to_account_index(target_index)
+    return {
+        "status": "SWITCHED" if report.success else "SWITCH_FAILED",
+        "switched": report.success,
+        "reason": f"Active account quota {current_gemini}% dropped below {threshold}%",
+        "from_account": active,
+        "to_account": best_candidate,
+        "report": report.safe_dict(),
+        "threshold": threshold,
+    }
+
+
 def display_transport_hub_quotas(adapter: StandaloneSessionAdapter, switcher: HotSwitcher) -> int:
     active_ls = adapter.find_language_server_process()
     pid_str = f"PID {active_ls.pid}" if active_ls else "NOT FOUND"
@@ -148,12 +206,22 @@ def main() -> int:
     parser.add_argument("--status", action="store_true", help="Показать статус активного аккаунта, процессов и кандидатов")
     parser.add_argument("--switch", action="store_true", help="Выполнить горячее переключение на следующий свежий кандидат или выбранный аккаунт")
     parser.add_argument("--index", type=int, default=0, help="Индекс аккаунта в пуле для переключения (по умолчанию: 0)")
-    parser.add_argument("--account-id", type=str, default="", help="Идентификатор или email целевого аккаунта для переключения")
+    parser.add_argument("--auto-failover-check", action="store_true", help="Проверить квоту активного аккаунта и выполнить авто-ротацию при <10%")
+    parser.add_argument("--threshold", type=float, default=10.0, help="Порог остатка квоты в % (по умолч.: 10.0)")
+    parser.add_argument("--force-failover", action="store_true", help="Принудительное переключение на лучшего кандидата")
     parser.add_argument("--timeout", type=float, default=6.0, help="Тайм-аут ожидания респауна в секундах")
     args = parser.parse_args()
 
     adapter = StandaloneSessionAdapter()
     switcher = HotSwitcher(adapter=adapter)
+
+    if args.auto_failover_check:
+        res = check_and_auto_failover(adapter, switcher, threshold=args.threshold, force=args.force_failover)
+        if args.json:
+            print(json.dumps(res, ensure_ascii=False, indent=2))
+        else:
+            print(f"[AUTO_FAILOVER] Status: {res['status']} | Switched: {res['switched']} | Reason: {res['reason']}")
+        return 0 if res["status"] in ("HEALTHY", "SWITCHED", "ALL_EXHAUSTED") else 1
 
     if args.hub:
         if args.json:
