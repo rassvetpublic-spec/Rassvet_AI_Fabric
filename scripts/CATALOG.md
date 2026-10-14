@@ -14,7 +14,7 @@
 | `demo-worktree-review.ps1` | PowerShell | Локальная детерминированная валидация рабочих деревьев на Windows |
 | `demo.ps1` | PowerShell | Интеграционный smoke-тест RAiF 10.2C с надежным разрешением Python |
 | `install-windows-service.ps1` | PowerShell | Развёртывание и управление фоновой службой диспетчера задач Rassvet AI Fabric (Stage R0.5) |
-| `local-gpu-daemon.py` | Python | scripts.local-gpu-daemon - Легковесный фоновый HTTP-сервер локального GPU-инференса (Stage R0.3). |
+| `local-gpu-daemon.py` | Python | scripts.local-gpu-daemon - Легковесный фоновый HTTP-сервер локального GPU-инференса (Stage R0.3 / R29). |
 | `monitor_worker_fleet.py` | Python | scripts.monitor_worker_fleet - Мониторинг фонового диспетчера задач WorkerFleet в SQLite (Stage R0.5 / Issue #17). |
 | `QA-Clone-RaiF-10_1-Static-R2.ps1` | PowerShell | Статическая проверка запускатора клонирования штатным парсером PowerShell |
 | `resolve-python.ps1` | PowerShell | Bounded managed probe для абсолютного Python 3.11+; WindowsApps alias исключён для слэша и бэкслэша |
