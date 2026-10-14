@@ -1,0 +1,92 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "parity_cron",
+  "name": "Parity Cron",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.parity_cron - Автоматический фоновый планировщик аудита паритета Трёх Башен (Stage R26 / R0.4).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "TriTowerParityCron.run_audit": {
+      "fn_id": "parity_cron.TriTowerParityCron.run_audit",
+      "description": "Выполняет один цикл аудита чекпойнтов Трёх Башен.",
+      "args": [
+        "force_seal"
+      ],
+      "inputs": {
+        "force_seal": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TriTowerParityCron.run_forever": {
+      "fn_id": "parity_cron.TriTowerParityCron.run_forever",
+      "description": "Запуск фонового периодического цикла аудита.",
+      "args": [
+        "interval_seconds",
+        "max_iterations",
+        "force_seal"
+      ],
+      "inputs": {
+        "interval_seconds": {
+          "type": "int",
+          "required": false,
+          "default": "3600"
+        },
+        "max_iterations": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        },
+        "force_seal": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
+    },
+    "main": {
+      "fn_id": "parity_cron.main",
+      "description": "Точка входа CLI для управления аудитом паритета Трёх Башен.",
+      "args": [
+        "args_list"
+      ],
+      "inputs": {
+        "args_list": {
+          "type": "Optional[list[str]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
+    }
+  }
+}

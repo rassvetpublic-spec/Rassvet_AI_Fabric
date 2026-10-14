@@ -1,0 +1,18 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "schedule-tri-tower-cron",
+  "name": "Schedule Tri-Tower Cron",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "scripts",
+  "description": "Развёртывание и управление регламентным расписанием аудита паритета Трёх Башен (Stage R26 / R0.4)",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "FAIL_CLOSED",
+    "WINDOWS_ONLY",
+    "SHARED_BOUNDED_PYTHON_RESOLVER",
+    "NO_REAL_PROVIDER_CALLS"
+  ]
+}

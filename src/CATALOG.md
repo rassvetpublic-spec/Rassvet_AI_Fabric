@@ -16,6 +16,7 @@
 | `rai_fabric/codex_real_transport.py` | Python | Управляемый App Server: только initialize и необязательный thread/start. |
 | `rai_fabric/credential_store.py` | Python | Атомарное хранение проверенной OAuth-сессии под DPAPI текущего Windows SID. |
 | `rai_fabric/dev_cycle_10_6.py` | Python | 10.6: Windows-only synthetic development task -> detached worktree -> bounded static mock tests -> independent QA request -> DRAFT PR intent; no auto-push/merge/provider. |
+| `rai_fabric/distributed_pool.py` | Python | rai_fabric.distributed_pool - Распределённый пул воркеров и RPC-маршрутизатор инференса (Stage R0.6). |
 | `rai_fabric/effect_ledger.py` | Python | W2: SQLite-журнал намерений и fail-closed восстановление внешних эффектов. |
 | `rai_fabric/failover_router.py` | Python | rai_fabric.failover_router - Автономный отказоустойчивый роутер запросов с каскадным переключением (CP-55). |
 | `rai_fabric/fleet_common.py` | Python | control.fleet_common - Каноническая библиотека переиспользуемых утилит флота CONTROL_TOWER. |

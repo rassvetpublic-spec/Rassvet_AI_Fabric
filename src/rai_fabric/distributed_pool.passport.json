@@ -1,0 +1,153 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "distributed_pool",
+  "name": "Distributed Pool",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.distributed_pool - Распределённый пул воркеров и RPC-маршрутизатор инференса (Stage R0.6).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "DistributedWorkerPool.registered_workers_count": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.registered_workers_count",
+      "description": "Функция DistributedWorkerPool.registered_workers_count",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.register_worker": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.register_worker",
+      "description": "Регистрация воркера в пуле.",
+      "args": [
+        "worker_id",
+        "capabilities",
+        "endpoint"
+      ],
+      "inputs": {
+        "worker_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "capabilities": {
+          "type": "Optional[List[str]]",
+          "required": false,
+          "default": "None"
+        },
+        "endpoint": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.unregister_worker": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.unregister_worker",
+      "description": "Исключение воркера из пула.",
+      "args": [
+        "worker_id"
+      ],
+      "inputs": {
+        "worker_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.select_best_worker": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.select_best_worker",
+      "description": "Выбор наименее загруженного воркера с требуемыми возможностями.",
+      "args": [
+        "required_capability"
+      ],
+      "inputs": {
+        "required_capability": {
+          "type": "str",
+          "required": false,
+          "default": "'inference'"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.dispatch_inference_task": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.dispatch_inference_task",
+      "description": "Маршрутизация задачи инференса в распределённый пул.",
+      "args": [
+        "prompt",
+        "task_id",
+        "priority"
+      ],
+      "inputs": {
+        "prompt": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        },
+        "priority": {
+          "type": "int",
+          "required": false,
+          "default": "1"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.get_pool_status": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.get_pool_status",
+      "description": "Получение агрегированного состояния пула.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

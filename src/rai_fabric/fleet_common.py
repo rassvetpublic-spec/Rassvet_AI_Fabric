@@ -15,7 +15,7 @@ control.fleet_common - Каноническая библиотека переи�
 
 from __future__ import annotations
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 import os
 import sys
@@ -268,3 +268,44 @@ def safe_dict(obj: Any) -> Dict[str, Any]:
     if hasattr(obj, "__dict__"):
         return {k: v for k, v in obj.__dict__.items() if not str(k).startswith("_")}
     return {"value": str(obj)}
+
+
+def safe_int(val: Any, default: int = 0) -> int:
+    """Безопасное преобразование значения в целое число без возбуждения исключений."""
+    try:
+        if val is None:
+            return default
+        return int(float(val))
+    except (ValueError, TypeError, OverflowError):
+        return default
+
+
+def safe_float(val: Any, default: float = 0.0) -> float:
+    """Безопасное преобразование значения в число с плавающей точкой без исключений."""
+    try:
+        if val is None:
+            return default
+        return float(val)
+    except (ValueError, TypeError, OverflowError):
+        return default
+
+
+def format_bytes(num_bytes: Union[int, float]) -> str:
+    """Форматирует размер в байтах в человекочитаемый вид (B, KB, MB, GB, TB)."""
+    try:
+        n = float(num_bytes)
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
+            if abs(n) < 1024.0 or unit == "TB":
+                return f"{n:.2f} {unit}" if unit != "B" else f"{int(n)} B"
+            n /= 1024.0
+        return f"{n:.2f} TB"
+    except Exception:
+        return "0 B"
+
+
+def ensure_dir(path: Union[str, Path]) -> Path:
+    """Гарантирует существование директории (mkdir parents=True, exist_ok=True)."""
+    p = Path(path)
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
