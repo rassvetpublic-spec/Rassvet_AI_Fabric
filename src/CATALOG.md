@@ -7,6 +7,7 @@
 |---|---|---|
 | `rai_fabric/__init__.py` | Python | Rassvet AI Fabric: независимый прототип системы оркестрации. |
 | `rai_fabric/__main__.py` | Python | Модуль __main__ |
+| `rai_fabric/bft_consensus.py` | Python | rai_fabric.bft_consensus - Византийский консенсус квитанций Трёх Башен (Stage R32). |
 | `rai_fabric/claude_vertex_transport.py` | Python | rai_fabric.claude_vertex_transport - Адаптер транспорта для моделей Claude через Google Cloud Vertex AI (CP-55). |
 | `rai_fabric/cli.py` | Python | Явное локальное управление: задания и токены не отправляются в API без согласия. |
 | `rai_fabric/codex_live_executor.py` | Python | Один разрешённый Codex App Server turn -> один файл -> локальный unittest. |

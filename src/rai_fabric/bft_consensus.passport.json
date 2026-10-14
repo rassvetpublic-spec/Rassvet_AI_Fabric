@@ -1,0 +1,139 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "bft_consensus",
+  "name": "BFT_Consensus",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "rai_fabric.bft_consensus - Византийский консенсус квитанций Трёх Башен (Stage R32).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "DETERMINISTIC"
+  ],
+  "functions": {
+    "ReceiptProposal.compute_digest": {
+      "fn_id": "bft_consensus.ReceiptProposal.compute_digest",
+      "description": "Вычисление криптографического дайджеста предложения квитанции.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.propose": {
+      "fn_id": "bft_consensus.BFTConsensusNode.propose",
+      "description": "Инициализация новой квитанции лидером раунда.",
+      "args": [
+        "merkle_root",
+        "checkpoints_count"
+      ],
+      "inputs": {
+        "merkle_root": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "checkpoints_count": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ReceiptProposal"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.handle_pre_prepare": {
+      "fn_id": "bft_consensus.BFTConsensusNode.handle_pre_prepare",
+      "description": "Обработка входящего предложения PRE_PREPARE от лидера.",
+      "args": [
+        "proposal",
+        "local_expected_merkle"
+      ],
+      "inputs": {
+        "proposal": {
+          "type": "ReceiptProposal",
+          "required": true,
+          "default": null
+        },
+        "local_expected_merkle": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[BFTVote]"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
+    },
+    "BFTConsensusNode.handle_prepare": {
+      "fn_id": "bft_consensus.BFTConsensusNode.handle_prepare",
+      "description": "Обработка голоса PREPARE от узла кластера.",
+      "args": [
+        "vote"
+      ],
+      "inputs": {
+        "vote": {
+          "type": "BFTVote",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[BFTVote]"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
+    },
+    "BFTConsensusNode.handle_commit": {
+      "fn_id": "bft_consensus.BFTConsensusNode.handle_commit",
+      "description": "Обработка голоса COMMIT от узла кластера.",
+      "args": [
+        "vote"
+      ],
+      "inputs": {
+        "vote": {
+          "type": "BFTVote",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED"
+      ]
+    },
+    "BFTConsensusNode.get_metrics": {
+      "fn_id": "bft_consensus.BFTConsensusNode.get_metrics",
+      "description": "Телеметрия узла консенсуса.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
