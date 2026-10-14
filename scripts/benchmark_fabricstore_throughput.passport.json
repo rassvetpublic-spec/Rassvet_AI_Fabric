@@ -1,0 +1,66 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "benchmark_fabricstore_throughput",
+  "name": "Benchmark FabricStore Throughput",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "scripts",
+  "description": "Автономный стресс-тест и бенчмарк пропускной способности очереди задач FabricStore и WorkerFleetScheduler (Stage R26)",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "FAIL_CLOSED",
+    "WINDOWS_ONLY",
+    "SHARED_BOUNDED_PYTHON_RESOLVER",
+    "NO_REAL_PROVIDER_CALLS"
+  ],
+  "functions": {
+    "run_throughput_benchmark": {
+      "fn_id": "benchmark_fabricstore_throughput.run_throughput_benchmark",
+      "description": "Выполняет автономный бенчмарк пропускной способности FabricStore.",
+      "args": [
+        "task_count",
+        "worker_count",
+        "db_path"
+      ],
+      "inputs": {
+        "task_count": {
+          "type": "int",
+          "required": false,
+          "default": "120"
+        },
+        "worker_count": {
+          "type": "int",
+          "required": false,
+          "default": "12"
+        },
+        "db_path": {
+          "type": "Path | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "benchmark_fabricstore_throughput.main",
+      "description": "Функция main",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

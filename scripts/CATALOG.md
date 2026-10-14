@@ -5,6 +5,7 @@
 
 | Имя файла | Тип | Описание |
 |---|---|---|
+| `benchmark_fabricstore_throughput.py` | Python | Автономный стресс-тест и бенчмарк пропускной способности очереди задач FabricStore и WorkerFleetScheduler (Stage R26) |
 | `benchmark_local_gpu.py` | Python | scripts.benchmark_local_gpu - Стресс-бенчмарк локального GPU-инференса и телеметрии (Stage R0.3). |
 | `Clone-RaiF-10_1-Safe-R2.ps1` | PowerShell | Безопасный клон и инспекция существующего каталога на Windows |
 | `demo-codex-mock.ps1` | PowerShell | SQLite codex-mock использует единый ограниченный Python resolver без WindowsApps alias |
@@ -20,6 +21,7 @@
 | `run-tests.ps1` | PowerShell | Интегрированный запускатор тестов RAiF с настройкой окружения |
 | `schedule-tri-tower-cron.ps1` | PowerShell | Развёртывание и управление регламентным расписанием аудита паритета Трёх Башен (Stage R26 / R0.4) |
 | `sidecar_passport_validator.py` | Python | 📋 Валидатор и гейт-контроллер Sidecar-паспортов по канону Архитектора (Sidecar Passports Gate). |
+| `stress_distributed_pool.py` | Python | Сквозной стресс-тест пула воркеров DistributedWorkerPool с реальным GPU-инференсом (Stage R0.6) |
 | `sync_tri_tower_receipt.py` | Python | scripts.sync_tri_tower_receipt - Сквозная генерация и верификация квитанции Трёх Башен (Stage R0.4). |
 | `Test-RaiF-10_1B-Static.ps1` | PowerShell | Статическая инспекция контракта запускатора хостовой валидации |
 | `Verify-RaiF-10_1B-Windows.ps1` | PowerShell | Хостовая валидация и прогон тестов закрепленного клона на Windows |

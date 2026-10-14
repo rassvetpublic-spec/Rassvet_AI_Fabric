@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "benchmark": "FabricStore_WorkerFleetScheduler_Throughput",
+  "task_count": 120,
+  "worker_count": 12,
+  "completed_count": 120,
+  "failed_count": 0,
+  "queued_remaining": 0,
+  "submit_duration_ms": 336.74,
+  "submit_rate_tasks_per_sec": 356.35,
+  "dispatch_duration_ms": 20872.56,
+  "throughput_tasks_per_sec": 5.75,
+  "ticks_count": 10,
+  "latency_p50_ms": 2087.937,
+  "latency_p90_ms": 2099.959,
+  "latency_p95_ms": 2099.959,
+  "latency_p99_ms": 2099.959,
+  "zero_loss_guarantee": true,
+  "timestamp": 1792000077.1803286
+}

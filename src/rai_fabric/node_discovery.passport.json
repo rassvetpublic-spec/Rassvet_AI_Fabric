@@ -1,0 +1,200 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "node_discovery",
+  "name": "Node Discovery",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.node_discovery - Децентрализованный реестр и сетевой шлюз Discovery узлов флота (Stage R27 / R0.7).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "NodeDiscoveryRegistry.register_node": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.register_node",
+      "description": "Регистрация нового узла кластера или обновление существующего.",
+      "args": [
+        "node_id",
+        "role",
+        "endpoint",
+        "capabilities",
+        "resources",
+        "lease_ttl_seconds"
+      ],
+      "inputs": {
+        "node_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "role": {
+          "type": "str",
+          "required": false,
+          "default": "'COMPUTE_NODE'"
+        },
+        "endpoint": {
+          "type": "str",
+          "required": false,
+          "default": "'http://127.0.0.1:11434'"
+        },
+        "capabilities": {
+          "type": "Optional[List[str]]",
+          "required": false,
+          "default": "None"
+        },
+        "resources": {
+          "type": "Optional[Dict[str, Any]]",
+          "required": false,
+          "default": "None"
+        },
+        "lease_ttl_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "DEFAULT_LEASE_TTL"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NodeDiscoveryRegistry.heartbeat": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.heartbeat",
+      "description": "Обновление пульса и телеметрии зарегистрированного узла.",
+      "args": [
+        "node_id",
+        "resources"
+      ],
+      "inputs": {
+        "node_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "resources": {
+          "type": "Optional[Dict[str, Any]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NodeDiscoveryRegistry.unregister_node": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.unregister_node",
+      "description": "Явное исключение узла из реестра.",
+      "args": [
+        "node_id"
+      ],
+      "inputs": {
+        "node_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NodeDiscoveryRegistry.get_node": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.get_node",
+      "description": "Получение копии карточки узла.",
+      "args": [
+        "node_id"
+      ],
+      "inputs": {
+        "node_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NodeDiscoveryRegistry.list_active_nodes": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.list_active_nodes",
+      "description": "Возвращает список активных (ONLINE) узлов с опциональной фильтрацией.",
+      "args": [
+        "role",
+        "capability"
+      ],
+      "inputs": {
+        "role": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        },
+        "capability": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "List[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NodeDiscoveryRegistry.evict_stale_nodes": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.evict_stale_nodes",
+      "description": "Удаление узлов, не подававших пульс дольше max_staleness_seconds.",
+      "args": [
+        "max_staleness_seconds"
+      ],
+      "inputs": {
+        "max_staleness_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "60.0"
+        }
+      },
+      "outputs": {
+        "return_type": "List[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NodeDiscoveryRegistry.get_cluster_topology": {
+      "fn_id": "node_discovery.NodeDiscoveryRegistry.get_cluster_topology",
+      "description": "Формирование агрегированного топологического среза кластера.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}
