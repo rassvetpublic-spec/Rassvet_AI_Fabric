@@ -1,0 +1,252 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "model_replicator",
+  "name": "Model_Replicator",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "core",
+  "description": "rai_fabric.model_replicator - Распределённая P2P-репликация тяжёлых моделей нейросетей по LAN (Stage R30 / R1.0).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "ZERO_SSD_WEAR"
+  ],
+  "functions": {
+    "ModelManifest.to_dict": {
+      "fn_id": "model_replicator.ModelManifest.to_dict",
+      "description": "Сериализация манифеста модели в словарь.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelManifest.from_dict": {
+      "fn_id": "model_replicator.ModelManifest.from_dict",
+      "description": "Десериализация манифеста из словаря.",
+      "args": [
+        "data"
+      ],
+      "inputs": {
+        "data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ModelManifest"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelManifest.create_from_file": {
+      "fn_id": "model_replicator.ModelManifest.create_from_file",
+      "description": "Создание манифеста модели из существующего локального файла.",
+      "args": [
+        "file_path",
+        "model_name",
+        "chunk_size",
+        "format_type",
+        "quantization"
+      ],
+      "inputs": {
+        "file_path": {
+          "type": "Path | str",
+          "required": true,
+          "default": null
+        },
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "chunk_size": {
+          "type": "int",
+          "required": false,
+          "default": "DEFAULT_CHUNK_SIZE"
+        },
+        "format_type": {
+          "type": "str",
+          "required": false,
+          "default": "GGUF"
+        },
+        "quantization": {
+          "type": "str",
+          "required": false,
+          "default": "Q4_K_M"
+        }
+      },
+      "outputs": {
+        "return_type": "ModelManifest"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelReplicator.export_chunk": {
+      "fn_id": "model_replicator.ModelReplicator.export_chunk",
+      "description": "Экспорт фрагмента модели для передачи запрашивающему пиру.",
+      "args": [
+        "model_name",
+        "chunk_index",
+        "chunk_size"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "chunk_index": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "chunk_size": {
+          "type": "int",
+          "required": false,
+          "default": "DEFAULT_CHUNK_SIZE"
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[bytes]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "ZERO_SSD_WEAR"
+      ]
+    },
+    "ModelReplicator.import_chunk": {
+      "fn_id": "model_replicator.ModelReplicator.import_chunk",
+      "description": "Импорт и потоковая валидация фрагмента модели в RAM.",
+      "args": [
+        "model_name",
+        "chunk_index",
+        "chunk_data",
+        "manifest"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "chunk_index": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "chunk_data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "manifest": {
+          "type": "ModelManifest",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "ZERO_SSD_WEAR"
+      ]
+    },
+    "ModelReplicator.get_model_status": {
+      "fn_id": "model_replicator.ModelReplicator.get_model_status",
+      "description": "Получение текущего статуса загрузки модели и процента завершённости.",
+      "args": [
+        "model_name",
+        "manifest"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "manifest": {
+          "type": "Optional[ModelManifest]",
+          "required": false,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelReplicator.finalize_model": {
+      "fn_id": "model_replicator.ModelReplicator.finalize_model",
+      "description": "Атомарная сборка модели из проверенных чанков и итоговая верификация Merkle Root.",
+      "args": [
+        "model_name",
+        "manifest"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "manifest": {
+          "type": "ModelManifest",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[bool, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelReplicator.replicate_from_peer": {
+      "fn_id": "model_replicator.ModelReplicator.replicate_from_peer",
+      "description": "Сквозной процесс репликации недостающих чанков модели от удалённого пира.",
+      "args": [
+        "manifest",
+        "peer_chunk_fetcher"
+      ],
+      "inputs": {
+        "manifest": {
+          "type": "ModelManifest",
+          "required": true,
+          "default": null
+        },
+        "peer_chunk_fetcher": {
+          "type": "Callable[[str, int], Optional[bytes]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "ZERO_SSD_WEAR"
+      ]
+    }
+  }
+}

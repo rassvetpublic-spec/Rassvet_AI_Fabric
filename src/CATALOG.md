@@ -26,6 +26,7 @@
 | `rai_fabric/host_gate_10_1b.py` | Python | Read-only Windows host preflight for Fabric 10.1B pinned-source acceptance. |
 | `rai_fabric/local_gpu_transport.py` | Python | rai_fabric.local_gpu_transport - Адаптер локального GPU-инференса для RTX 5070 Ti / Ollama (Stage R0.3). |
 | `rai_fabric/mcp_server.py` | Python | MCP-сервер по stdio: только чтение, согласование протокола 2025-11-25. |
+| `rai_fabric/model_replicator.py` | Python | rai_fabric.model_replicator - Распределённая P2P-репликация тяжёлых моделей нейросетей по LAN (Stage R30 / R1.0). |
 | `rai_fabric/node_discovery.py` | Python | rai_fabric.node_discovery - Децентрализованный реестр и сетевой шлюз Discovery узлов флота (Stage R27 / R0.7). |
 | `rai_fabric/oauth_exchange.py` | Python | Офлайн-контракт OAuth code exchange и refresh для подписного ChatGPT. |
 | `rai_fabric/oauth_identity.py` | Python | Проверка OpenID Connect ID-токена на доверенных JWKS без сетевых запросов. |
