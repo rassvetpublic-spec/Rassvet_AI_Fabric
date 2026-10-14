@@ -10,3 +10,9 @@
    - 3. Роли: `HARVESTER` -> `DESTROYER` -> `SEALER`. `UNKNOWN != PASS`.
 4. **On-Demand модули и спецификации:** Модули m01-m20, паспорта sidecar, метрики и bubble-up предложений читаются по требованию из навыка [bpr5-protocol](file:///C:/Users/alexa/.gemini/config/plugins/fleet-bpr5-protocol/skills/bpr5-protocol/SKILL.md) или ядра `protocols/bpr5/BPR5/CORE.yaml`.
 5. **Политика CI/CD:** Windows-only CI, не запускать CI на каждом commit.
+
+
+<!-- FLEET_AGENT_AUTONOMY_POINTER_R1 -->
+## Fleet agent interoperability / самостоятельный QA (candidate)
+После принятия Rules Hub PR [#124](https://github.com/rassvetpublic-spec/rassvet-rules-hub/pull/124) всем участникам проекта применять единый [FLEET_AGENT_AUTONOMY_INTEROP/1](https://github.com/rassvetpublic-spec/rassvet-rules-hub/blob/main/skills/FLEET_AGENT_AUTONOMY_INTEROP.md): **сами** передавать QA-COMMAND/ACK/RESULT и проводить разрешённые Windows QA через Antigravity/host tools, не просить владельца пересылать сообщения или запускать пробы. Если исполнитель недоступен — сохранить BLOCKED с доказательствами и следующим machine-owned курсором; UNKNOWN != PASS. Это *указатель*, не отдельная власть: Project Instructions, проектный QA_PROTOCOL, безопасность, MTD и protected gates имеют приоритет. Никакого автоматического live network/system mutation.
+<!-- /FLEET_AGENT_AUTONOMY_POINTER_R1 -->
