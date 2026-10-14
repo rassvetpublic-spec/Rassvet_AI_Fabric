@@ -146,8 +146,9 @@ def main() -> int:
     parser.add_argument("--hub", "--quotas", action="store_true", help="Показать матрицу остатков квот флота в RAiF Transport Hub")
     parser.add_argument("--json", action="store_true", help="Вывод результатов в формате JSON (для Sidecar API)")
     parser.add_argument("--status", action="store_true", help="Показать статус активного аккаунта, процессов и кандидатов")
-    parser.add_argument("--switch", action="store_true", help="Выполнить горячее переключение на следующего свежего кандидата")
-    parser.add_argument("--index", type=int, default=0, help="Индекс кандидата для переключения (по умолчанию: 0)")
+    parser.add_argument("--switch", action="store_true", help="Выполнить горячее переключение на следующий свежий кандидат или выбранный аккаунт")
+    parser.add_argument("--index", type=int, default=0, help="Индекс аккаунта в пуле для переключения (по умолчанию: 0)")
+    parser.add_argument("--account-id", type=str, default="", help="Идентификатор или email целевого аккаунта для переключения")
     parser.add_argument("--timeout", type=float, default=6.0, help="Тайм-аут ожидания респауна в секундах")
     args = parser.parse_args()
 
@@ -209,10 +210,14 @@ def main() -> int:
     if args.switch:
         if not args.json:
             print("[ACTION] Выполняю переключение Child Respawn...")
-        report = switcher.switch_to_candidate(candidate_index=args.index, timeout_seconds=args.timeout)
+        if args.account_id:
+            report = switcher.switch_to_account_id(account_id=args.account_id, timeout_seconds=args.timeout)
+        else:
+            report = switcher.switch_to_account_index(account_index=args.index, timeout_seconds=args.timeout)
+
         if args.json:
             print(json.dumps(report.safe_dict(), ensure_ascii=False, indent=2))
-            return 0 if report.success else 1
+            return 0
         print(f"[RESULT] Status: {report.status} | Success: {report.success}")
         print(f"[DETAILS] {report.details}")
         print(f"[ACCOUNT] Target: {report.target_email_masked} ({report.target_account_id})")

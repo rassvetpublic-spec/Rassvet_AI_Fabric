@@ -45,6 +45,9 @@ class FormattedAccountCredential:
             "expires_in_seconds": round(self.expires_in_seconds, 1),
         }
 
+    def safe_dict(self) -> Dict[str, Any]:
+        return self.safe_summary()
+
 
 def mask_email(email: str) -> str:
     """Маскирование email для безопасного логирования: user@domain.com -> u***r@domain.com."""

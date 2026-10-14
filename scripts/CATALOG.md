@@ -18,6 +18,7 @@
 | `QA-Clone-RaiF-10_1-Static-R2.ps1` | PowerShell | Статическая проверка запускатора клонирования штатным парсером PowerShell |
 | `resolve-python.ps1` | PowerShell | Bounded managed probe для абсолютного Python 3.11+; WindowsApps alias исключён для слэша и бэкслэша |
 | `run-tests.ps1` | PowerShell | Интегрированный запускатор тестов RAiF с настройкой окружения |
+| `schedule-tri-tower-cron.ps1` | PowerShell | Развёртывание и управление регламентным расписанием аудита паритета Трёх Башен (Stage R26 / R0.4) |
 | `sidecar_passport_validator.py` | Python | 📋 Валидатор и гейт-контроллер Sidecar-паспортов по канону Архитектора (Sidecar Passports Gate). |
 | `sync_tri_tower_receipt.py` | Python | scripts.sync_tri_tower_receipt - Сквозная генерация и верификация квитанции Трёх Башен (Stage R0.4). |
 | `Test-RaiF-10_1B-Static.ps1` | PowerShell | Статическая инспекция контракта запускатора хостовой валидации |
