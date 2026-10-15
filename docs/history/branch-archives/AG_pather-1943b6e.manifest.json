@@ -1,0 +1,195 @@
+{
+  "schema": "RAIF_HISTORICAL_BRANCH_ARCHIVE/1",
+  "status": "HISTORICAL_REFERENCE_ONLY",
+  "description": "Архив исторических документов AG_pather. Старые статусы, курсоры и инструкции относятся к исходному коммиту и не задают текущее состояние или полномочия. Содержимое каждого файла сохранено побайтно.",
+  "created_at_utc": "2026-10-15T20:24:33.4347564+00:00",
+  "source_repository": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric",
+  "source_branch": "AG_pather",
+  "source_commit": "1943b6ec140155e2fde1caee4b330b7be8bf50a6",
+  "comparison_branch": "main",
+  "comparison_commit": "6d9b1b602b3006495e66aab2397d45c3fde2e920",
+  "selection": "Файлы, присутствующие в source_commit и отсутствующие по тем же путям в comparison_commit: git diff --diff-filter=A comparison_commit source_commit.",
+  "archive_file": "AG_pather-1943b6e.zip",
+  "archive_sha256": "ec92367cd955de56093c4d370f7bbe2c67362f6a4fa3d9db80c3a8b49442c5d5",
+  "file_count": 25,
+  "checkpoint_count": 23,
+  "plan_count": 2,
+  "validation": "Для каждого файла ZIP вычислен Git blob OID по исходным байтам и сверен с source_commit. Состав архива совпадает с выбранными 25 путями. Дополнительно записаны SHA-256 файлов и ZIP.",
+  "files": [
+    {
+      "original_path": "checkpoints/d03_raif_postmerge_tower_bpr5_readback_20261010_r1.md",
+      "git_blob_oid": "c900ada5ac0bb29dbfc360faa62533ddd1256df5",
+      "sha256": "21a79d329fd1ebdde919f17d26fdd2dcf12f5f7afb80cf32798f6c13bba0f985",
+      "size_bytes": 6331,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d03_raif_postmerge_tower_bpr5_readback_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d04_raif_bigwave02_safe_diagnostics_20261010_r1.md",
+      "git_blob_oid": "8bf34879d4dd0a41584891ecced9d76c8c856193",
+      "sha256": "92cbe89e0a05d1f87e24f3522a819c8f2e34d3954da4c5261565e6d20d86a58c",
+      "size_bytes": 5909,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d04_raif_bigwave02_safe_diagnostics_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d06_raif_bigwave03_w0_dirty_source_readback_20261010_r1.md",
+      "git_blob_oid": "01aa968ed5aa5a37bcf6c6e102631f0078f3d381",
+      "sha256": "23d52b270557103a7bf4ccee385cea3d0c4c65fd6f933e71bdbd5d4dc57dccb6",
+      "size_bytes": 5264,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d06_raif_bigwave03_w0_dirty_source_readback_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d07_raif_w0b_134_wip_preserved_w1_isolated_20261010_r1.md",
+      "git_blob_oid": "6c2883b9956511ba5b83f06f02713da2bebd9fa9",
+      "sha256": "96ecdfd176b4a9c60f695de52c4d9794df3033c0e0705dd50a00e75fdd643c6a",
+      "size_bytes": 6008,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d07_raif_w0b_134_wip_preserved_w1_isolated_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d08_raif_w1_428_pass_mock_contract_resume_20261010_r1.md",
+      "git_blob_oid": "fde769083c558c7aa5288751cc3b487c39ce6939",
+      "sha256": "1841722f582ab901d3847e373312349d8b2316d532545abce5c891cab6744b06",
+      "size_bytes": 5787,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d08_raif_w1_428_pass_mock_contract_resume_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d09_raif_w1r2_offline_core_accepted_20261010_r1.md",
+      "git_blob_oid": "ea87c9d9728dc23e938965dea4ca76bd74c662b3",
+      "sha256": "42c85eda6542be0b826810a95c5ab2e050dbf40f48ba30f452930d3c1d1b5df3",
+      "size_bytes": 5360,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d09_raif_w1r2_offline_core_accepted_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d10_raif_pr5_r3_p1_fixes_ci466_qa_pending_20261010_r1.md",
+      "git_blob_oid": "b7973fcd84d5a361aa9740de84837709a363320b",
+      "sha256": "b86ce351755849a470467783b6b13aa166664aa8928f9faca15ba85d6a70993a",
+      "size_bytes": 1836,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d10_raif_pr5_r3_p1_fixes_ci466_qa_pending_20261010_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d13_raif_pr5_postmerge_main_green_20261012_r1.md",
+      "git_blob_oid": "f87ea06eff1ddee75f3a266bd005ef9b1ba1b643",
+      "sha256": "129ca18e3dc4f6d22b70a88476bd84438515505fb02aa092edb5ae96c6d137a1",
+      "size_bytes": 3605,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d13_raif_pr5_postmerge_main_green_20261012_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d16_raif_w2_windows_ci514_qa_pending_20261012_r1.md",
+      "git_blob_oid": "4eacff2cc6ba1e743bcfc62e614b6e21de55a6db",
+      "sha256": "a49cd68125e32b8a1175c3bacd21d7d7304f906c99ad9f0f4b7c2fad784c4944",
+      "size_bytes": 3114,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d16_raif_w2_windows_ci514_qa_pending_20261012_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d18_raif_w2_r2_ci521_host_handoff_20261012_r1.md",
+      "git_blob_oid": "4c5f43a73128d52e88f38cc48373161e058cc3a0",
+      "sha256": "4a263e293263a1f6625c7ad4fa1d1c42f14d691a2d1c07b786bf8034836c5366",
+      "size_bytes": 2084,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d18_raif_w2_r2_ci521_host_handoff_20261012_r1.md"
+    },
+    {
+      "original_path": "checkpoints/d19_raif_w2_f2_2_crosschat_handoff_20261012_r1.md",
+      "git_blob_oid": "15616cc7a10e208c04ecbc36a98120dcc49a0f9b",
+      "sha256": "6ec31d59ae8f1df68261dda6a6b0c2f78654692bd756f5e1319573a507e431c8",
+      "size_bytes": 6188,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/d19_raif_w2_f2_2_crosschat_handoff_20261012_r1.md"
+    },
+    {
+      "original_path": "checkpoints/s03_raif_postmerge_tower_bpr5_readback_20261010_r1.json",
+      "git_blob_oid": "6f960f0eece224676317833bd7ccfc30294821af",
+      "sha256": "22ce13129ae7fd1f38f1a06976810cf850d47d33b371fdf0bf58e19f3ac487c7",
+      "size_bytes": 5130,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s03_raif_postmerge_tower_bpr5_readback_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s04_raif_bigwave02_safe_diagnostics_20261010_r1.json",
+      "git_blob_oid": "442a206bfd29d8290c8013379f7305885e9c058c",
+      "sha256": "c5ba73003d337dd4ff81747606570b95245b4f8c3a4926d925e08da4bf101d3e",
+      "size_bytes": 5156,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s04_raif_bigwave02_safe_diagnostics_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s05_raif_bigwave02_result_master_plan_20261010_r1.json",
+      "git_blob_oid": "b01e595c59e311af72bb662ecb87781c41141b91",
+      "sha256": "cd9850ef02d3b09c81fea3183089fa679bcc8cf4924422b9464e0f44cc9b934a",
+      "size_bytes": 4024,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s05_raif_bigwave02_result_master_plan_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s06_raif_bigwave03_w0_dirty_source_readback_20261010_r1.json",
+      "git_blob_oid": "a983e4dc700bdc974dbc0c4ce9ba8d6d85c70d0a",
+      "sha256": "0226ebbea9ce68d0132dd13797f7a99067c352941c1d36744ab29cd6e21c43d2",
+      "size_bytes": 3963,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s06_raif_bigwave03_w0_dirty_source_readback_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s07_raif_w0b_w1_isolated_handoff_20261010_r1.json",
+      "git_blob_oid": "56fe5e36ea1d44325d4e5be32e499b3068350786",
+      "sha256": "283636292657b18ab18a27a1199a84884d64c195079a62c1efadeea6d7b04de6",
+      "size_bytes": 5554,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s07_raif_w0b_w1_isolated_handoff_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s08_raif_w1_428_pass_mock_contract_resume_20261010_r1.json",
+      "git_blob_oid": "d8f11d84d08d88d7e09816fade3aecbc91fdca18",
+      "sha256": "666dacbabccbd93751381123e854d09fc03422238fa296adf2db1e4719a9f075",
+      "size_bytes": 3897,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s08_raif_w1_428_pass_mock_contract_resume_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s09_raif_w1r2_offline_core_accepted_20261010_r1.json",
+      "git_blob_oid": "10431fe9c8cff636342df78828ed4cac945dc48c",
+      "sha256": "5bdb78d87db7695a502f20a6496b52af80be97b4b08769309f13f08e30cb45c3",
+      "size_bytes": 3970,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s09_raif_w1r2_offline_core_accepted_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s10_raif_pr5_r3_p1_fixes_ci466_qa_pending_20261010_r1.json",
+      "git_blob_oid": "015c346a671812a72c54d77231d08d5662d956b0",
+      "sha256": "cbedba3b61f4a315184cb6ed2754753d63eb583035c572a02f7d28e63d4cf09e",
+      "size_bytes": 2524,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s10_raif_pr5_r3_p1_fixes_ci466_qa_pending_20261010_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s13_raif_pr5_postmerge_main_green_20261012_r1.json",
+      "git_blob_oid": "9b57193ae8879bd17ce2dd0441fc230eed9584ba",
+      "sha256": "6b7127336908e802b653746a2967654b8a95aebbee7dd20b53d2df9a17f89897",
+      "size_bytes": 2449,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s13_raif_pr5_postmerge_main_green_20261012_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s16_raif_w2_windows_ci514_qa_pending_20261012_r1.json",
+      "git_blob_oid": "b6b201bf6a3b2822e425a243fa94da7e31c8cc76",
+      "sha256": "7e0be3d2aca1cbe1050782b4d33afb324e4afd0b28bac8b4b57a35afa03e4950",
+      "size_bytes": 2502,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s16_raif_w2_windows_ci514_qa_pending_20261012_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s18_raif_w2_r2_ci521_host_handoff_20261012_r1.json",
+      "git_blob_oid": "7dbb3ade85c6b19826db8f9b180deafd805f33f7",
+      "sha256": "88f26203c6e01ed556604a0eff97a47e3221b5f8819647142a4314ecbef27baf",
+      "size_bytes": 2341,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s18_raif_w2_r2_ci521_host_handoff_20261012_r1.json"
+    },
+    {
+      "original_path": "checkpoints/s19_raif_w2_f2_2_crosschat_handoff_20261012_r1.json",
+      "git_blob_oid": "5c4c03c8ed7eaaeb48d85de99879824134937c1e",
+      "sha256": "2c0fbe912ba8da08508dfe5e8631e574c4c22a8cb6240fc70e08fc61c8026df1",
+      "size_bytes": 5525,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/checkpoints/s19_raif_w2_f2_2_crosschat_handoff_20261012_r1.json"
+    },
+    {
+      "original_path": "design/d01_raif_fabric_10_3_to_release_master_plan_20261010_r1.md",
+      "git_blob_oid": "6200da1e9f92a66ce7667f53553ddeba535c0bce",
+      "sha256": "5c413d1f495b28d28fd733e75afab4d940f181b4298249210cb870c093f68a2f",
+      "size_bytes": 20977,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/design/d01_raif_fabric_10_3_to_release_master_plan_20261010_r1.md"
+    },
+    {
+      "original_path": "design/d02_raif_10_4_durable_recovery_w2_20261010_r1.md",
+      "git_blob_oid": "16a0aef79c7d79ff019250a92c203a904c64a615",
+      "sha256": "647e8181469c3a4af620b6ec2beba35e32dd0ce89ee3e644c0b83d68656e51ac",
+      "size_bytes": 10287,
+      "source_url": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/blob/1943b6ec140155e2fde1caee4b330b7be8bf50a6/design/d02_raif_10_4_durable_recovery_w2_20261010_r1.md"
+    }
+  ]
+}
