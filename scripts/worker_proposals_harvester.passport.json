@@ -1,0 +1,69 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "worker_proposals_harvester",
+  "name": "Worker Proposals Harvester",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "telemetry",
+  "description": "Автоматический сбор, классификация ABCxXYZ и репликация предложений независимых воркеров в C:\\_inbox и Три Башни.",
+  "author": "KAT9I_OS_DEVELOPER",
+  "inputs": {
+    "brain_root": {
+      "type": "Path",
+      "required": false,
+      "default": "DEFAULT_BRAIN_ROOT"
+    },
+    "days": {
+      "type": "int",
+      "required": false,
+      "default": 7
+    }
+  },
+  "outputs": {
+    "proposals_report": {
+      "type": "Dict[str, Any]",
+      "schema": "KAT9I_WORKER_PROPOSALS/1.0"
+    }
+  },
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "FAIL_CLOSED",
+    "ABC_XYZ_CLASSIFICATION",
+    "ZERO_DROPPED_PROPOSALS"
+  ],
+  "functions": {
+    "discover_subagent_transcripts": {
+      "fn_id": "harvester.discover_subagent_transcripts",
+      "description": "Поиск transcript.jsonl файлов субагентов."
+    },
+    "extract_proposals_from_text": {
+      "fn_id": "harvester.extract_proposals_from_text",
+      "description": "Извлечение предложений из текста транскрипта."
+    },
+    "harvest_worker_proposals": {
+      "fn_id": "harvester.harvest_worker_proposals",
+      "description": "Сбор и дедупликация предложений."
+    },
+    "render_proposals_markdown": {
+      "fn_id": "harvester.render_proposals_markdown",
+      "description": "Генерация Markdown отчета."
+    },
+    "replicate_to_destinations": {
+      "fn_id": "harvester.replicate_to_destinations",
+      "description": "Репликация в C:\\_inbox и Три Башни."
+    },
+    "main": {
+      "fn_id": "harvester.main",
+      "description": "CLI интерфейс."
+    }
+  },
+  "metrics": {
+    "code_sha256": "076c7b73d030f771e065c1c3e663438d95575f9d2ea67d5a866559f1e5cae6f7",
+    "bytes": 11361,
+    "loc": 257,
+    "classes_count": 0,
+    "functions_count": 6,
+    "slo_target_ms": 100.0,
+    "updated_at": "2026-10-15T02:48:00.000000+00:00"
+  }
+}

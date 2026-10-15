@@ -26,3 +26,4 @@
 | `Test-RaiF-10_1B-Static.ps1` | PowerShell | Статическая инспекция контракта запускатора хостовой валидации |
 | `Verify-RaiF-10_1B-Windows.ps1` | PowerShell | Хостовая валидация и прогон тестов закрепленного клона на Windows |
 | `windows-preflight.ps1` | PowerShell | Проверка готовности и доступности системных компонентов Windows |
+| `worker_proposals_harvester.py` | Python | Автоматический сбор, классификация ABCxXYZ и репликация предложений независимых воркеров в C:\_inbox и Три Башни. |
