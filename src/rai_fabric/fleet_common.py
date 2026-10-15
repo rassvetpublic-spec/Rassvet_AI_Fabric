@@ -15,11 +15,12 @@ control.fleet_common - Каноническая библиотека переи�
 
 from __future__ import annotations
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 import os
 import sys
 import ast
+import re
 import json
 import hashlib
 import datetime
@@ -389,5 +390,46 @@ def compute_module_metrics(py_path: Union[str, Path]) -> Dict[str, Any]:
         "telemetry_binding": "ako_index.db::mcp_invocations,mcp_tool_stats,self_learning_signals,inbox_records",
         "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
+
+
+def extract_ps1_docstring(filepath: Union[str, Path]) -> str:
+    """Извлекает краткое описание PowerShell-скрипта (.ps1) из sidecar-паспорта или help-блока/комментариев."""
+    p = Path(filepath)
+    sidecar = p.parent / f"{p.stem}.passport.json"
+    if sidecar.exists():
+        try:
+            with open(sidecar, "r", encoding="utf-8", errors="replace") as f:
+                data = json.load(f)
+                desc = data.get("description", "").strip()
+                if desc and desc != f"Скрипт {p.stem}":
+                    return desc
+        except Exception:
+            pass
+
+    if not p.exists() or not p.is_file():
+        return "_Описание отсутствует_"
+
+    try:
+        raw = p.read_text(encoding="utf-8", errors="replace")
+        match = re.search(r"\.SYNOPSIS\s*\n\s*([^\r\n]+)", raw, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        match_block = re.search(r"<#(.*?(\.SYNOPSIS.*?)?)#>", raw, re.DOTALL)
+        if match_block:
+            for line in match_block.group(1).splitlines():
+                clean = line.strip().lstrip("#").strip()
+                if clean and not clean.startswith("."):
+                    return clean
+        for line in raw.splitlines():
+            clean = line.strip()
+            if clean.startswith("#") and not clean.startswith("#!") and not clean.startswith("# -"):
+                text = clean.lstrip("#").strip()
+                if text and not text.startswith("==="):
+                    return text
+    except Exception:
+        pass
+
+    return "_Описание отсутствует_"
+
 
 
