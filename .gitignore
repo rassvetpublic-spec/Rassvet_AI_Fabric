@@ -70,3 +70,8 @@ env/
 secrets/
 *.key
 
+
+# Fleet Hygiene Guard (Auto-Compaction & Anti-Bloat)
+coverage/
+*.console.log
+checkpoints/transient/
