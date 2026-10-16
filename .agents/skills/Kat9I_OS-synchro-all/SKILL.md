@@ -39,9 +39,9 @@ py tools/sync/kat9i_synchro_all.py
 
 ### Пошаговый протокол работы:
 
-### Шаг 1. Пакетная синхронизация 24 репозиториев Git (`C:\GIT`)
+### Шаг 1. Пакетная синхронизация 24 активных репозиториев Git (`C:\GIT`)
 - Запуск [`tools/sync/fleet_git_sync.py`](file:///c:/GIT/CONTROL_TOWER/tools/sync/fleet_git_sync.py);
-- Сканирование всех репозиториев: `AG25`, `AndreysSUNOBOT`, `antigravity-studio-pro`, `AntigravityData`, `asme-ptc19-3-tw-2016-batch`, `BPR40`, `chatbot-ui`, `CKS`, `ComfyUI-MusicMapper-nodes`, `ConnectorPIA-xray`, `DirectSUNO`, `Genre_test`, `KAT9I_OS`, `kat9i_skills`, `local-listener-android`, `media-collection`, `media-collection-clean`, `music-suite`, `OZONE12_MASTERING_LAB`, `pia-foss-desktop`, `rassvet-rules-hub`, `Rassvet_AI_Fabric`, `rassvetpublic-spec-kat9i_skills`, `CONTROL_TOWER`;
+- Сканирование 24 активных репозиториев: `AndreysSUNOBOT`, `antigravity-studio-pro`, `AntigravityData`, `asme-ptc19-3-tw-2016-batch`, `chatbot-ui`, `CKS`, `ComfyUI-MusicMapper-nodes`, `ConnectorPIA-xray`, `DirectSUNO`, `Genre_test`, `KAT9I_OS`, `kat9i_skills`, `local-listener-android`, `media-collection`, `media-collection-clean`, `music-suite`, `OZONE12_MASTERING_LAB`, `pia-foss-desktop`, `rassvet-rules-hub`, `Rassvet_AI_Fabric`, `rassvetpublic-spec-kat9i_skills`, `RUST_NET_VPN`, `SORT_FOTO_VIDEO`, `CONTROL_TOWER` (инкубаторы `BPR40` и `AG25` переведены в статус архивных бандлов в `CONTROL_TOWER/archive/`);
 - Автоматическая фиксация канонических паспортов [`PROJECT_PASSPORT.yaml`](file:///c:/GIT/CONTROL_TOWER/PROJECT_PASSPORT.yaml);
 - Отправка изменений в remote origin на GitHub (`git push origin <branch>`);
 - Проверка целевого инварианта: **100% CLEAN** во всех репозиториях.
