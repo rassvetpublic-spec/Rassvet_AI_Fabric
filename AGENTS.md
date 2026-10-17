@@ -18,3 +18,9 @@
 ## Fleet agent interoperability / самостоятельный QA (candidate)
 После принятия Rules Hub PR [#124](https://github.com/rassvetpublic-spec/rassvet-rules-hub/pull/124) всем участникам проекта применять единый [FLEET_AGENT_AUTONOMY_INTEROP/1](https://github.com/rassvetpublic-spec/rassvet-rules-hub/blob/main/skills/FLEET_AGENT_AUTONOMY_INTEROP.md): **сами** передавать QA-COMMAND/ACK/RESULT и проводить разрешённые Windows QA через Antigravity/host tools, не просить владельца пересылать сообщения или запускать пробы. Если исполнитель недоступен — сохранить BLOCKED с доказательствами и следующим machine-owned курсором; UNKNOWN != PASS. Это *указатель*, не отдельная власть: Project Instructions, проектный QA_PROTOCOL, безопасность, MTD и protected gates имеют приоритет. Никакого автоматического live network/system mutation.
 <!-- /FLEET_AGENT_AUTONOMY_POINTER_R1 -->
+
+
+<!-- FLEET_CHAT_OPERATIONS_R1_20261018 -->
+## Exact-chat operational runbook
+Read [ANTIGRAVITY_CHAT_OPERATIONS.md](docs/agent-interop/ANTIGRAVITY_CHAT_OPERATIONS.md) before cross-chat delivery. Use bundled PowerShell 7 helpers. Probe exact native IDLE/BUSY; BUSY queues locally, UNKNOWN/BLOCKED holds, IDLE uses WHEN_IDLE with inherited settings. Harvest prior public result/artifacts before new work; queue/API acceptance is not model receipt. No ordinary interrupting system messages, no BAT, no private trajectory/thinking dumps. File queues require an active consumer. The runbook documents the distinct authorized interruption path but does not authorize using it.
+<!-- /FLEET_CHAT_OPERATIONS_R1_20261018 -->
