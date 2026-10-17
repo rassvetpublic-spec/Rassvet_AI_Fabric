@@ -1,0 +1,41 @@
+{
+  "schema": "FLEET_AGENT_INTEROP_BUNDLE/1",
+  "version": "2026-10-18-r1",
+  "files": [
+    {
+      "path": "docs/agent-interop/ANTIGRAVITY_CHAT_OPERATIONS.md",
+      "sha256": "3a43797e685eb094bd3430d5a90a2fd5e6a0aafaa6fa403114aaabd1fef6f5c7",
+      "bytes": 19231
+    },
+    {
+      "path": "tools/agent-interop/antigravity-delivery-policy.ps1",
+      "sha256": "0312d4bfd89449f10c99378490d603442019c046bd54f427c5d050d7b2bf5a1a",
+      "bytes": 2372
+    },
+    {
+      "path": "tools/agent-interop/antigravity-message.ps1",
+      "sha256": "845f71d8300151bab71974c1d6ad933a3ddd45d1af4f81fb384b57fb3f7bc0c1",
+      "bytes": 7509
+    },
+    {
+      "path": "tools/agent-interop/antigravity-public-view.ps1",
+      "sha256": "877cd78dec97d9eacc67f5f914993ac3a9c5a39a9238d74b5d63669555bb661b",
+      "bytes": 1351
+    },
+    {
+      "path": "tools/agent-interop/antigravity-read-public.ps1",
+      "sha256": "aab235ad47720a119dc01e7f9fac79d0ec1267f1c4ac09f7fa94fe9b07436ee4",
+      "bytes": 2954
+    },
+    {
+      "path": "tools/agent-interop/test-antigravity-delivery.ps1",
+      "sha256": "92ebfd676a974ce616f361d2d7069f5b0d7707e5d9163435d230aadb9a557fd5",
+      "bytes": 1891
+    },
+    {
+      "path": "tools/agent-interop/test-antigravity-public-view.ps1",
+      "sha256": "081511ff8705bd4b62fb569970ba19b1c0c77414dabb7692f0649e84fd2779a2",
+      "bytes": 1652
+    }
+  ]
+}
