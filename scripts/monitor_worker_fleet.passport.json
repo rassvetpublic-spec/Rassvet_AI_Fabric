@@ -24,7 +24,8 @@
       "inputs": {
         "db_path": {
           "type": "Path",
-          "required": true
+          "required": true,
+          "default": null
         }
       },
       "outputs": {
@@ -46,7 +47,8 @@
       "inputs": {
         "db_path": {
           "type": "Path",
-          "required": true
+          "required": true,
+          "default": null
         },
         "count": {
           "type": "int",
@@ -79,7 +81,8 @@
       "inputs": {
         "db_path": {
           "type": "Path",
-          "required": true
+          "required": true,
+          "default": null
         },
         "expected_task_ids": {
           "type": "Optional[List[str]]",
@@ -107,7 +110,7 @@
     },
     "main": {
       "fn_id": "monitor_worker_fleet.main",
-      "description": "Точка входа командной строки",
+      "description": "Функция main",
       "args": [],
       "inputs": {},
       "outputs": {

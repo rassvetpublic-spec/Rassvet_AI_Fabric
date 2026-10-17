@@ -36,6 +36,133 @@
         "DETERMINISTIC"
       ]
     },
+    "MMRProof.to_dict": {
+      "fn_id": "tri_tower_sync.MMRProof.to_dict",
+      "description": "Функция MMRProof.to_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MerkleMountainRange.leaf_count": {
+      "fn_id": "tri_tower_sync.MerkleMountainRange.leaf_count",
+      "description": "Функция MerkleMountainRange.leaf_count",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MerkleMountainRange.append": {
+      "fn_id": "tri_tower_sync.MerkleMountainRange.append",
+      "description": "Добавление нового листа в MMR с амортизированной сложностью O(1).",
+      "args": [
+        "leaf_hash"
+      ],
+      "inputs": {
+        "leaf_hash": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MerkleMountainRange.get_peaks": {
+      "fn_id": "tri_tower_sync.MerkleMountainRange.get_peaks",
+      "description": "Возвращает список текущих пиков MMR.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "List[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MerkleMountainRange.get_root": {
+      "fn_id": "tri_tower_sync.MerkleMountainRange.get_root",
+      "description": "Вычисление компактного 32-байтного корня MMR (Bagged Peak Root).",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MerkleMountainRange.get_proof": {
+      "fn_id": "tri_tower_sync.MerkleMountainRange.get_proof",
+      "description": "Генерация O(log N) доказательства включения листа в MMR.",
+      "args": [
+        "leaf_index"
+      ],
+      "inputs": {
+        "leaf_index": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "MMRProof"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MerkleMountainRange.verify_proof": {
+      "fn_id": "tri_tower_sync.MerkleMountainRange.verify_proof",
+      "description": "Криптографическая верификация доказательства включения листа в корень MMR.",
+      "args": [
+        "root",
+        "leaf_hash",
+        "proof"
+      ],
+      "inputs": {
+        "root": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "leaf_hash": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "proof": {
+          "type": "MMRProof",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "TriTowerSyncAdapter.audit_checkpoints": {
       "fn_id": "tri_tower_sync.TriTowerSyncAdapter.audit_checkpoints",
       "description": "Сканирование контрольных точек и вычисление криптографического Merkle-дайджеста.",
@@ -62,6 +189,46 @@
           "default": "None"
         }
       },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TriTowerSyncAdapter.seal_receipt": {
+      "fn_id": "tri_tower_sync.TriTowerSyncAdapter.seal_receipt",
+      "description": "Атомарная запись канонической квитанции паритета Трёх Башен.",
+      "args": [
+        "target_path",
+        "target_dest"
+      ],
+      "inputs": {
+        "target_path": {
+          "type": "Optional[Path | str]",
+          "required": false,
+          "default": "None"
+        },
+        "target_dest": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Path"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "TriTowerSyncAdapter.verify_parity_status": {
+      "fn_id": "tri_tower_sync.TriTowerSyncAdapter.verify_parity_status",
+      "description": "Проверка паритета и соблюдения инвариантов Safe Sync Gate.",
+      "args": [],
+      "inputs": {},
       "outputs": {
         "return_type": "Dict[str, Any]"
       },

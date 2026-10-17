@@ -30,6 +30,27 @@ from .local_gpu_transport import LocalGpuTransport
 logger = logging.getLogger("raif.distributed_pool")
 
 
+class WeightedLoadBalancer:
+    """Взвешенный балансировщик нагрузки с алгоритмом Work-Stealing (Stage R33 / R7)."""
+
+    @staticmethod
+    def score_worker(
+        vram_free_mb: float,
+        compute_power: float,
+        active_tasks: int,
+        task_tokens: int = 1000,
+    ) -> float:
+        """
+        Формула скоринга воркера:
+        Score = (VRAM_free * ComputePower) / ((1 + active_tasks) * (1 + task_tokens / 4096))
+        """
+        vram = max(100.0, float(vram_free_mb))
+        power = max(0.1, float(compute_power))
+        active = max(0, int(active_tasks))
+        tokens_penalty = 1.0 + (max(1, int(task_tokens)) / 4096.0)
+        return (vram * power) / ((1.0 + active) * tokens_penalty)
+
+
 class DistributedWorkerPool:
     """Управляющий координатор распределённого пула воркеров инференса и задач."""
 
@@ -60,8 +81,10 @@ class DistributedWorkerPool:
         worker_id: str,
         capabilities: Optional[List[str]] = None,
         endpoint: Optional[str] = None,
+        vram_free_mb: float = 8000.0,
+        compute_power: float = 1.0,
     ) -> bool:
-        """Регистрация воркера в пуле."""
+        """Регистрация воркера в пуле с аппаратным профилем."""
         with self._lock:
             self._workers[worker_id] = {
                 "worker_id": worker_id,
@@ -71,6 +94,9 @@ class DistributedWorkerPool:
                 "completed_tasks": 0,
                 "last_seen": time.time(),
                 "status": "ONLINE",
+                "vram_free_mb": float(vram_free_mb),
+                "compute_power": float(compute_power),
+                "pending_queue": [],
             }
             logger.info("Worker registered: %s (capabilities: %s)", worker_id, capabilities)
             return True
@@ -84,8 +110,12 @@ class DistributedWorkerPool:
                 return True
             return False
 
-    def select_best_worker(self, required_capability: str = "inference") -> Optional[str]:
-        """Выбор наименее загруженного воркера с требуемыми возможностями."""
+    def select_best_worker(
+        self,
+        required_capability: str = "inference",
+        task_tokens: int = 1000,
+    ) -> Optional[str]:
+        """Выбор лучшего воркера с использованием взвешенного скоринга (R7)."""
         with self._lock:
             candidates = [
                 w for w in self._workers.values()
@@ -93,9 +123,51 @@ class DistributedWorkerPool:
             ]
             if not candidates:
                 return None
-            # Least-loaded selection
-            candidates.sort(key=lambda x: (x["active_tasks"], x["completed_tasks"]))
+            candidates.sort(
+                key=lambda w: WeightedLoadBalancer.score_worker(
+                    vram_free_mb=w.get("vram_free_mb", 8000.0),
+                    compute_power=w.get("compute_power", 1.0),
+                    active_tasks=w.get("active_tasks", 0) + len(w.get("pending_queue", [])),
+                    task_tokens=task_tokens,
+                ),
+                reverse=True,
+            )
             return candidates[0]["worker_id"]
+
+    def enqueue_worker_task(self, worker_id: str, task: Dict[str, Any]) -> bool:
+        """Помещение задачи в очередь конкретного воркера."""
+        with self._lock:
+            if worker_id not in self._workers:
+                return False
+            self._workers[worker_id]["pending_queue"].append(task)
+            return True
+
+    def steal_work(self, idle_worker_id: str) -> Optional[Dict[str, Any]]:
+        """Проактивный перехват задачи из хвоста наиболее загруженного воркера (Work-Stealing / R7)."""
+        with self._lock:
+            if idle_worker_id not in self._workers:
+                return None
+
+            busiest_worker = None
+            max_queue_len = 0
+            for w_id, w in self._workers.items():
+                if w_id != idle_worker_id and w["status"] == "ONLINE":
+                    q_len = len(w.get("pending_queue", []))
+                    if q_len > max_queue_len:
+                        max_queue_len = q_len
+                        busiest_worker = w
+
+            if busiest_worker and max_queue_len > 0:
+                stolen_task = busiest_worker["pending_queue"].pop()
+                logger.info(
+                    "WorkStealing: worker '%s' stole task '%s' from '%s'",
+                    idle_worker_id,
+                    stolen_task.get("task_id"),
+                    busiest_worker["worker_id"],
+                )
+                return stolen_task
+
+            return None
 
     def dispatch_inference_task(
         self,

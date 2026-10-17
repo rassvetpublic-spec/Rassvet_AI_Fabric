@@ -16,9 +16,96 @@
     "ZERO_SSD_WEAR"
   ],
   "functions": {
+    "FastCDCChunker.chunk_stream": {
+      "fn_id": "model_replicator.FastCDCChunker.chunk_stream",
+      "description": "Разбиение входного потока на переменные блоки FastCDC с вычислением SHA-256.",
+      "args": [
+        "data_stream",
+        "min_size",
+        "avg_size",
+        "max_size"
+      ],
+      "inputs": {
+        "data_stream": {
+          "type": "BinaryIO",
+          "required": true,
+          "default": null
+        },
+        "min_size": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        },
+        "avg_size": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        },
+        "max_size": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Iterator[Tuple[bytes, str]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ZstdCompressorWrapper.compress_chunk": {
+      "fn_id": "model_replicator.ZstdCompressorWrapper.compress_chunk",
+      "description": "Функция ZstdCompressorWrapper.compress_chunk",
+      "args": [
+        "chunk",
+        "level"
+      ],
+      "inputs": {
+        "chunk": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "level": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ZstdCompressorWrapper.decompress_chunk": {
+      "fn_id": "model_replicator.ZstdCompressorWrapper.decompress_chunk",
+      "description": "Функция ZstdCompressorWrapper.decompress_chunk",
+      "args": [
+        "compressed_chunk"
+      ],
+      "inputs": {
+        "compressed_chunk": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "ModelManifest.to_dict": {
       "fn_id": "model_replicator.ModelManifest.to_dict",
-      "description": "Сериализация манифеста модели в словарь.",
+      "description": "Функция ModelManifest.to_dict",
       "args": [],
       "inputs": {},
       "outputs": {
@@ -31,7 +118,7 @@
     },
     "ModelManifest.from_dict": {
       "fn_id": "model_replicator.ModelManifest.from_dict",
-      "description": "Десериализация манифеста из словаря.",
+      "description": "Функция ModelManifest.from_dict",
       "args": [
         "data"
       ],
@@ -79,12 +166,12 @@
         "format_type": {
           "type": "str",
           "required": false,
-          "default": "GGUF"
+          "default": "'GGUF'"
         },
         "quantization": {
           "type": "str",
           "required": false,
-          "default": "Q4_K_M"
+          "default": "'Q4_K_M'"
         }
       },
       "outputs": {
@@ -125,7 +212,7 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "ZERO_SSD_WEAR"
+        "DETERMINISTIC"
       ]
     },
     "ModelReplicator.import_chunk": {
@@ -164,7 +251,58 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "ZERO_SSD_WEAR"
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelReplicator.import_chunk_direct": {
+      "fn_id": "model_replicator.ModelReplicator.import_chunk_direct",
+      "description": "Прямая запись чанка по смещению в итоговый файл модели без staging (Zero SSD Wear / R4).",
+      "args": [
+        "model_name",
+        "chunk_index",
+        "offset",
+        "chunk_data",
+        "expected_hash",
+        "total_size"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "chunk_index": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "offset": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "chunk_data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "expected_hash": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "total_size": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     },
     "ModelReplicator.get_model_status": {
@@ -183,7 +321,7 @@
         "manifest": {
           "type": "Optional[ModelManifest]",
           "required": false,
-          "default": null
+          "default": "None"
         }
       },
       "outputs": {
@@ -245,7 +383,7 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "ZERO_SSD_WEAR"
+        "DETERMINISTIC"
       ]
     }
   }

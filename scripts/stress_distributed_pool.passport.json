@@ -14,5 +14,67 @@
     "WINDOWS_ONLY",
     "SHARED_BOUNDED_PYTHON_RESOLVER",
     "NO_REAL_PROVIDER_CALLS"
-  ]
+  ],
+  "functions": {
+    "run_stress_test": {
+      "fn_id": "stress_distributed_pool.run_stress_test",
+      "description": "Выполнение сквозного стресс-теста пула воркеров.",
+      "args": [
+        "concurrency",
+        "total_tasks",
+        "worker_count",
+        "prompt_prefix"
+      ],
+      "inputs": {
+        "concurrency": {
+          "type": "int",
+          "required": false,
+          "default": "4"
+        },
+        "total_tasks": {
+          "type": "int",
+          "required": false,
+          "default": "20"
+        },
+        "worker_count": {
+          "type": "int",
+          "required": false,
+          "default": "3"
+        },
+        "prompt_prefix": {
+          "type": "str",
+          "required": false,
+          "default": "'def solve_batch_item'"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "main": {
+      "fn_id": "stress_distributed_pool.main",
+      "description": "Функция main",
+      "args": [
+        "args_list"
+      ],
+      "inputs": {
+        "args_list": {
+          "type": "Optional[list[str]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
 }

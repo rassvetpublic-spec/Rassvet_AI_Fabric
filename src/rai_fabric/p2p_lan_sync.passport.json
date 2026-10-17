@@ -18,7 +18,7 @@
   "functions": {
     "LanBeacon.to_dict": {
       "fn_id": "p2p_lan_sync.LanBeacon.to_dict",
-      "description": "Сериализация маяка в словарь.",
+      "description": "Функция LanBeacon.to_dict",
       "args": [],
       "inputs": {},
       "outputs": {
@@ -31,7 +31,7 @@
     },
     "LanBeacon.to_bytes": {
       "fn_id": "p2p_lan_sync.LanBeacon.to_bytes",
-      "description": "Кодирование маяка в JSON-байты.",
+      "description": "Функция LanBeacon.to_bytes",
       "args": [],
       "inputs": {},
       "outputs": {
@@ -44,7 +44,7 @@
     },
     "LanBeacon.from_dict": {
       "fn_id": "p2p_lan_sync.LanBeacon.from_dict",
-      "description": "Десериализация маяка из словаря.",
+      "description": "Функция LanBeacon.from_dict",
       "args": [
         "data"
       ],
@@ -65,7 +65,7 @@
     },
     "LanBeacon.from_bytes": {
       "fn_id": "p2p_lan_sync.LanBeacon.from_bytes",
-      "description": "Декодирование маяка из сырых байтов.",
+      "description": "Функция LanBeacon.from_bytes",
       "args": [
         "raw"
       ],
@@ -78,6 +78,93 @@
       },
       "outputs": {
         "return_type": "Optional[LanBeacon]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EWMAPingTracker.record_ping": {
+      "fn_id": "p2p_lan_sync.EWMAPingTracker.record_ping",
+      "description": "Регистрация замера RTT и обновление скользящего среднего EWMA.",
+      "args": [
+        "peer_id",
+        "rtt_ms",
+        "timestamp"
+      ],
+      "inputs": {
+        "peer_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "rtt_ms": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "timestamp": {
+          "type": "Optional[float]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "float"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EWMAPingTracker.get_state": {
+      "fn_id": "p2p_lan_sync.EWMAPingTracker.get_state",
+      "description": "Определение состояния пира по формуле скользящего 3-тикового окна.",
+      "args": [
+        "peer_id",
+        "now"
+      ],
+      "inputs": {
+        "peer_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "now": {
+          "type": "Optional[float]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "EWMAPingTracker.get_peer_metrics": {
+      "fn_id": "p2p_lan_sync.EWMAPingTracker.get_peer_metrics",
+      "description": "Телеметрия RTT и состояния пира.",
+      "args": [
+        "peer_id",
+        "now"
+      ],
+      "inputs": {
+        "peer_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "now": {
+          "type": "Optional[float]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
       },
       "invariants": [
         "FAIL_CLOSED",
@@ -154,7 +241,7 @@
     },
     "LanPeerDiscovery.broadcast_beacon": {
       "fn_id": "p2p_lan_sync.LanPeerDiscovery.broadcast_beacon",
-      "description": "Отправка широковещательного UDP-пакета.",
+      "description": "Отправка широковещательного UDP-пакета (безопасный fail-closed перехват ошибок).",
       "args": [
         "beacon",
         "target_ip"
@@ -168,7 +255,7 @@
         "target_ip": {
           "type": "str",
           "required": false,
-          "default": "255.255.255.255"
+          "default": "'255.255.255.255'"
         }
       },
       "outputs": {
@@ -217,7 +304,7 @@
         "host": {
           "type": "str",
           "required": false,
-          "default": "127.0.0.1"
+          "default": "'127.0.0.1'"
         },
         "port": {
           "type": "int",
@@ -256,7 +343,7 @@
     },
     "CrossHostP2PSyncManager.reconcile_with_peer": {
       "fn_id": "p2p_lan_sync.CrossHostP2PSyncManager.reconcile_with_peer",
-      "description": "Антиэнтропийное разрешение дельты с пиром.",
+      "description": "Антиэнтропийное разрешение дельты с пиром (Stage R29).",
       "args": [
         "peer_offer",
         "fetch_checkpoint_fn"
@@ -270,7 +357,7 @@
         "fetch_checkpoint_fn": {
           "type": "Optional[Callable[[str], Optional[Dict[str, Any]]]]",
           "required": false,
-          "default": null
+          "default": "None"
         }
       },
       "outputs": {
@@ -278,7 +365,7 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "ZERO_SSD_WEAR"
+        "DETERMINISTIC"
       ]
     },
     "CrossHostP2PSyncManager.get_fleet_lan_topology": {

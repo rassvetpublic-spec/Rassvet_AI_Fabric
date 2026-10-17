@@ -19,10 +19,12 @@ __version__ = "1.0.0"
 import hashlib
 import json
 import logging
+import math
 import os
 import time
+import zlib
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, Dict, Iterator, List, Optional, Tuple
 
 from rai_fabric.fleet_common import get_repo_root
 from rai_fabric.tri_tower_sync import calculate_merkle_root
@@ -30,6 +32,126 @@ from rai_fabric.tri_tower_sync import calculate_merkle_root
 logger = logging.getLogger("raif.model_replicator")
 
 DEFAULT_CHUNK_SIZE = 16 * 1024 * 1024  # 16 MB
+
+# 256 детерминированных 32-битных коэффициентов Gear для FastCDC
+GEAR_MATRIX = [
+    0x5BE0CD19, 0x1F15CD51, 0x0A52DE09, 0xA8E571F1, 0x69680509, 0x76A03507, 0x4D368FD7, 0x6E565257,
+    0x5672FA47, 0xF972E9D1, 0x67C2F009, 0x4CE7C7AF, 0x86AC5E29, 0x5824C6EE, 0x55EEB581, 0x05483B5E,
+    0x77741F71, 0x2A1BE8E7, 0x3F676B23, 0xF47551B5, 0x7CA428C1, 0x82693BE5, 0x438641EB, 0x1AEB4527,
+    0x386CEEC5, 0x44BE7F69, 0x7B1E4E71, 0x86B2F7E7, 0xA9966D41, 0x1E462F47, 0x2A62C64B, 0x32AE1E19,
+    0x7ACD9F61, 0x3DB2A577, 0x5EE33441, 0x125191A7, 0x64426BE5, 0x6F4932F1, 0x0EDF337B, 0x8DF12A13,
+    0x615F4957, 0x8D218335, 0x5393CE9B, 0x27C9F757, 0x7433B761, 0x3AA38A53, 0x153A0429, 0x5B5F348F,
+    0x2EAF7191, 0x7508496B, 0x175DF4C9, 0x4D79590B, 0x16346297, 0x6B19B267, 0x8B3B59D1, 0x26AC8445,
+    0x3A21BD77, 0x234F3679, 0x58A3CE11, 0x24B3EB89, 0x30138C47, 0x47781C55, 0x1812E27B, 0x309C5A87,
+    0x4E747F95, 0x2897593B, 0x4F04A7B7, 0x6AE32711, 0x2B7A8129, 0x7F26E6F5, 0x6A6B8081, 0x78531777,
+    0x6F61314B, 0x33445C11, 0x618525E7, 0x3C49B2F5, 0x3C9A6197, 0x709C6F61, 0x46450A9B, 0x26685819,
+    0x2035F147, 0x75218D19, 0x5776C559, 0x7F27CE2B, 0x1D3B5145, 0x11311C27, 0x3841D6B7, 0x217277E5,
+    0x629C2337, 0x117E3F29, 0x155452D1, 0x3A75B495, 0x2A1521B5, 0x7B9A458B, 0x717013C9, 0x2B49CD39,
+    0x13380B51, 0x2117A167, 0x78860B95, 0x414597F5, 0x323497F5, 0x468817D5, 0x45486C11, 0x5821F453,
+    0x498177F7, 0x4E8E2D17, 0x53528A4B, 0x50186989, 0x3D11F9E9, 0x581373A5, 0x1E59C759, 0x1E2B889B,
+    0x40366D67, 0x738A5A69, 0x40134F47, 0x12711C45, 0x103E793B, 0x6A192667, 0x376E6A21, 0x4E2B1A3B,
+    0x2324F973, 0x5F1965A1, 0x5D524F57, 0x37351651, 0x729C1F17, 0x28892695, 0x5C89C7D5, 0x7621CD55,
+    0x30691517, 0x62153B8B, 0x553597D5, 0x36480B67, 0x6424D515, 0x5C86C1D9, 0x4778E295, 0x76879B59,
+    0x35574519, 0x64692745, 0x4657B451, 0x712B3B15, 0x4C542B11, 0x38914619, 0x756B7D57, 0x3732E967,
+    0x673966F9, 0x2213F985, 0x1D237A47, 0x3554CD7B, 0x4D368A6B, 0x6B198425, 0x6629B7F1, 0x4B364955,
+    0x544E8C2B, 0x2A15CD59, 0x2E687799, 0x75932821, 0x2479244B, 0x545B8E67, 0x4774B399, 0x145B11B9,
+    0x7F265D3B, 0x4858B4A5, 0x7654C47B, 0x67623945, 0x355799F1, 0x7F411C2B, 0x54366A49, 0x2874CD35,
+    0x256B44F1, 0x3E5466F9, 0x35198C45, 0x288768A5, 0x6618F957, 0x599C44F1, 0x446B89F5, 0x5A737F99,
+    0x7426E927, 0x6A3297A5, 0x2649B229, 0x582B1489, 0x6968B4C5, 0x43867A55, 0x5C396B7B, 0x1276C759,
+    0x754F8E29, 0x5672CD59, 0x67542F19, 0x1654C4F5, 0x66868E49, 0x77765171, 0x46429A2B, 0x7665793B,
+    0x6E562F41, 0x45238B57, 0x48967A45, 0x5A88B351, 0x74868F45, 0x5776CD79, 0x2323B519, 0x755F6A47,
+    0x386C5A21, 0x7E35E981, 0x794966B5, 0x464B7D25, 0x6C729A39, 0x5D54C115, 0x254F2719, 0x1872CD55,
+    0x7A748677, 0x668615A1, 0x4A86C72B, 0x2A19F7E5, 0x50186989, 0x3A2197A5, 0x468817D5, 0x77741F71,
+    0x6424D515, 0x4D79590B, 0x7B1E4E71, 0x2EAF7191, 0x1F15CD51, 0x5BE0CD19, 0x76A03507, 0x69680509,
+    0x6E565257, 0x4D368FD7, 0xF972E9D1, 0x5672FA47, 0x4CE7C7AF, 0x67C2F009, 0x5824C6EE, 0x86AC5E29,
+    0x05483B5E, 0x55EEB581, 0x2A1BE8E7, 0x77741F71, 0xF47551B5, 0x3F676B23, 0x82693BE5, 0x7CA428C1,
+    0x1AEB4527, 0x438641EB, 0x44BE7F69, 0x386CEEC5, 0x86B2F7E7, 0x7B1E4E71, 0x1E462F47, 0xA9966D41,
+    0x32AE1E19, 0x2A62C64B, 0x3DB2A577, 0x7ACD9F61, 0x125191A7, 0x5EE33441, 0x6F4932F1, 0x64426BE5,
+]
+
+
+class FastCDCChunker:
+    """Контентно-определённое чанкование (Content-Defined Chunking) с Gear Hash (Stage R33 / R4)."""
+
+    def __init__(
+        self,
+        min_size: int = 4 * 1024 * 1024,
+        avg_size: int = 16 * 1024 * 1024,
+        max_size: int = 32 * 1024 * 1024,
+    ) -> None:
+        self.min_size = min_size
+        self.avg_size = avg_size
+        self.max_size = max_size
+        bits = max(1, int(math.log2(avg_size))) if avg_size > 1 else 1
+        self.mask = (1 << bits) - 1
+
+    def chunk_stream(
+        self,
+        data_stream: BinaryIO,
+        min_size: Optional[int] = None,
+        avg_size: Optional[int] = None,
+        max_size: Optional[int] = None,
+    ) -> Iterator[Tuple[bytes, str]]:
+        """Разбиение входного потока на переменные блоки FastCDC с вычислением SHA-256."""
+        c_min = min_size if min_size is not None else self.min_size
+        c_avg = avg_size if avg_size is not None else self.avg_size
+        c_max = max_size if max_size is not None else self.max_size
+        bits = max(1, int(math.log2(c_avg))) if c_avg > 1 else 1
+        mask = (1 << bits) - 1
+
+        buf = bytearray()
+        gear_hash = 0
+
+        while True:
+            read_bytes = data_stream.read(64 * 1024)
+            if not read_bytes:
+                if buf:
+                    chunk = bytes(buf)
+                    yield chunk, hashlib.sha256(chunk).hexdigest()
+                break
+
+            for b in read_bytes:
+                buf.append(b)
+                gear_hash = (((gear_hash << 1) & 0xFFFFFFFF) + GEAR_MATRIX[b]) & 0xFFFFFFFF
+
+                if len(buf) >= c_min:
+                    if len(buf) >= c_max or (gear_hash & mask) == 0:
+                        chunk = bytes(buf)
+                        yield chunk, hashlib.sha256(chunk).hexdigest()
+                        buf.clear()
+                        gear_hash = 0
+
+
+class ZstdCompressorWrapper:
+    """Потоковое сжатие чанков моделей с адаптивным fallback (Zstandard / zlib)."""
+
+    def __init__(self, level: int = 3) -> None:
+        self.level = level
+        self._has_zstd = False
+        try:
+            import zstandard as zstd
+            self._zstd = zstd
+            self._has_zstd = True
+        except ImportError:
+            self._zstd = None
+
+    def compress_chunk(self, chunk: bytes, level: Optional[int] = None) -> bytes:
+        lvl = level if level is not None else self.level
+        if self._has_zstd and self._zstd:
+            cctx = self._zstd.ZstdCompressor(level=lvl)
+            return b"ZSTD" + cctx.compress(chunk)
+        return b"ZLIB" + zlib.compress(chunk, level=min(9, max(1, lvl)))
+
+    def decompress_chunk(self, compressed_chunk: bytes) -> bytes:
+        if compressed_chunk.startswith(b"ZSTD") and self._has_zstd and self._zstd:
+            dctx = self._zstd.ZstdDecompressor()
+            return dctx.decompress(compressed_chunk[4:])
+        if compressed_chunk.startswith(b"ZLIB"):
+            return zlib.decompress(compressed_chunk[4:])
+        try:
+            return zlib.decompress(compressed_chunk)
+        except Exception:
+            return compressed_chunk
 
 
 class ModelManifest:
@@ -195,6 +317,37 @@ class ModelReplicator:
         # Хэш проверен в RAM -> сохраняем во временный блок staging
         staging_path = self._get_staging_chunk_path(model_name, chunk_index)
         staging_path.write_bytes(chunk_data)
+        return True
+
+    def import_chunk_direct(
+        self,
+        model_name: str,
+        chunk_index: int,
+        offset: int,
+        chunk_data: bytes,
+        expected_hash: str,
+        total_size: Optional[int] = None,
+    ) -> bool:
+        """
+        Прямая запись чанка по смещению в итоговый файл модели без staging (Zero SSD Wear / R4).
+        Проверяет SHA-256 в RAM перед выполнением seek + write.
+        """
+        actual_hash = hashlib.sha256(chunk_data).hexdigest()
+        if actual_hash != expected_hash:
+            logger.error(
+                "Direct chunk %d hash mismatch! Expected: %s, got: %s",
+                chunk_index,
+                expected_hash,
+                actual_hash,
+            )
+            return False
+
+        target_path = self._get_model_path(model_name)
+        mode = "r+b" if target_path.exists() else "wb"
+        with open(target_path, mode) as f:
+            f.seek(offset)
+            f.write(chunk_data)
+            f.flush()
         return True
 
     def get_model_status(self, model_name: str, manifest: Optional[ModelManifest] = None) -> Dict[str, Any]:

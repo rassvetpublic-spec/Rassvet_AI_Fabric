@@ -476,7 +476,18 @@
         "val",
         "default"
       ],
-      "inputs": {},
+      "inputs": {
+        "val": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "default": {
+          "type": "int",
+          "required": false,
+          "default": "0"
+        }
+      },
       "outputs": {
         "return_type": "int"
       },
@@ -492,7 +503,18 @@
         "val",
         "default"
       ],
-      "inputs": {},
+      "inputs": {
+        "val": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "default": {
+          "type": "float",
+          "required": false,
+          "default": "0.0"
+        }
+      },
       "outputs": {
         "return_type": "float"
       },
@@ -507,7 +529,13 @@
       "args": [
         "num_bytes"
       ],
-      "inputs": {},
+      "inputs": {
+        "num_bytes": {
+          "type": "Union[int, float]",
+          "required": true,
+          "default": null
+        }
+      },
       "outputs": {
         "return_type": "str"
       },
@@ -522,7 +550,13 @@
       "args": [
         "path"
       ],
-      "inputs": {},
+      "inputs": {
+        "path": {
+          "type": "Union[str, Path]",
+          "required": true,
+          "default": null
+        }
+      },
       "outputs": {
         "return_type": "Path"
       },
@@ -539,7 +573,23 @@
         "include_tests",
         "exclude_dirs"
       ],
-      "inputs": {},
+      "inputs": {
+        "p": {
+          "type": "Union[str, Path]",
+          "required": true,
+          "default": null
+        },
+        "include_tests": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        },
+        "exclude_dirs": {
+          "type": "Optional[Set[str]]",
+          "required": false,
+          "default": "None"
+        }
+      },
       "outputs": {
         "return_type": "bool"
       },
@@ -556,7 +606,23 @@
         "include_tests",
         "exclude_dirs"
       ],
-      "inputs": {},
+      "inputs": {
+        "directory": {
+          "type": "Union[str, Path]",
+          "required": true,
+          "default": null
+        },
+        "include_tests": {
+          "type": "bool",
+          "required": false,
+          "default": "False"
+        },
+        "exclude_dirs": {
+          "type": "Optional[Set[str]]",
+          "required": false,
+          "default": "None"
+        }
+      },
       "outputs": {
         "return_type": "List[Path]"
       },
@@ -571,7 +637,13 @@
       "args": [
         "py_path"
       ],
-      "inputs": {},
+      "inputs": {
+        "py_path": {
+          "type": "Union[str, Path]",
+          "required": true,
+          "default": null
+        }
+      },
       "outputs": {
         "return_type": "Dict[str, Any]"
       },

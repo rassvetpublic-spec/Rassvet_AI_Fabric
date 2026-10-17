@@ -17,7 +17,7 @@
   "functions": {
     "TriTowerParityCron.run_audit": {
       "fn_id": "parity_cron.TriTowerParityCron.run_audit",
-      "description": "Выполняет один цикл аудита чекпойнтов Трёх Башен.",
+      "description": "Выполняет один цикл аудита чекпойнтов.",
       "args": [
         "force_seal"
       ],
@@ -65,12 +65,13 @@
         "return_type": "None"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     },
     "main": {
       "fn_id": "parity_cron.main",
-      "description": "Точка входа CLI для управления аудитом паритета Трёх Башен.",
+      "description": "Функция main",
       "args": [
         "args_list"
       ],
@@ -85,7 +86,8 @@
         "return_type": "int"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     }
   }

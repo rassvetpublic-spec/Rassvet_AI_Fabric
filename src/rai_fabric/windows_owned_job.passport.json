@@ -17,7 +17,7 @@
   "functions": {
     "_kernel": {
       "fn_id": "windows_owned_job._kernel",
-      "description": "WinAPI с ограниченными правами",
+      "description": "Настраивать WinAPI строго на Windows; никакого shell/taskkill.",
       "args": [],
       "inputs": {},
       "outputs": {
@@ -30,7 +30,7 @@
     },
     "_active_count": {
       "fn_id": "windows_owned_job._active_count",
-      "description": "Число активных процессов owned Job",
+      "description": "Функция _active_count",
       "args": [
         "api",
         "job"
@@ -57,7 +57,7 @@
     },
     "run_synthetic_job": {
       "fn_id": "windows_owned_job.run_synthetic_job",
-      "description": "Выполнить owned synthetic child с polling отмены, TerminateJobObject и ActiveProcesses=0",
+      "description": "Доказательство владения тестовым дочерним деревом без внешнего inference.",
       "args": [
         "case",
         "timeout_seconds",

@@ -68,7 +68,6 @@
         "DETERMINISTIC"
       ]
     },
-
     "_reject_constant": {
       "fn_id": "oauth_exchange._reject_constant",
       "description": "Функция _reject_constant",

@@ -141,13 +141,55 @@
     },
     "_validate_directory": {
       "fn_id": "continuity._validate_directory",
-      "description": "Функция _validate_directory",
+      "description": "Reject symlink/junction ancestors, not only the final directory.",
       "args": [
         "path"
       ],
       "inputs": {
         "path": {
           "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_lock_directory_windows": {
+      "fn_id": "continuity._lock_directory_windows",
+      "description": "Acquire a non-sharing directory handle on Windows to prevent concurrent renames and enable metadata flushing.",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "int | None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_flush_and_close_directory_windows": {
+      "fn_id": "continuity._flush_and_close_directory_windows",
+      "description": "Flush NTFS directory metadata buffers and close handle.",
+      "args": [
+        "handle"
+      ],
+      "inputs": {
+        "handle": {
+          "type": "int | None",
           "required": true,
           "default": null
         }

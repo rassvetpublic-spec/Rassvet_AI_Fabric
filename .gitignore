@@ -75,3 +75,5 @@ secrets/
 coverage/
 *.console.log
 checkpoints/transient/
+
+.agents/teamwork/

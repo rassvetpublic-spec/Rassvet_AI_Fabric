@@ -11,7 +11,9 @@ __version__ = "1.0.0"
 import hashlib
 import json
 import os
+import queue
 import struct
+import threading
 import time
 import zlib
 from pathlib import Path
@@ -67,7 +69,33 @@ class NvmeKVCacheManager:
         self._evictions = 0
         self._corrupted_count = 0
 
+        self._lock = threading.Lock()
+        self._staging_dict: Dict[str, Any] = {}
+        self._staging_queue: queue.Queue[Optional[Tuple[str, str, Any]]] = queue.Queue(maxsize=4096)
+        self._worker_running = True
+        self._flush_thread = threading.Thread(target=self._worker_loop, daemon=True, name="NvmeFlushWorker")
+        self._flush_thread.start()
+
         self._scan_and_recover()
+
+    def _worker_loop(self) -> None:
+        """Фоновый рабочий поток сброса отложенных записей на NVMe (R6)."""
+        while self._worker_running:
+            try:
+                item = self._staging_queue.get(timeout=0.1)
+                if item is None:
+                    self._staging_queue.task_done()
+                    break
+                model_id, prompt_prefix, payload = item
+                key = self.compute_key(model_id, prompt_prefix)
+                with self._lock:
+                    self._write_entry(model_id, prompt_prefix, payload)
+                    self._staging_dict.pop(key, None)
+                self._staging_queue.task_done()
+            except queue.Empty:
+                continue
+            except Exception:
+                pass
 
     @staticmethod
     def compute_key(model_id: str, prompt_prefix: str) -> str:
@@ -83,13 +111,8 @@ class NvmeKVCacheManager:
         padding = self.block_size - rem
         return data + (b"\x00" * padding)
 
-    def put(
-        self,
-        model_id: str,
-        prompt_prefix: str,
-        payload: Any,
-    ) -> bool:
-        """Сохранение полезной нагрузки префикса в блочный кэш."""
+    def _write_entry(self, model_id: str, prompt_prefix: str, payload: Any) -> bool:
+        """Синхронная запись блока на диск с 4096-выравниванием."""
         key = self.compute_key(model_id, prompt_prefix)
         key_bytes = bytes.fromhex(key)
 
@@ -140,22 +163,48 @@ class NvmeKVCacheManager:
         self._current_bytes += block_total_len
         return True
 
+    def put(
+        self,
+        model_id: str,
+        prompt_prefix: str,
+        payload: Any,
+        wait: bool = True,
+    ) -> bool:
+        """Сохранение полезной нагрузки префикса в блочный кэш.
+        
+        Если wait=False, запись асинхронно ставится в очередь фонового потока (Milestone M1 / R6).
+        """
+        if wait:
+            with self._lock:
+                return self._write_entry(model_id, prompt_prefix, payload)
+        else:
+            key = self.compute_key(model_id, prompt_prefix)
+            with self._lock:
+                self._staging_dict[key] = payload
+            self._staging_queue.put((model_id, prompt_prefix, payload))
+            return True
+
     def get(
         self,
         model_id: str,
         prompt_prefix: str,
     ) -> Optional[Any]:
-        """Извлечение префикса из кэша с проверкой CRC32 (Fail-closed)."""
+        """Извлечение префикса из кэша с проверкой CRC32 (Fail-closed) и read-through staging."""
         key = self.compute_key(model_id, prompt_prefix)
-        if key not in self._index:
-            self._misses += 1
-            return None
+        with self._lock:
+            if key in self._staging_dict:
+                self._hits += 1
+                return self._staging_dict[key]
 
-        entry = self._index[key]
-        if not entry.file_path.exists():
-            self._misses += 1
-            del self._index[key]
-            return None
+            if key not in self._index:
+                self._misses += 1
+                return None
+
+            entry = self._index[key]
+            if not entry.file_path.exists():
+                self._misses += 1
+                del self._index[key]
+                return None
 
         try:
             with open(entry.file_path, "rb") as f:
@@ -178,9 +227,10 @@ class NvmeKVCacheManager:
                 if computed_crc != stored_crc:
                     raise ValueError(f"CRC mismatch: {computed_crc} != {stored_crc}")
 
-            entry.access_count += 1
-            entry.last_accessed = time.time()
-            self._hits += 1
+            with self._lock:
+                entry.access_count += 1
+                entry.last_accessed = time.time()
+                self._hits += 1
 
             # Попытка десериализации в JSON
             try:
@@ -190,11 +240,12 @@ class NvmeKVCacheManager:
 
         except (OSError, ValueError):
             # Поврежденная запись: fail-closed, инкремент счетчика и удаление
-            self._corrupted_count += 1
-            self._misses += 1
-            if entry.file_path.exists():
-                entry.file_path.unlink(missing_ok=True)
-            del self._index[key]
+            with self._lock:
+                self._corrupted_count += 1
+                self._misses += 1
+                if entry.file_path.exists():
+                    entry.file_path.unlink(missing_ok=True)
+                self._index.pop(key, None)
             return None
 
     def _ensure_capacity(self, needed_bytes: int) -> None:
@@ -267,8 +318,40 @@ class NvmeKVCacheManager:
 
     def clear(self) -> None:
         """Полная очистка кэша."""
-        for entry in self._index.values():
-            if entry.file_path.exists():
-                entry.file_path.unlink(missing_ok=True)
-        self._index.clear()
-        self._current_bytes = 0
+        with self._lock:
+            self._staging_dict.clear()
+            while not self._staging_queue.empty():
+                try:
+                    self._staging_queue.get_nowait()
+                    self._staging_queue.task_done()
+                except (queue.Empty, ValueError):
+                    break
+            for entry in self._index.values():
+                if entry.file_path.exists():
+                    entry.file_path.unlink(missing_ok=True)
+            self._index.clear()
+            self._current_bytes = 0
+
+    def flush(self, wait: bool = True) -> None:
+        """Сброс всех отложенных записей из очереди на диск (Milestone M1 / R6)."""
+        if wait:
+            self._staging_queue.join()
+
+    def close(self) -> None:
+        """Остановка фонового рабочего потока и сброс кэша."""
+        if not self._worker_running:
+            return
+        self._worker_running = False
+        try:
+            self._staging_queue.put_nowait(None)
+        except queue.Full:
+            pass
+        if self._flush_thread.is_alive():
+            self._flush_thread.join(timeout=2.0)
+        self.flush(wait=True)
+
+    def __enter__(self) -> "NvmeKVCacheManager":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()

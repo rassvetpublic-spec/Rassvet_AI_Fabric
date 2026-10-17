@@ -300,6 +300,57 @@ class BFTConsensusNode:
 
         return False
 
+    def propose_membership_change(self, action: str, target_node_id: str) -> Dict[str, Any]:
+        """Формирование предложения изменения состава валидаторов (ADD_NODE / REMOVE_NODE / R8)."""
+        if action not in ("ADD_NODE", "REMOVE_NODE"):
+            raise ValueError(f"Invalid membership action: {action}")
+        self.sequence_number += 1
+        digest = hashlib.sha256(f"{action}:{target_node_id}:{self.current_epoch}:{self.sequence_number}".encode("utf-8")).digest()
+        sig = self.sign_digest(digest)
+        return {
+            "type": "MEMBERSHIP_PROPOSAL",
+            "action": action,
+            "target_node_id": target_node_id,
+            "epoch": self.current_epoch,
+            "sequence_number": self.sequence_number,
+            "proposer_id": self.node_id,
+            "signature": sig,
+        }
+
+    def apply_membership_change(
+        self,
+        action: str,
+        target_node_id: str,
+        commit_signatures: Dict[str, str],
+    ) -> bool:
+        """
+        Применение изменения состава узлов кластера при наличии кворума подписей (2f_old + 1).
+        Увеличивает эпоху, пересчитывает N, f и quorum_size без остановки работы (R8).
+        """
+        valid_signatures = 0
+        digest = hashlib.sha256(f"{action}:{target_node_id}:{self.current_epoch}:{self.sequence_number}".encode("utf-8")).digest()
+        for voter_id, sig in commit_signatures.items():
+            if voter_id in self.cluster_nodes:
+                if self.verify_signature(voter_id, digest, sig):
+                    valid_signatures += 1
+
+        if valid_signatures < self.quorum_size:
+            self._stats["quorum_failures"] += 1
+            return False
+
+        nodes_set = set(self.cluster_nodes)
+        if action == "ADD_NODE":
+            nodes_set.add(target_node_id)
+        elif action == "REMOVE_NODE":
+            nodes_set.discard(target_node_id)
+
+        self.cluster_nodes = sorted(list(nodes_set))
+        self.n = len(self.cluster_nodes)
+        self.f = (self.n - 1) // 3 if self.n >= 4 else 0
+        self.quorum_size = 2 * self.f + 1 if self.f > 0 else (self.n // 2 + 1)
+        self.current_epoch += 1
+        return True
+
     def is_committed(self, sequence_number: int) -> bool:
         return sequence_number in self._committed_receipts
 
@@ -312,6 +363,7 @@ class BFTConsensusNode:
             "cluster_nodes_count": self.n,
             "byzantine_tolerance_f": self.f,
             "quorum_size": self.quorum_size,
+            "epoch": self.current_epoch,
             "phase": self.phase.value,
             "sequence_number": self.sequence_number,
             "committed_count": len(self._committed_receipts),

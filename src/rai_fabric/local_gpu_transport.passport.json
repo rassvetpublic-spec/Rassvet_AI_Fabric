@@ -28,6 +28,80 @@
         "DETERMINISTIC"
       ]
     },
+    "query_gpu_telemetry": {
+      "fn_id": "local_gpu_transport.query_gpu_telemetry",
+      "description": "Опрос оперативной телеметрии GPU (VRAM used/total, температура, потребление энергии).",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "GpuThermalWatchdog.set_mock_telemetry": {
+      "fn_id": "local_gpu_transport.GpuThermalWatchdog.set_mock_telemetry",
+      "description": "Установка детерминированных показаний для тестирования.",
+      "args": [
+        "temp_c",
+        "free_vram_mb"
+      ],
+      "inputs": {
+        "temp_c": {
+          "type": "Optional[float]",
+          "required": true,
+          "default": null
+        },
+        "free_vram_mb": {
+          "type": "Optional[float]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "GpuThermalWatchdog.get_telemetry": {
+      "fn_id": "local_gpu_transport.GpuThermalWatchdog.get_telemetry",
+      "description": "Получение телеметрии с кэшированием для предотвращения избыточных вызовов nvidia-smi.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "GpuThermalWatchdog.check_safety": {
+      "fn_id": "local_gpu_transport.GpuThermalWatchdog.check_safety",
+      "description": "Проверка аппаратных порогов.",
+      "args": [
+        "is_interactive"
+      ],
+      "inputs": {
+        "is_interactive": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
+        }
+      },
+      "outputs": {
+        "return_type": "tuple[bool, Optional[str]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "LocalGpuTransport.status": {
       "fn_id": "local_gpu_transport.LocalGpuTransport.status",
       "description": "Функция LocalGpuTransport.status",
@@ -163,6 +237,33 @@
       },
       "outputs": {
         "return_type": "Optional[TransportMessageEnvelope]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalGpuBenchmark.run_benchmark": {
+      "fn_id": "local_gpu_transport.LocalGpuBenchmark.run_benchmark",
+      "description": "Запуск стресс-прогона генерации с замером задержки, скорости токенов и дельты телеметрии.",
+      "args": [
+        "iterations",
+        "prompt"
+      ],
+      "inputs": {
+        "iterations": {
+          "type": "int",
+          "required": false,
+          "default": "5"
+        },
+        "prompt": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
       },
       "invariants": [
         "FAIL_CLOSED",

@@ -15,6 +15,45 @@
     "FAIL_CLOSED"
   ],
   "functions": {
+    "WeightedLoadBalancer.score_worker": {
+      "fn_id": "distributed_pool.WeightedLoadBalancer.score_worker",
+      "description": "Формула скоринга воркера:",
+      "args": [
+        "vram_free_mb",
+        "compute_power",
+        "active_tasks",
+        "task_tokens"
+      ],
+      "inputs": {
+        "vram_free_mb": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "compute_power": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "active_tasks": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "task_tokens": {
+          "type": "int",
+          "required": false,
+          "default": "1000"
+        }
+      },
+      "outputs": {
+        "return_type": "float"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "DistributedWorkerPool.registered_workers_count": {
       "fn_id": "distributed_pool.DistributedWorkerPool.registered_workers_count",
       "description": "Функция DistributedWorkerPool.registered_workers_count",
@@ -30,11 +69,13 @@
     },
     "DistributedWorkerPool.register_worker": {
       "fn_id": "distributed_pool.DistributedWorkerPool.register_worker",
-      "description": "Регистрация воркера в пуле.",
+      "description": "Регистрация воркера в пуле с аппаратным профилем.",
       "args": [
         "worker_id",
         "capabilities",
-        "endpoint"
+        "endpoint",
+        "vram_free_mb",
+        "compute_power"
       ],
       "inputs": {
         "worker_id": {
@@ -51,6 +92,16 @@
           "type": "Optional[str]",
           "required": false,
           "default": "None"
+        },
+        "vram_free_mb": {
+          "type": "float",
+          "required": false,
+          "default": "8000.0"
+        },
+        "compute_power": {
+          "type": "float",
+          "required": false,
+          "default": "1.0"
         }
       },
       "outputs": {
@@ -84,19 +135,73 @@
     },
     "DistributedWorkerPool.select_best_worker": {
       "fn_id": "distributed_pool.DistributedWorkerPool.select_best_worker",
-      "description": "Выбор наименее загруженного воркера с требуемыми возможностями.",
+      "description": "Выбор лучшего воркера с использованием взвешенного скоринга (R7).",
       "args": [
-        "required_capability"
+        "required_capability",
+        "task_tokens"
       ],
       "inputs": {
         "required_capability": {
           "type": "str",
           "required": false,
           "default": "'inference'"
+        },
+        "task_tokens": {
+          "type": "int",
+          "required": false,
+          "default": "1000"
         }
       },
       "outputs": {
         "return_type": "Optional[str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.enqueue_worker_task": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.enqueue_worker_task",
+      "description": "Помещение задачи в очередь конкретного воркера.",
+      "args": [
+        "worker_id",
+        "task"
+      ],
+      "inputs": {
+        "worker_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "task": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "DistributedWorkerPool.steal_work": {
+      "fn_id": "distributed_pool.DistributedWorkerPool.steal_work",
+      "description": "Проактивный перехват задачи из хвоста наиболее загруженного воркера (Work-Stealing / R7).",
+      "args": [
+        "idle_worker_id"
+      ],
+      "inputs": {
+        "idle_worker_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
       },
       "invariants": [
         "FAIL_CLOSED",

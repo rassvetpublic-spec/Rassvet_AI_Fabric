@@ -128,6 +128,27 @@
         "DETERMINISTIC"
       ]
     },
+    "FabricStore.submit_batch": {
+      "fn_id": "store.FabricStore.submit_batch",
+      "description": "Пакетное добавление задач в одной атомарной транзакции (Milestone M1 / R2).",
+      "args": [
+        "task_specs"
+      ],
+      "inputs": {
+        "task_specs": {
+          "type": "list[dict[str, Any]]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "list[dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "FabricStore.get": {
       "fn_id": "store.FabricStore.get",
       "description": "Функция FabricStore.get",

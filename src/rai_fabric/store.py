@@ -42,8 +42,19 @@ class FabricStore:
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.execute("PRAGMA busy_timeout=10000")
+        self.db.execute("PRAGMA mmap_size=268435456")
+        self.db.execute("PRAGMA synchronous=NORMAL")
+        self.db.execute("PRAGMA temp_store=MEMORY")
+        self.db.execute("PRAGMA wal_autocheckpoint=2000")
+        self._tx_depth = 0
         if initialize:
-            self.db.execute("PRAGMA journal_mode=WAL")
+            try:
+                cur = self.db.execute("PRAGMA journal_mode=WAL2")
+                res = cur.fetchone()
+                if not res or str(res[0]).lower() not in ("wal2", "wal"):
+                    self.db.execute("PRAGMA journal_mode=WAL")
+            except Exception:
+                self.db.execute("PRAGMA journal_mode=WAL")
             self._init_schema()
         elif not self.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='tasks'").fetchone():
             self.close()
@@ -109,13 +120,29 @@ class FabricStore:
 
     @contextmanager
     def atomic(self) -> Iterator[None]:
-        self.db.execute("BEGIN IMMEDIATE")
-        try:
-            yield
-            self.db.execute("COMMIT")
-        except BaseException:
-            self.db.execute("ROLLBACK")
-            raise
+        if getattr(self, "_tx_depth", 0) == 0:
+            self._tx_depth = 1
+            self.db.execute("BEGIN IMMEDIATE")
+            try:
+                yield
+                self.db.execute("COMMIT")
+            except BaseException:
+                self.db.execute("ROLLBACK")
+                raise
+            finally:
+                self._tx_depth = 0
+        else:
+            sp_name = f"sp_{uuid.uuid4().hex[:8]}"
+            self.db.execute(f"SAVEPOINT {sp_name}")
+            self._tx_depth += 1
+            try:
+                yield
+                self.db.execute(f"RELEASE SAVEPOINT {sp_name}")
+            except BaseException:
+                self.db.execute(f"ROLLBACK TO SAVEPOINT {sp_name}")
+                raise
+            finally:
+                self._tx_depth -= 1
 
     def _event(self, task_id: str, kind: str, data: dict[str, Any]) -> None:
         self.db.execute(
@@ -192,6 +219,21 @@ class FabricStore:
             self._checkpoint(task_id, "SUBMITTED", "PARTIAL", "DISPATCH", {"dependencies": deps})
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             return self._view(row)
+
+    def submit_batch(self, task_specs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Пакетное добавление задач в одной атомарной транзакции (Milestone M1 / R2)."""
+        results: list[dict[str, Any]] = []
+        with self.atomic():
+            for spec in task_specs:
+                res = self.submit(
+                    objective=spec["objective"],
+                    provider=spec["provider"],
+                    workspace=spec["workspace"],
+                    task_id=spec.get("task_id"),
+                    depends_on=spec.get("depends_on"),
+                )
+                results.append(res)
+        return results
 
     def get(self, task_id: str) -> dict[str, Any]:
         row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()

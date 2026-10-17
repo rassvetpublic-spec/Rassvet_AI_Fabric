@@ -17,7 +17,7 @@
   "functions": {
     "_identifier": {
       "fn_id": "effect_ledger._identifier",
-      "description": "Проверка неприватного ключа",
+      "description": "Функция _identifier",
       "args": [
         "value"
       ],
@@ -38,7 +38,7 @@
     },
     "_sha": {
       "fn_id": "effect_ledger._sha",
-      "description": "Проверка SHA-256 payload",
+      "description": "Функция _sha",
       "args": [
         "value"
       ],
@@ -59,7 +59,7 @@
     },
     "_safe_parent": {
       "fn_id": "effect_ledger._safe_parent",
-      "description": "Static reparse path check",
+      "description": "Статический fail-closed preflight для тестового SQLite-приёмника.",
       "args": [
         "path"
       ],
@@ -80,7 +80,7 @@
     },
     "SyntheticSQLiteTarget.close": {
       "fn_id": "effect_ledger.SyntheticSQLiteTarget.close",
-      "description": "Закрыть синтетическую SQLite БД",
+      "description": "Функция SyntheticSQLiteTarget.close",
       "args": [],
       "inputs": {},
       "outputs": {
@@ -93,7 +93,7 @@
     },
     "SyntheticSQLiteTarget.apply": {
       "fn_id": "effect_ledger.SyntheticSQLiteTarget.apply",
-      "description": "Отдельная локальная идемпотентная запись",
+      "description": "Идемпотентная запись в отдельный локальный sink; без сетевого вызова.",
       "args": [
         "operation_id",
         "payload_sha256"
@@ -120,7 +120,7 @@
     },
     "SyntheticSQLiteTarget.readback": {
       "fn_id": "effect_ledger.SyntheticSQLiteTarget.readback",
-      "description": "Независимый синтетический readback",
+      "description": "Функция SyntheticSQLiteTarget.readback",
       "args": [
         "operation_id"
       ],
@@ -141,7 +141,7 @@
     },
     "EffectLedger.install_on_empty_store": {
       "fn_id": "effect_ledger.EffectLedger.install_on_empty_store",
-      "description": "Явная установка схемы в пустую БД",
+      "description": "Создать W2-таблицы только в пустой явно выбранной Fabric SQLite БД.",
       "args": [
         "store"
       ],
@@ -153,7 +153,7 @@
         }
       },
       "outputs": {
-        "return_type": "EffectLedger"
+        "return_type": "'EffectLedger'"
       },
       "invariants": [
         "FAIL_CLOSED",
@@ -162,7 +162,7 @@
     },
     "EffectLedger.get": {
       "fn_id": "effect_ledger.EffectLedger.get",
-      "description": "Прочитать состояние эффекта",
+      "description": "Функция EffectLedger.get",
       "args": [
         "target_id",
         "operation_id"
@@ -189,7 +189,7 @@
     },
     "EffectLedger.list_for_task": {
       "fn_id": "effect_ledger.EffectLedger.list_for_task",
-      "description": "Только неприватные метаданные эффектов",
+      "description": "Функция EffectLedger.list_for_task",
       "args": [
         "task_id"
       ],
@@ -210,7 +210,7 @@
     },
     "EffectLedger.prepare_effect": {
       "fn_id": "effect_ledger.EffectLedger.prepare_effect",
-      "description": "Сохранить намерение до внешнего действия",
+      "description": "Ledger PREPARED коммитится ДО любой возможной внешней операции.",
       "args": [
         "task_id",
         "owner",
@@ -267,7 +267,7 @@
     },
     "EffectLedger.mark_possible_dispatch": {
       "fn_id": "effect_ledger.EffectLedger.mark_possible_dispatch",
-      "description": "Fence перед потенциальным действием",
+      "description": "Одноразовый fence; MUST commit before invoking any outside target.",
       "args": [
         "task_id",
         "owner",
@@ -312,7 +312,7 @@
     },
     "EffectLedger.recover_pending_effects": {
       "fn_id": "effect_ledger.EffectLedger.recover_pending_effects",
-      "description": "UNKNOWN_OUTCOME без повторного исполнения",
+      "description": "После crash/lost ACK пометить просроченные MAY_HAVE_RUN как UNKNOWN.",
       "args": [],
       "inputs": {},
       "outputs": {
@@ -325,7 +325,7 @@
     },
     "EffectLedger.reconcile_synthetic": {
       "fn_id": "effect_ledger.EffectLedger.reconcile_synthetic",
-      "description": "Только synthetic readback из отдельной БД",
+      "description": "Сверять эффект ТОЛЬКО с независимой локальной synthetic SQLite БД.",
       "args": [
         "target",
         "operation_id"
@@ -352,7 +352,7 @@
     },
     "EffectLedger.receipts_for_task": {
       "fn_id": "effect_ledger.EffectLedger.receipts_for_task",
-      "description": "Неизменяемые receipts",
+      "description": "Функция EffectLedger.receipts_for_task",
       "args": [
         "task_id"
       ],

@@ -19,8 +19,9 @@ import json
 import logging
 import os
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger("raif.tri_tower_sync")
 
@@ -40,6 +41,165 @@ def calculate_merkle_root(file_hashes: List[str]) -> str:
             next_layer.append(combined)
         current_layer = next_layer
     return current_layer[0]
+
+
+@dataclass
+class MMRProof:
+    """Криптографическое доказательство включения листа в Merkle Mountain Range (R10)."""
+    leaf_index: int
+    leaf_hash: str
+    peak_hashes: List[str]
+    peak_index: int
+    audit_path: List[Tuple[str, str]]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "leaf_index": self.leaf_index,
+            "leaf_hash": self.leaf_hash,
+            "peak_hashes": self.peak_hashes,
+            "peak_index": self.peak_index,
+            "audit_path": self.audit_path,
+        }
+
+
+class MerkleMountainRange:
+    """
+    Append-only Merkle Mountain Range (MMR) для сжатия квитанций чекпойнтов (Stage R33 / R10).
+    Обеспечивает O(1) добавление листьев, O(log N) доказательства включения
+    и компактный 32-байтный упакованный корень (bagged peak root).
+    """
+
+    def __init__(self) -> None:
+        self.leaves: List[str] = []
+        self._peaks: List[str] = []
+        self._trees: List[List[List[str]]] = []
+
+    @property
+    def leaf_count(self) -> int:
+        return len(self.leaves)
+
+    @staticmethod
+    def _hash_pair(left: str, right: str) -> str:
+        return hashlib.sha256(f"{left}:{right}".encode("utf-8")).hexdigest()
+
+    def append(self, leaf_hash: str) -> int:
+        """Добавление нового листа в MMR с амортизированной сложностью O(1)."""
+        idx = len(self.leaves)
+        self.leaves.append(leaf_hash)
+
+        new_tree: List[List[str]] = [[leaf_hash]]
+        self._trees.append(new_tree)
+
+        while len(self._trees) >= 2:
+            prev_tree = self._trees[-2]
+            curr_tree = self._trees[-1]
+            if len(prev_tree[0]) == len(curr_tree[0]):
+                base = prev_tree[0] + curr_tree[0]
+                merged_tree: List[List[str]] = [base]
+                curr_layer = base
+                while len(curr_layer) > 1:
+                    next_layer = []
+                    for i in range(0, len(curr_layer), 2):
+                        h = self._hash_pair(curr_layer[i], curr_layer[i + 1])
+                        next_layer.append(h)
+                    merged_tree.append(next_layer)
+                    curr_layer = next_layer
+                self._trees.pop()
+                self._trees.pop()
+                self._trees.append(merged_tree)
+            else:
+                break
+
+        self._peaks = [t[-1][0] for t in self._trees]
+        return idx
+
+    def get_peaks(self) -> List[str]:
+        """Возвращает список текущих пиков MMR."""
+        return list(self._peaks)
+
+    def get_root(self) -> str:
+        """
+        Вычисление компактного 32-байтного корня MMR (Bagged Peak Root).
+        Сворачивает все пики справа налево.
+        """
+        if not self._peaks:
+            return hashlib.sha256(b"EMPTY_MMR").hexdigest()
+        if len(self._peaks) == 1:
+            return self._peaks[0]
+
+        root = self._peaks[-1]
+        for p in reversed(self._peaks[:-1]):
+            root = self._hash_pair(p, root)
+        return root
+
+    def get_proof(self, leaf_index: int) -> MMRProof:
+        """Генерация O(log N) доказательства включения листа в MMR."""
+        if leaf_index < 0 or leaf_index >= len(self.leaves):
+            raise IndexError(f"Leaf index {leaf_index} out of bounds")
+
+        target_leaf = self.leaves[leaf_index]
+        offset = 0
+        target_tree_idx = -1
+        local_leaf_idx = -1
+        for t_idx, tree in enumerate(self._trees):
+            tree_leaves_count = len(tree[0])
+            if offset <= leaf_index < offset + tree_leaves_count:
+                target_tree_idx = t_idx
+                local_leaf_idx = leaf_index - offset
+                break
+            offset += tree_leaves_count
+
+        assert target_tree_idx != -1 and local_leaf_idx != -1
+        tree = self._trees[target_tree_idx]
+
+        audit_path: List[Tuple[str, str]] = []
+        idx_in_layer = local_leaf_idx
+        for layer in tree[:-1]:
+            is_right = (idx_in_layer % 2 == 1)
+            sibling_idx = idx_in_layer - 1 if is_right else idx_in_layer + 1
+            if sibling_idx < len(layer):
+                sibling_hash = layer[sibling_idx]
+                direction = "L" if is_right else "R"
+                audit_path.append((sibling_hash, direction))
+            idx_in_layer //= 2
+
+        return MMRProof(
+            leaf_index=leaf_index,
+            leaf_hash=target_leaf,
+            peak_hashes=list(self._peaks),
+            peak_index=target_tree_idx,
+            audit_path=audit_path,
+        )
+
+    @classmethod
+    def verify_proof(cls, root: str, leaf_hash: str, proof: MMRProof) -> bool:
+        """Криптографическая верификация доказательства включения листа в корень MMR."""
+        if proof.leaf_hash != leaf_hash:
+            return False
+
+        curr = leaf_hash
+        for sibling_hash, direction in proof.audit_path:
+            if direction == "L":
+                curr = cls._hash_pair(sibling_hash, curr)
+            else:
+                curr = cls._hash_pair(curr, sibling_hash)
+
+        if proof.peak_index >= len(proof.peak_hashes):
+            return False
+        if proof.peak_hashes[proof.peak_index] != curr:
+            return False
+
+        peaks = proof.peak_hashes
+        if not peaks:
+            return False
+        if len(peaks) == 1:
+            recomputed_root = peaks[0]
+        else:
+            recomputed_root = peaks[-1]
+            for p in reversed(peaks[:-1]):
+                recomputed_root = cls._hash_pair(p, recomputed_root)
+
+        return recomputed_root == root
 
 
 class TriTowerSyncAdapter:

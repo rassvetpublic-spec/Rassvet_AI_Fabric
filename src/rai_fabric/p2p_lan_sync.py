@@ -96,6 +96,82 @@ class LanBeacon:
         return None
 
 
+class PeerState:
+    ONLINE = "ONLINE"
+    DEGRADED = "DEGRADED"
+    SUSPECT = "SUSPECT"
+    FAILED = "FAILED"
+
+
+class EWMAPingTracker:
+    """Адаптивный EWMA-трекер пинга и скользящее 3-тиковое окно отказоустойчивости (Stage R33 / R5)."""
+
+    def __init__(
+        self,
+        alpha: float = 0.25,
+        tick_interval_sec: float = 1.5,
+        failover_ticks: int = 3,
+        degraded_rtt_ms: float = 200.0,
+    ) -> None:
+        self.alpha = alpha
+        self.tick_interval_sec = tick_interval_sec
+        self.failover_ticks = failover_ticks
+        self.max_failover_sec = tick_interval_sec * failover_ticks
+        self.degraded_rtt_ms = degraded_rtt_ms
+        self._peers: Dict[str, Dict[str, Any]] = {}
+
+    def record_ping(self, peer_id: str, rtt_ms: float, timestamp: Optional[float] = None) -> float:
+        """Регистрация замера RTT и обновление скользящего среднего EWMA."""
+        ts = timestamp if timestamp is not None else time.time()
+        if peer_id not in self._peers:
+            self._peers[peer_id] = {
+                "rtt_ewma": float(rtt_ms),
+                "last_seen_ts": ts,
+                "pings_count": 1,
+            }
+            return float(rtt_ms)
+
+        info = self._peers[peer_id]
+        prev_ewma = info["rtt_ewma"]
+        new_ewma = (self.alpha * rtt_ms) + ((1.0 - self.alpha) * prev_ewma)
+        info["rtt_ewma"] = new_ewma
+        info["last_seen_ts"] = ts
+        info["pings_count"] += 1
+        return new_ewma
+
+    def get_state(self, peer_id: str, now: Optional[float] = None) -> str:
+        """Определение состояния пира по формуле скользящего 3-тикового окна."""
+        if peer_id not in self._peers:
+            return PeerState.FAILED
+
+        info = self._peers[peer_id]
+        current_time = now if now is not None else time.time()
+        elapsed = max(0.0, current_time - info["last_seen_ts"])
+
+        if elapsed >= self.max_failover_sec:
+            return PeerState.FAILED
+        elif elapsed >= self.tick_interval_sec:
+            return PeerState.SUSPECT
+        elif info["rtt_ewma"] >= self.degraded_rtt_ms:
+            return PeerState.DEGRADED
+        return PeerState.ONLINE
+
+    def get_peer_metrics(self, peer_id: str, now: Optional[float] = None) -> Dict[str, Any]:
+        """Телеметрия RTT и состояния пира."""
+        if peer_id not in self._peers:
+            return {"peer_id": peer_id, "state": PeerState.FAILED, "rtt_ewma_ms": 0.0}
+        info = self._peers[peer_id]
+        current_time = now if now is not None else time.time()
+        elapsed = max(0.0, current_time - info["last_seen_ts"])
+        return {
+            "peer_id": peer_id,
+            "state": self.get_state(peer_id, now=current_time),
+            "rtt_ewma_ms": round(info["rtt_ewma"], 2),
+            "pings_count": info["pings_count"],
+            "seconds_since_last_ping": round(elapsed, 2),
+        }
+
+
 class LanPeerDiscovery:
     """Реестр и координатор обнаружения пиров локальной сети с отслеживанием TTL."""
 
@@ -103,14 +179,17 @@ class LanPeerDiscovery:
         self,
         beacon_port: int = DEFAULT_BEACON_PORT,
         ttl_seconds: float = DEFAULT_TTL_SECONDS,
+        ping_tracker: Optional[EWMAPingTracker] = None,
     ) -> None:
         self.beacon_port = beacon_port
         self.ttl_seconds = ttl_seconds
+        self.ping_tracker = ping_tracker or EWMAPingTracker()
         self.peers: Dict[str, Dict[str, Any]] = {}
 
     def register_peer(self, beacon: LanBeacon) -> None:
         """Регистрация или обновление пира по полученному маяку."""
         now = time.time()
+        self.ping_tracker.record_ping(beacon.node_id, rtt_ms=1.0, timestamp=now)
         self.peers[beacon.node_id] = {
             "node_id": beacon.node_id,
             "endpoint": f"http://{beacon.host}:{beacon.port}",
@@ -129,6 +208,8 @@ class LanPeerDiscovery:
         node_id = peer_data.get("node_id", f"synthetic-{int(time.time())}")
         now = time.time()
         ttl = peer_data.get("ttl_seconds", self.ttl_seconds)
+        rtt = peer_data.get("rtt_ms", 1.0)
+        self.ping_tracker.record_ping(node_id, rtt_ms=rtt, timestamp=now)
         self.peers[node_id] = {
             "node_id": node_id,
             "endpoint": peer_data.get("endpoint", f"http://{peer_data.get('host', '127.0.0.1')}:{peer_data.get('port', 11434)}"),
@@ -153,6 +234,11 @@ class LanPeerDiscovery:
     def get_active_peers(self) -> List[Dict[str, Any]]:
         """Получение списка актуальных незаэкспиренных пиров."""
         self.purge_expired_peers()
+        now = time.time()
+        for nid, p in self.peers.items():
+            st = self.ping_tracker.get_state(nid, now=now)
+            p["status"] = st
+            p["ewma_metrics"] = self.ping_tracker.get_peer_metrics(nid, now=now)
         return list(self.peers.values())
 
     def broadcast_beacon(

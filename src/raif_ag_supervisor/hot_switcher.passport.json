@@ -28,6 +28,19 @@
         "DETERMINISTIC"
       ]
     },
+    "HotSwitcher.get_all_profiles": {
+      "fn_id": "hot_switcher.HotSwitcher.get_all_profiles",
+      "description": "Возвращает все доступные профили аккаунтов флота из хранилища.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "List[FormattedAccountCredential]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "HotSwitcher.list_candidate_profiles": {
       "fn_id": "hot_switcher.HotSwitcher.list_candidate_profiles",
       "description": "Возвращает список доступных профилей, отсортированных по свежести.",
@@ -35,6 +48,60 @@
       "inputs": {},
       "outputs": {
         "return_type": "List[FormattedAccountCredential]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HotSwitcher.switch_to_account_index": {
+      "fn_id": "hot_switcher.HotSwitcher.switch_to_account_index",
+      "description": "Выполняет переключение на указанный аккаунт по прямому индексу пула флота (0..N-1).",
+      "args": [
+        "account_index",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "account_index": {
+          "type": "int",
+          "required": false,
+          "default": "0"
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "6.0"
+        }
+      },
+      "outputs": {
+        "return_type": "HotSwitchReport"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "HotSwitcher.switch_to_account_id": {
+      "fn_id": "hot_switcher.HotSwitcher.switch_to_account_id",
+      "description": "Выполняет переключение на указанный аккаунт по ID или email.",
+      "args": [
+        "account_id",
+        "timeout_seconds"
+      ],
+      "inputs": {
+        "account_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "timeout_seconds": {
+          "type": "float",
+          "required": false,
+          "default": "6.0"
+        }
+      },
+      "outputs": {
+        "return_type": "HotSwitchReport"
       },
       "invariants": [
         "FAIL_CLOSED",

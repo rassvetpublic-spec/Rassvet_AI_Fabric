@@ -28,6 +28,19 @@
         "DETERMINISTIC"
       ]
     },
+    "FormattedAccountCredential.safe_dict": {
+      "fn_id": "token_refresh.FormattedAccountCredential.safe_dict",
+      "description": "Функция FormattedAccountCredential.safe_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "mask_email": {
       "fn_id": "token_refresh.mask_email",
       "description": "Маскирование email для безопасного логирования: user@domain.com -> u***r@domain.com.",

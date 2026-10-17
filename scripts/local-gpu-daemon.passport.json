@@ -54,6 +54,148 @@
         "DETERMINISTIC"
       ]
     },
+    "check_upstream_ollama": {
+      "fn_id": "local-gpu-daemon.check_upstream_ollama",
+      "description": "Проверка доступности нативного инференс-сервиса Ollama на апстрим-порту.",
+      "args": [
+        "timeout"
+      ],
+      "inputs": {
+        "timeout": {
+          "type": "float",
+          "required": false,
+          "default": "0.25"
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_send_chunk": {
+      "fn_id": "local-gpu-daemon._send_chunk",
+      "description": "Отправка фрагмента HTTP Chunked Transfer Encoding.",
+      "args": [
+        "wfile",
+        "data"
+      ],
+      "inputs": {
+        "wfile": {
+          "type": "Any",
+          "required": true,
+          "default": null
+        },
+        "data": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ModelSlot.to_dict": {
+      "fn_id": "local-gpu-daemon.ModelSlot.to_dict",
+      "description": "Функция ModelSlot.to_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MultiModelPool.get_allocated_vram": {
+      "fn_id": "local-gpu-daemon.MultiModelPool.get_allocated_vram",
+      "description": "Функция MultiModelPool.get_allocated_vram",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MultiModelPool.get_available_vram": {
+      "fn_id": "local-gpu-daemon.MultiModelPool.get_available_vram",
+      "description": "Функция MultiModelPool.get_available_vram",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MultiModelPool.ensure_model_loaded": {
+      "fn_id": "local-gpu-daemon.MultiModelPool.ensure_model_loaded",
+      "description": "Функция MultiModelPool.ensure_model_loaded",
+      "args": [
+        "model_name"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[bool, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MultiModelPool.unload_model": {
+      "fn_id": "local-gpu-daemon.MultiModelPool.unload_model",
+      "description": "Функция MultiModelPool.unload_model",
+      "args": [
+        "model_name"
+      ],
+      "inputs": {
+        "model_name": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[bool, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "MultiModelPool.get_state": {
+      "fn_id": "local-gpu-daemon.MultiModelPool.get_state",
+      "description": "Функция MultiModelPool.get_state",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "synthesize_embedding_response": {
       "fn_id": "local-gpu-daemon.synthesize_embedding_response",
       "description": "Детерминированная генерация нормализованного векторного эмбеддинга (Ollama API / Embeddings).",
@@ -70,7 +212,7 @@
         "model": {
           "type": "str",
           "required": false,
-          "default": "bge-m3"
+          "default": "'bge-m3'"
         }
       },
       "outputs": {
@@ -83,7 +225,7 @@
     },
     "synthesize_code_response": {
       "fn_id": "local-gpu-daemon.synthesize_code_response",
-      "description": "Генерация программного ответа с аппаратной токенизацией и замером времени.",
+      "description": "Интеллектуальная генерация ответа с аппаратной токенизацией,",
       "args": [
         "prompt",
         "model"

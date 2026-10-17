@@ -229,6 +229,14 @@ class MultiModelPool:
                 vram_mb=5200,
                 description="Основная модель кодогенерации и рефакторинга флота",
             ),
+            "qwen2.5-coder:1.5b": ModelSlot(
+                name="qwen2.5-coder:1.5b",
+                model_type="code-draft",
+                format_type="GGUF",
+                quant="Q4_K_M",
+                vram_mb=1400,
+                description="Сверхбыстрая черновая (draft) модель для спекулятивного декодирования (R3)",
+            ),
             "qwen2.5-coder:7b-instruct-q5_k_m": ModelSlot(
                 name="qwen2.5-coder:7b-instruct-q5_k_m",
                 model_type="code",

@@ -9,31 +9,241 @@
   "author": "RAIF_DEVELOPER",
   "inputs": {},
   "outputs": {},
-  "invariants": ["SIDECAR_CANON_ENFORCED", "IN_CODE_ONLY_VERSION", "FAIL_CLOSED", "NO_EXTERNAL_PROVIDER", "OWNER_MTD_FOR_MERGE"],
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED",
+    "NO_EXTERNAL_PROVIDER",
+    "OWNER_MTD_FOR_MERGE"
+  ],
   "functions": {
     "_is_legacy": {
-      "fn_id": "dev_cycle_10_6._is_legacy", "description": "Legacy C source root denylist", "args": ["path"]
+      "fn_id": "dev_cycle_10_6._is_legacy",
+      "description": "Функция _is_legacy",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "str | Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "_read_json": {
-      "fn_id": "dev_cycle_10_6._read_json", "description": "Bounded JSON duplicate-key reject", "args": ["path"]
+      "fn_id": "dev_cycle_10_6._read_json",
+      "description": "Функция _read_json",
+      "args": [
+        "path"
+      ],
+      "inputs": {
+        "path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "_stamp": {
-      "fn_id": "dev_cycle_10_6._stamp", "description": "Internal untrusted SHA256 checksum seal", "args": ["value"]
+      "fn_id": "dev_cycle_10_6._stamp",
+      "description": "Функция _stamp",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "_check_stamp": {
-      "fn_id": "dev_cycle_10_6._check_stamp", "description": "Recalculate receipt checksum", "args": ["value"]
+      "fn_id": "dev_cycle_10_6._check_stamp",
+      "description": "Функция _check_stamp",
+      "args": [
+        "value"
+      ],
+      "inputs": {
+        "value": {
+          "type": "dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "_check_task": {
-      "fn_id": "dev_cycle_10_6._check_task", "description": "Windows task, exact source pin, root and queue fail-closed preflight", "args": ["store", "task_id", "repo", "pin", "root"]
+      "fn_id": "dev_cycle_10_6._check_task",
+      "description": "Функция _check_task",
+      "args": [
+        "store",
+        "task_id",
+        "repo",
+        "pin",
+        "root"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "pin": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "root": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "_build_evidence": {
-      "fn_id": "dev_cycle_10_6._build_evidence", "description": "Check worktree-review manifest, checkpoint, mock tests and patch bytes", "args": ["run", "expected_pin"]
+      "fn_id": "dev_cycle_10_6._build_evidence",
+      "description": "Функция _build_evidence",
+      "args": [
+        "run",
+        "expected_pin"
+      ],
+      "inputs": {
+        "run": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "expected_pin": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "run_synthetic_cycle": {
-      "fn_id": "dev_cycle_10_6.run_synthetic_cycle", "description": "Stage queue-owned synthetic dev task into verifiable offline review packet", "args": ["store", "task_id", "repo", "pin", "output_root", "owner"]
+      "fn_id": "dev_cycle_10_6.run_synthetic_cycle",
+      "description": "Single allowlisted dev task -> isolated diff -> 3 checks -> QA/PR intent.",
+      "args": [
+        "store",
+        "task_id",
+        "repo",
+        "pin",
+        "output_root",
+        "owner"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "repo": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "pin": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "output_root": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": false,
+          "default": "'raif-10-6-synthetic'"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "verify_cycle_receipt": {
-      "fn_id": "dev_cycle_10_6.verify_cycle_receipt", "description": "Tamper-evident offline readback, without approving QA or PR", "args": ["run_dir"]
+      "fn_id": "dev_cycle_10_6.verify_cycle_receipt",
+      "description": "Readback only, no review authority; refuses tampered/missing records.",
+      "args": [
+        "run_dir"
+      ],
+      "inputs": {
+        "run_dir": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     }
   }
 }

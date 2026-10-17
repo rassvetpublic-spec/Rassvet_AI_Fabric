@@ -18,11 +18,146 @@
   "functions": {
     "ReceiptProposal.compute_digest": {
       "fn_id": "bft_consensus.ReceiptProposal.compute_digest",
-      "description": "Вычисление криптографического дайджеста предложения квитанции.",
+      "description": "Функция ReceiptProposal.compute_digest",
       "args": [],
       "inputs": {},
       "outputs": {
         "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ReceiptProposal.to_dict": {
+      "fn_id": "bft_consensus.ReceiptProposal.to_dict",
+      "description": "Функция ReceiptProposal.to_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ReceiptProposal.from_dict": {
+      "fn_id": "bft_consensus.ReceiptProposal.from_dict",
+      "description": "Функция ReceiptProposal.from_dict",
+      "args": [
+        "d"
+      ],
+      "inputs": {
+        "d": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "ReceiptProposal"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTVote.compute_digest": {
+      "fn_id": "bft_consensus.BFTVote.compute_digest",
+      "description": "Функция BFTVote.compute_digest",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTVote.to_dict": {
+      "fn_id": "bft_consensus.BFTVote.to_dict",
+      "description": "Функция BFTVote.to_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTVote.from_dict": {
+      "fn_id": "bft_consensus.BFTVote.from_dict",
+      "description": "Функция BFTVote.from_dict",
+      "args": [
+        "d"
+      ],
+      "inputs": {
+        "d": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "BFTVote"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.sign_digest": {
+      "fn_id": "bft_consensus.BFTConsensusNode.sign_digest",
+      "description": "Генерация HMAC-подписи для квитанции или голоса.",
+      "args": [
+        "digest"
+      ],
+      "inputs": {
+        "digest": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.verify_signature": {
+      "fn_id": "bft_consensus.BFTConsensusNode.verify_signature",
+      "description": "Проверка подписи узла кластера.",
+      "args": [
+        "voter_id",
+        "digest",
+        "signature"
+      ],
+      "inputs": {
+        "voter_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "digest": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "signature": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
       },
       "invariants": [
         "FAIL_CLOSED",
@@ -72,14 +207,15 @@
         "local_expected_merkle": {
           "type": "Optional[str]",
           "required": false,
-          "default": null
+          "default": "None"
         }
       },
       "outputs": {
         "return_type": "Optional[BFTVote]"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     },
     "BFTConsensusNode.handle_prepare": {
@@ -99,7 +235,8 @@
         "return_type": "Optional[BFTVote]"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     },
     "BFTConsensusNode.handle_commit": {
@@ -119,12 +256,115 @@
         "return_type": "bool"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.propose_membership_change": {
+      "fn_id": "bft_consensus.BFTConsensusNode.propose_membership_change",
+      "description": "Формирование предложения изменения состава валидаторов (ADD_NODE / REMOVE_NODE / R8).",
+      "args": [
+        "action",
+        "target_node_id"
+      ],
+      "inputs": {
+        "action": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "target_node_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.apply_membership_change": {
+      "fn_id": "bft_consensus.BFTConsensusNode.apply_membership_change",
+      "description": "Применение изменения состава узлов кластера при наличии кворума подписей (2f_old + 1).",
+      "args": [
+        "action",
+        "target_node_id",
+        "commit_signatures"
+      ],
+      "inputs": {
+        "action": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "target_node_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "commit_signatures": {
+          "type": "Dict[str, str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.is_committed": {
+      "fn_id": "bft_consensus.BFTConsensusNode.is_committed",
+      "description": "Функция BFTConsensusNode.is_committed",
+      "args": [
+        "sequence_number"
+      ],
+      "inputs": {
+        "sequence_number": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "BFTConsensusNode.get_committed_receipt": {
+      "fn_id": "bft_consensus.BFTConsensusNode.get_committed_receipt",
+      "description": "Функция BFTConsensusNode.get_committed_receipt",
+      "args": [
+        "sequence_number"
+      ],
+      "inputs": {
+        "sequence_number": {
+          "type": "int",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     },
     "BFTConsensusNode.get_metrics": {
       "fn_id": "bft_consensus.BFTConsensusNode.get_metrics",
-      "description": "Телеметрия узла консенсуса.",
+      "description": "Функция BFTConsensusNode.get_metrics",
       "args": [],
       "inputs": {},
       "outputs": {

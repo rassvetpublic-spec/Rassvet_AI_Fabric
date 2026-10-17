@@ -1,0 +1,65 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "speculative_decoder",
+  "name": "Speculative Decoder",
+  "version": "1.0.0",
+  "standard": "SENIOR_ARCHITECTURE_STANDARD_V6.0",
+  "layer": "tools",
+  "description": "rai_fabric.speculative_decoder - Конвейер спекулятивного декодирования (Stage R33 / Milestone M2 / R3).",
+  "author": "RAIF_DEVELOPER",
+  "inputs": {},
+  "outputs": {},
+  "invariants": [
+    "SIDECAR_CANON_ENFORCED",
+    "IN_CODE_ONLY_VERSION",
+    "FAIL_CLOSED"
+  ],
+  "functions": {
+    "SpeculativeResult.to_dict": {
+      "fn_id": "speculative_decoder.SpeculativeResult.to_dict",
+      "description": "Функция SpeculativeResult.to_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "SpeculativeDecoder.generate": {
+      "fn_id": "speculative_decoder.SpeculativeDecoder.generate",
+      "description": "Спекулятивная генерация с верификацией блоками по K токенов.",
+      "args": [
+        "prompt",
+        "max_tokens",
+        "draft_k"
+      ],
+      "inputs": {
+        "prompt": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "max_tokens": {
+          "type": "int",
+          "required": false,
+          "default": "128"
+        },
+        "draft_k": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "SpeculativeResult"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  }
+}

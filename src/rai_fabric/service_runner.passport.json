@@ -74,6 +74,19 @@
         "FAIL_CLOSED",
         "DETERMINISTIC"
       ]
+    },
+    "main": {
+      "fn_id": "service_runner.main",
+      "description": "Точка входа CLI для управления фоновой службой WorkerFleetServiceRunner.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     }
   }
 }

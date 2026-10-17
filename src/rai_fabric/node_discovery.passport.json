@@ -213,7 +213,8 @@
         "return_type": "Optional[Dict[str, Any]]"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     }
   }

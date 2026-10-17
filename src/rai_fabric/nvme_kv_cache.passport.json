@@ -18,7 +18,7 @@
   "functions": {
     "NvmeKVCacheManager.compute_key": {
       "fn_id": "nvme_kv_cache.NvmeKVCacheManager.compute_key",
-      "description": "Детерминированный ключ записи sha256(model_id + '::' + prompt_prefix).",
+      "description": "Детерминированный ключ записи: sha256(model_id + '::' + prompt_prefix).",
       "args": [
         "model_id",
         "prompt_prefix"
@@ -49,7 +49,8 @@
       "args": [
         "model_id",
         "prompt_prefix",
-        "payload"
+        "payload",
+        "wait"
       ],
       "inputs": {
         "model_id": {
@@ -66,6 +67,11 @@
           "type": "Any",
           "required": true,
           "default": null
+        },
+        "wait": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
         }
       },
       "outputs": {
@@ -73,12 +79,12 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "ZERO_SSD_WEAR"
+        "DETERMINISTIC"
       ]
     },
     "NvmeKVCacheManager.get": {
       "fn_id": "nvme_kv_cache.NvmeKVCacheManager.get",
-      "description": "Извлечение префикса из кэша с проверкой CRC32 (Fail-closed).",
+      "description": "Извлечение префикса из кэша с проверкой CRC32 (Fail-closed) и read-through staging.",
       "args": [
         "model_id",
         "prompt_prefix"
@@ -100,7 +106,7 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "ZERO_SSD_WEAR"
+        "DETERMINISTIC"
       ]
     },
     "NvmeKVCacheManager.get_metrics": {
@@ -125,7 +131,42 @@
         "return_type": "None"
       },
       "invariants": [
-        "FAIL_CLOSED"
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvmeKVCacheManager.flush": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.flush",
+      "description": "Сброс всех отложенных записей из очереди на диск (Milestone M1 / R6).",
+      "args": [
+        "wait"
+      ],
+      "inputs": {
+        "wait": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvmeKVCacheManager.close": {
+      "fn_id": "nvme_kv_cache.NvmeKVCacheManager.close",
+      "description": "Остановка фонового рабочего потока и сброс кэша.",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
       ]
     }
   }

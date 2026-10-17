@@ -38,6 +38,7 @@
 | `rai_fabric/parity_cron.py` | Python | rai_fabric.parity_cron - Автоматический фоновый планировщик аудита паритета Трёх Башен (Stage R26 / R0.4). |
 | `rai_fabric/scheduler.py` | Python | rai_fabric.scheduler - Автономный диспетчер очередей задач (Stage R26 / Issue #17). |
 | `rai_fabric/service_runner.py` | Python | rai_fabric.service_runner - Диспетчер автономной фоновой службы Windows для WorkerFleetScheduler (Stage R0.5). |
+| `rai_fabric/speculative_decoder.py` | Python | rai_fabric.speculative_decoder - Конвейер спекулятивного декодирования (Stage R33 / Milestone M2 / R3). |
 | `rai_fabric/store.py` | Python | Транзакционное состояние задач; не использует код OMX или Superpowers. |
 | `rai_fabric/transport.py` | Python | rai_fabric.transport - Мост обратной совместимости для пакета transport (Stage R25). |
 | `rai_fabric/tri_tower_sync.py` | Python | rai_fabric.tri_tower_sync - Адаптер синхронизации чекпойнтов и квитанций Трёх Башен (Stage R0.4). |

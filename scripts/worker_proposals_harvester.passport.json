@@ -33,28 +33,154 @@
   ],
   "functions": {
     "discover_subagent_transcripts": {
-      "fn_id": "harvester.discover_subagent_transcripts",
-      "description": "Поиск transcript.jsonl файлов субагентов."
+      "fn_id": "worker_proposals_harvester.discover_subagent_transcripts",
+      "description": "Находит все файлы transcript.jsonl в поддиректориях brain.",
+      "args": [
+        "brain_root"
+      ],
+      "inputs": {
+        "brain_root": {
+          "type": "Path",
+          "required": false,
+          "default": "DEFAULT_BRAIN_ROOT"
+        }
+      },
+      "outputs": {
+        "return_type": "List[Tuple[str, Path]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "extract_proposals_from_text": {
-      "fn_id": "harvester.extract_proposals_from_text",
-      "description": "Извлечение предложений из текста транскрипта."
+      "fn_id": "worker_proposals_harvester.extract_proposals_from_text",
+      "description": "Извлекает структурированные предложения из текста транскрипта.",
+      "args": [
+        "text",
+        "source_id"
+      ],
+      "inputs": {
+        "text": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "source_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "List[Dict[str, Any]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "harvest_worker_proposals": {
-      "fn_id": "harvester.harvest_worker_proposals",
-      "description": "Сбор и дедупликация предложений."
+      "fn_id": "worker_proposals_harvester.harvest_worker_proposals",
+      "description": "Сбор и структурирование всех предложений воркеров.",
+      "args": [
+        "brain_root",
+        "max_days"
+      ],
+      "inputs": {
+        "brain_root": {
+          "type": "Path",
+          "required": false,
+          "default": "DEFAULT_BRAIN_ROOT"
+        },
+        "max_days": {
+          "type": "int",
+          "required": false,
+          "default": "7"
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "render_proposals_markdown": {
-      "fn_id": "harvester.render_proposals_markdown",
-      "description": "Генерация Markdown отчета."
+      "fn_id": "worker_proposals_harvester.render_proposals_markdown",
+      "description": "Генерирует форматированный Markdown отчет.",
+      "args": [
+        "data"
+      ],
+      "inputs": {
+        "data": {
+          "type": "Dict[str, Any]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "str"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "replicate_to_destinations": {
-      "fn_id": "harvester.replicate_to_destinations",
-      "description": "Репликация в C:\\_inbox и Три Башни."
+      "fn_id": "worker_proposals_harvester.replicate_to_destinations",
+      "description": "Реплицирует отчет и json во все приемники флота.",
+      "args": [
+        "json_content",
+        "md_content",
+        "date_str"
+      ],
+      "inputs": {
+        "json_content": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "md_content": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "date_str": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Dict[str, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     },
     "main": {
-      "fn_id": "harvester.main",
-      "description": "CLI интерфейс."
+      "fn_id": "worker_proposals_harvester.main",
+      "description": "Функция main",
+      "args": [
+        "argv"
+      ],
+      "inputs": {
+        "argv": {
+          "type": "Optional[List[str]]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "int"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
     }
   },
   "metrics": {

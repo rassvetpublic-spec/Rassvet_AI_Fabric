@@ -16,9 +16,111 @@
     "SYNTHETIC_ONLY"
   ],
   "functions": {
+    "_summary": {
+      "fn_id": "foreground_w2._summary",
+      "description": "Публичный результат без аренды, исходного payload, путей и PID.",
+      "args": [
+        "store",
+        "ledger",
+        "task_id",
+        "target_id",
+        "operation_id",
+        "reason"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "ledger": {
+          "type": "EffectLedger",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "operation_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "reason": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "dict"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "_settle_blocked": {
+      "fn_id": "foreground_w2._settle_blocked",
+      "description": "Только fail-closed завершение; если lease потерян, потребуется recovery.",
+      "args": [
+        "store",
+        "ledger",
+        "task_id",
+        "owner",
+        "lease_token",
+        "reason"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "ledger": {
+          "type": "EffectLedger",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "owner": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "lease_token": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "reason": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "run_foreground_synthetic_once": {
       "fn_id": "foreground_w2.run_foreground_synthetic_once",
-      "description": "Один fenced foreground synthetic effect, owned Windows Job и immutable target receipt",
+      "description": "Одна synthetic mock-задача с fenced PREPARED→MAY_HAVE_RUN→receipt.",
       "args": [
         "store",
         "target",
@@ -53,7 +155,7 @@
         "case": {
           "type": "str",
           "required": false,
-          "default": "\"EXIT_ZERO\""
+          "default": "'EXIT_ZERO'"
         },
         "timeout_seconds": {
           "type": "float",
@@ -76,13 +178,12 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "SYNTHETIC_ONLY",
-        "NO_REPLAY"
+        "DETERMINISTIC"
       ]
     },
     "recover_foreground_synthetic": {
       "fn_id": "foreground_w2.recover_foreground_synthetic",
-      "description": "Переход expired lease в BLOCKED/UNKNOWN без запуска задач",
+      "description": "Без replay: истёкшие аренды → BLOCKED и UNKNOWN_OUTCOME.",
       "args": [
         "store"
       ],
@@ -98,7 +199,7 @@
       },
       "invariants": [
         "FAIL_CLOSED",
-        "NO_REPLAY"
+        "DETERMINISTIC"
       ]
     }
   }
