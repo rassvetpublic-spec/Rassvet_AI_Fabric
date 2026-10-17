@@ -112,6 +112,83 @@ def query_gpu_telemetry() -> Dict[str, Any]:
     return telemetry
 
 
+class GpuThermalWatchdog:
+    """Аппаратный предохранитель по температуре и доступной VRAM (Stage R33 / Milestone M1)."""
+
+    def __init__(
+        self,
+        max_temp_c: float = 72.0,
+        min_free_vram_mb: float = 800.0,
+        cache_ttl_seconds: float = 1.0,
+    ) -> None:
+        self.max_temp_c = max_temp_c
+        self.min_free_vram_mb = min_free_vram_mb
+        self.cache_ttl_seconds = cache_ttl_seconds
+        self._last_telemetry: Dict[str, Any] = {}
+        self._last_query_ts: float = 0.0
+        self._mock_telemetry: Optional[Dict[str, Any]] = None
+
+    def set_mock_telemetry(self, temp_c: Optional[float], free_vram_mb: Optional[float]) -> None:
+        """Установка детерминированных показаний для тестирования."""
+        if temp_c is None and free_vram_mb is None:
+            self._mock_telemetry = None
+        else:
+            self._mock_telemetry = {
+                "available": True,
+                "temperature_c": temp_c,
+                "free_vram_mb": free_vram_mb,
+            }
+
+    def get_telemetry(self) -> Dict[str, Any]:
+        """Получение телеметрии с кэшированием для предотвращения избыточных вызовов nvidia-smi."""
+        if self._mock_telemetry is not None:
+            return dict(self._mock_telemetry)
+
+        now = time.time()
+        if (now - self._last_query_ts) < self.cache_ttl_seconds and self._last_telemetry:
+            return dict(self._last_telemetry)
+
+        tel = query_gpu_telemetry()
+        if tel.get("available") and tel.get("memory_total_mb") is not None and tel.get("memory_used_mb") is not None:
+            tel["free_vram_mb"] = max(0, tel["memory_total_mb"] - tel["memory_used_mb"])
+        else:
+            tel["free_vram_mb"] = None
+
+        self._last_telemetry = tel
+        self._last_query_ts = now
+        return dict(tel)
+
+    def check_safety(self, is_interactive: bool = True) -> tuple[bool, Optional[str]]:
+        """
+        Проверка аппаратных порогов.
+        Если порог превышен:
+        - для фоновых задач (is_interactive=False): сброс нагрузки (False, причина)
+        - для интерактивного диалога (is_interactive=True): предупреждение (True, warning)
+        """
+        tel = self.get_telemetry()
+        if not tel.get("available"):
+            return True, None
+
+        temp = tel.get("temperature_c")
+        free_vram = tel.get("free_vram_mb")
+
+        reason = None
+        if temp is not None and temp > self.max_temp_c:
+            reason = f"GPU temperature {temp}°C exceeds safety threshold {self.max_temp_c}°C"
+        elif free_vram is not None and free_vram < self.min_free_vram_mb:
+            reason = f"Free VRAM {free_vram} MB is below safety threshold {self.min_free_vram_mb} MB"
+
+        if reason:
+            if not is_interactive:
+                logger.warning("ThermalWatchdog: Shedding background queue load: %s", reason)
+                return False, reason
+            else:
+                logger.warning("ThermalWatchdog: Interactive throttle advisory: %s", reason)
+                return True, reason
+
+        return True, None
+
+
 class LocalGpuTransport(ITransportChannel):
     """Канал локального GPU-инференса для выгрузки синтетических и рутинных задач флота."""
 
@@ -121,11 +198,13 @@ class LocalGpuTransport(ITransportChannel):
         model_name: str = DEFAULT_LOCAL_MODEL,
         mock_client: Optional[Any] = None,
         timeout: float = 30.0,
+        watchdog: Optional[GpuThermalWatchdog] = None,
     ) -> None:
         self.endpoint_url = endpoint_url.rstrip("/")
         self.model_name = model_name
         self.mock_client = mock_client
         self.timeout = timeout
+        self.watchdog = watchdog or GpuThermalWatchdog()
 
         self._status = TransportStatus.DISCONNECTED
         self._gpu_meta = detect_local_gpu()
@@ -189,6 +268,12 @@ class LocalGpuTransport(ITransportChannel):
         if not envelope.verify_signature():
             self._status = TransportStatus.ERROR
             raise TransportError("SIGNATURE_MISMATCH", "Envelope cryptographic verification failed")
+
+        # R1: Hardware Thermal Watchdog & VRAM-Shedding
+        is_interactive = envelope.payload.get("interactive", True) if isinstance(envelope.payload, dict) else True
+        safe, reason = self.watchdog.check_safety(is_interactive=is_interactive)
+        if not safe:
+            raise TransportError("GPU_SAFETY_THRESHOLD_EXCEEDED", f"429 Load Shedding: {reason}")
 
         try:
             if self.mock_client is not None:

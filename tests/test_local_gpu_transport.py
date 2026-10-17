@@ -153,6 +153,33 @@ class TestLocalGpuTransport(unittest.TestCase):
         self.assertIn("eval_count", res)
         self.assertTrue(res["done"])
 
+    def test_thermal_watchdog_thresholds(self):
+        from rai_fabric.local_gpu_transport import GpuThermalWatchdog
+
+        watchdog = GpuThermalWatchdog(max_temp_c=72.0, min_free_vram_mb=800.0)
+        # Normal state
+        watchdog.set_mock_telemetry(temp_c=65.0, free_vram_mb=4096.0)
+        safe, reason = watchdog.check_safety(is_interactive=False)
+        self.assertTrue(safe)
+        self.assertIsNone(reason)
+
+        # High temp - background shed
+        watchdog.set_mock_telemetry(temp_c=78.0, free_vram_mb=4096.0)
+        safe_bg, reason_bg = watchdog.check_safety(is_interactive=False)
+        self.assertFalse(safe_bg)
+        self.assertIn("exceeds safety threshold", reason_bg)
+
+        # High temp - interactive warning allowed
+        safe_ia, reason_ia = watchdog.check_safety(is_interactive=True)
+        self.assertTrue(safe_ia)
+        self.assertIn("exceeds safety threshold", reason_ia)
+
+        # Low VRAM - background shed
+        watchdog.set_mock_telemetry(temp_c=60.0, free_vram_mb=500.0)
+        safe_vram, reason_vram = watchdog.check_safety(is_interactive=False)
+        self.assertFalse(safe_vram)
+        self.assertIn("below safety threshold", reason_vram)
+
 
 if __name__ == "__main__":
     unittest.main()
