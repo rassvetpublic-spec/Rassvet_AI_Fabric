@@ -17,6 +17,7 @@ from __future__ import annotations
 __version__ = "1.0.0"
 
 import hashlib
+import hmac
 import json
 import logging
 import math
@@ -254,25 +255,64 @@ class ModelReplicator:
         self.models_dir.mkdir(parents=True, exist_ok=True)
         self.staging_dir = self.models_dir / ".staging"
         self.staging_dir.mkdir(parents=True, exist_ok=True)
-        # Metadata-bound in-process proof cache; no additional runtime files.
-        self._verified_model_cache: Dict[str, Tuple[str, int, int, int]] = {}
+    @staticmethod
+    def _manifest_valid(manifest: ModelManifest, model_name: str) -> bool:
+        """Validate untrusted manifest structure and bind it to the requested model."""
+        if not isinstance(manifest, ModelManifest) or manifest.model_name != model_name:
+            return False
+        size, step, count = (manifest.total_size_bytes, manifest.chunk_size_bytes,
+                             manifest.chunks_count)
+        if (not isinstance(size, int) or not isinstance(step, int) or
+                not isinstance(count, int) or size <= 0 or step <= 0 or
+                count != (size + step - 1) // step or
+                len(manifest.chunk_hashes) != count):
+            return False
+        digests = manifest.chunk_hashes
+        if not all(isinstance(h, str) and len(h) == 64 and
+                   all(c in "0123456789abcdef" for c in h) for h in digests):
+            return False
+        root = calculate_merkle_root(digests)
+        return hmac.compare_digest(root, manifest.root_hash)
+
+    def _staging_chunk_verified(self, model_name: str, index: int,
+                                manifest: ModelManifest) -> bool:
+        """Do not count a staged chunk until exact length and SHA are read back."""
+        sp = self._get_staging_chunk_path(model_name, index)
+        if sp.is_symlink() or not sp.is_file():
+            return False
+        expected_len = min(manifest.chunk_size_bytes,
+                           manifest.total_size_bytes - index * manifest.chunk_size_bytes)
+        if expected_len <= 0:
+            return False
+        try:
+            with sp.open('rb') as f:
+                before = os.fstat(f.fileno())
+                if before.st_size != expected_len:
+                    return False
+                h = hashlib.sha256()
+                while block := f.read(1024 * 1024):
+                    h.update(block)
+                after = os.fstat(f.fileno())
+                return (before.st_size == after.st_size and
+                        before.st_mtime_ns == after.st_mtime_ns and
+                        hmac.compare_digest(h.hexdigest(), manifest.chunk_hashes[index]))
+        except OSError:
+            return False
 
     def _matches_manifest(self, path: Path, manifest: ModelManifest) -> bool:
         """Verify an existing model in bounded RAM; never trust file presence alone."""
+        if not self._manifest_valid(manifest, manifest.model_name):
+            return False
+        if path.is_symlink():
+            return False
         size = manifest.total_size_bytes
         chunk_size = manifest.chunk_size_bytes
-        if (size <= 0 or chunk_size <= 0 or manifest.chunks_count != len(manifest.chunk_hashes)
-                or manifest.chunks_count != (size + chunk_size - 1) // chunk_size):
-            return False
-        if calculate_merkle_root(manifest.chunk_hashes) != manifest.root_hash:
-            return False
         try:
             before = path.stat()
             if before.st_size != size:
                 return False
-            stamp = (manifest.root_hash, before.st_size, before.st_mtime_ns, before.st_ino)
-            if self._verified_model_cache.get(str(path)) == stamp:
-                return True
+            # Metadata stamps are not a proof: same-size corruption with restored
+            # timestamps/inode must not turn into COMPLETED. Always stream/hash.
             hashes: List[str] = []
             with path.open("rb") as source:
                 for index, expected in enumerate(manifest.chunk_hashes):
@@ -296,7 +336,6 @@ class ModelReplicator:
                 return False
             if calculate_merkle_root(hashes) != manifest.root_hash:
                 return False
-            self._verified_model_cache[str(path)] = stamp
             return True
         except OSError:
             return False
@@ -316,12 +355,14 @@ class ModelReplicator:
         chunk_size: int = DEFAULT_CHUNK_SIZE,
     ) -> Optional[bytes]:
         """Экспорт фрагмента модели для передачи запрашивающему пиру."""
+        if (type(chunk_index) is not int or chunk_index < 0 or
+                type(chunk_size) is not int or chunk_size <= 0):
+            return None
         path = self._get_model_path(model_name)
+        if path.is_symlink():
+            return None
         if not path.is_file():
-            # Проверяем, есть ли чанк в staging
-            staging_chunk = self._get_staging_chunk_path(model_name, chunk_index)
-            if staging_chunk.is_file():
-                return staging_chunk.read_bytes()
+            # Without a matching manifest, staging is not verified; do not export it.
             return None
 
         offset = chunk_index * chunk_size
@@ -344,10 +385,15 @@ class ModelReplicator:
         Импорт и потоковая валидация фрагмента модели в RAM.
         При несовпадении хеша — отбрасывается без сохранения на диск (Fail-Closed).
         """
-        if chunk_index < 0 or chunk_index >= manifest.chunks_count:
-            logger.warning("Chunk index %d out of bounds (total: %d)", chunk_index, manifest.chunks_count)
+        if (not self._manifest_valid(manifest, model_name) or
+                type(chunk_index) is not int or
+                chunk_index < 0 or chunk_index >= manifest.chunks_count or
+                not isinstance(chunk_data, bytes)):
             return False
-
+        expected_len = min(manifest.chunk_size_bytes,
+                           manifest.total_size_bytes - chunk_index * manifest.chunk_size_bytes)
+        if len(chunk_data) != expected_len:
+            return False
         expected_hash = manifest.chunk_hashes[chunk_index]
         actual_hash = hashlib.sha256(chunk_data).hexdigest()
 
@@ -362,8 +408,17 @@ class ModelReplicator:
 
         # Хэш проверен в RAM -> сохраняем во временный блок staging
         staging_path = self._get_staging_chunk_path(model_name, chunk_index)
-        staging_path.write_bytes(chunk_data)
-        return True
+        if staging_path.is_symlink():
+            return False
+        try:
+            flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+            flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+            fd = os.open(staging_path, flags, 0o600)
+            with os.fdopen(fd, "wb") as staging:
+                staging.write(chunk_data)
+            return True
+        except OSError:
+            return False
 
     def import_chunk_direct(
         self,
@@ -380,11 +435,11 @@ class ModelReplicator:
         """
         # An untrusted peer's chunk index/offset must never cause out-of-bounds
         # sparse-file writes or overwrite bytes beyond a supplied manifest size.
-        if (not isinstance(chunk_index, int) or chunk_index < 0 or
-                not isinstance(offset, int) or offset < 0 or
-                (total_size is not None and
-                 (not isinstance(total_size, int) or total_size < 0 or
-                  offset > total_size or len(chunk_data) > total_size - offset))):
+        if (type(chunk_index) is not int or chunk_index < 0 or
+                type(offset) is not int or offset < 0 or
+                type(total_size) is not int or total_size <= 0 or
+                not isinstance(chunk_data, bytes) or not chunk_data or
+                offset > total_size or len(chunk_data) > total_size - offset):
             return False
         actual_hash = hashlib.sha256(chunk_data).hexdigest()
         if actual_hash != expected_hash:
@@ -397,16 +452,26 @@ class ModelReplicator:
             return False
 
         target_path = self._get_model_path(model_name)
-        mode = "r+b" if target_path.exists() else "wb"
-        with open(target_path, mode) as f:
-            f.seek(offset)
-            f.write(chunk_data)
-            f.flush()
-        self._verified_model_cache.pop(str(target_path), None)
-        return True
+        if target_path.is_symlink():
+            return False
+        # O_NOFOLLOW defends final component on POSIX. Windows still receives
+        # the explicit symlink check above; no active host paths are modified.
+        flags = os.O_RDWR | os.O_CREAT
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+        try:
+            fd = os.open(target_path, flags, 0o600)
+            with os.fdopen(fd, "r+b") as f:
+                f.seek(offset)
+                f.write(chunk_data)
+                f.flush()
+            return True
+        except OSError:
+            return False
 
     def get_model_status(self, model_name: str, manifest: Optional[ModelManifest] = None) -> Dict[str, Any]:
         """Получение текущего статуса загрузки модели и процента завершённости."""
+        if manifest is not None and not self._manifest_valid(manifest, model_name):
+            return {"model_name": model_name, "status": "INVALID_MANIFEST", "progress_pct": 0.0}
         model_path = self._get_model_path(model_name)
         model_present = model_path.is_file()
         if model_present:
@@ -437,7 +502,7 @@ class ModelReplicator:
         missing_indices: List[int] = []
         for i in range(manifest.chunks_count):
             sp = self._get_staging_chunk_path(model_name, i)
-            if sp.is_file():
+            if self._staging_chunk_verified(model_name, i, manifest):
                 downloaded += 1
             else:
                 missing_indices.append(i)
@@ -458,23 +523,49 @@ class ModelReplicator:
         """
         Атомарная сборка модели из проверенных чанков и итоговая верификация Merkle Root.
         """
+        if not self._manifest_valid(manifest, model_name):
+            return False, "INVALID_MANIFEST"
         for i in range(manifest.chunks_count):
-            sp = self._get_staging_chunk_path(model_name, i)
-            if not sp.is_file():
-                return False, f"Отсутствует чанк {i} из {manifest.chunks_count}"
+            if not self._staging_chunk_verified(model_name, i, manifest):
+                return False, f"Чанк {i} отсутствует или повреждён"
 
         target_path = self._get_model_path(model_name)
         temp_target = target_path.with_suffix(".assembly.tmp")
 
+        created_temp = False
         try:
             chunk_hashes: List[str] = []
-            with open(temp_target, "wb") as out_f:
+            # O_EXCL blocks existing symlinks, stale temporary files and
+            # concurrent assembly; never truncate an unrelated target.
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+            fd = os.open(temp_target, flags, 0o600)
+            created_temp = True
+            with os.fdopen(fd, "wb") as out_f:
                 for i in range(manifest.chunks_count):
                     sp = self._get_staging_chunk_path(model_name, i)
-                    data = sp.read_bytes()
-                    h = hashlib.sha256(data).hexdigest()
-                    chunk_hashes.append(h)
-                    out_f.write(data)
+                    if sp.is_symlink():
+                        raise ValueError("Staged chunk is a symlink")
+                    read_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                    read_flags |= getattr(os, "O_BINARY", 0)
+                    in_fd = os.open(sp, read_flags)
+                    expected_bytes = min(
+                        manifest.chunk_size_bytes,
+                        manifest.total_size_bytes - i * manifest.chunk_size_bytes,
+                    )
+                    with os.fdopen(in_fd, "rb") as staged:
+                        remaining = expected_bytes
+                        digest = hashlib.sha256()
+                        while remaining:
+                            block = staged.read(min(1024 * 1024, remaining))
+                            if not block:
+                                raise ValueError("Staging chunk ended early")
+                            digest.update(block)
+                            out_f.write(block)
+                            remaining -= len(block)
+                        if staged.read(1):
+                            raise ValueError("Staging chunk exceeded manifest size")
+                    chunk_hashes.append(digest.hexdigest())
 
             # Never attest a complete model if its payload size differs from the manifest.
             if temp_target.stat().st_size != manifest.total_size_bytes:
@@ -493,12 +584,6 @@ class ModelReplicator:
 
             # Атомарная замена
             temp_target.replace(target_path)
-            verified_stat = target_path.stat()
-            self._verified_model_cache[str(target_path)] = (
-                manifest.root_hash, verified_stat.st_size,
-                verified_stat.st_mtime_ns, verified_stat.st_ino,
-            )
-
             # Очистка staging
             for i in range(manifest.chunks_count):
                 sp = self._get_staging_chunk_path(model_name, i)
@@ -509,9 +594,12 @@ class ModelReplicator:
 
             return True, f"Модель '{model_name}' успешно собрана и верифицирована (Размер: {target_path.stat().st_size} байт)"
         except Exception as exc:
-            if temp_target.exists():
-                temp_target.unlink()
-            return False, f"Сбой финализации модели: {exc}"
+            if created_temp:
+                try:
+                    temp_target.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            return False, f"Сбой финализации модели ({type(exc).__name__})"
 
     def replicate_from_peer(
         self,
@@ -522,6 +610,9 @@ class ModelReplicator:
         Сквозной процесс репликации недостающих чанков модели от удалённого пира.
         """
         t0 = time.perf_counter()
+        if not self._manifest_valid(manifest, manifest.model_name):
+            return {"status": "INVALID_MANIFEST", "model_name": manifest.model_name,
+                    "replicated_count": 0, "failed_count": 0, "assembly_ok": False}
         status = self.get_model_status(manifest.model_name, manifest)
         if status["status"] == "COMPLETED":
             return {
