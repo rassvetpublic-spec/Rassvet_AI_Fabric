@@ -57,6 +57,9 @@ class NvmeKVCacheManager:
         max_bytes: int = 64 * 1024 * 1024,
         block_size: int = 4096,
     ) -> None:
+        if (type(max_bytes) is not int or max_bytes <= 0 or
+                type(block_size) is not int or block_size <= 0):
+            raise ValueError("Cache limits must be positive integers")
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_bytes = max_bytes
@@ -80,28 +83,42 @@ class NvmeKVCacheManager:
 
     def _worker_loop(self) -> None:
         """Фоновый рабочий поток сброса отложенных записей на NVMe (R6)."""
-        while self._worker_running:
+        # Drain queued writes before the sentinel. Every dequeue must ack, even
+        # when the disk write raises: otherwise flush()/close() can hang forever.
+        while True:
             try:
                 item = self._staging_queue.get(timeout=0.1)
+            except queue.Empty:
+                if not self._worker_running:
+                    break
+                continue
+            try:
                 if item is None:
-                    self._staging_queue.task_done()
                     break
                 model_id, prompt_prefix, payload = item
                 key = self.compute_key(model_id, prompt_prefix)
-                with self._lock:
-                    self._write_entry(model_id, prompt_prefix, payload)
-                    self._staging_dict.pop(key, None)
-                self._staging_queue.task_done()
-            except queue.Empty:
-                continue
+                try:
+                    with self._lock:
+                        self._write_entry(model_id, prompt_prefix, payload)
+                finally:
+                    with self._lock:
+                        if self._staging_dict.get(key) is payload:
+                            self._staging_dict.pop(key, None)
             except Exception:
+                # The failed write is a cache miss, never a durable cache hit.
                 pass
+            finally:
+                self._staging_queue.task_done()
 
     @staticmethod
     def compute_key(model_id: str, prompt_prefix: str) -> str:
         """Детерминированный ключ записи: sha256(model_id + '::' + prompt_prefix)."""
         raw = f"{model_id.strip()}::{prompt_prefix.strip()}".encode("utf-8")
         return hashlib.sha256(raw).hexdigest()
+
+    def _entry_size(self, entry: NvmeKVCacheEntry) -> int:
+        n = HEADER_SIZE + len(entry.payload_bytes)
+        return ((n + self.block_size - 1) // self.block_size) * self.block_size
 
     def _pad_to_block_size(self, data: bytes) -> bytes:
         """Выравнивание блока по размеру страницы (Zero SSD Wear alignment)."""
@@ -130,21 +147,41 @@ class NvmeKVCacheManager:
         aligned_block = self._pad_to_block_size(raw_block)
 
         block_total_len = len(aligned_block)
-        self._ensure_capacity(block_total_len)
+        if block_total_len > self.max_bytes:
+            return False
 
         target_file = self.cache_dir / f"{key}.raifcache"
         tmp_file = self.cache_dir / f"{key}.tmp"
+        if target_file.is_symlink() or tmp_file.is_symlink():
+            return False
+        old_size = 0
+        if key in self._index and target_file.is_file():
+            old_size = target_file.stat().st_size
 
+        created_temp = False
         try:
-            with open(tmp_file, "wb") as f:
+            # O_EXCL prevents accidentally truncating a preexisting or
+            # symlinked temporary file with this predictable SHA-derived name.
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+            fd = os.open(tmp_file, flags, 0o600)
+            created_temp = True
+            with os.fdopen(fd, "wb") as f:
                 f.write(aligned_block)
                 f.flush()
                 os.fsync(f.fileno())
+            # Replacement should reserve only the *delta* in effective usage.
+            if not self._ensure_capacity(max(0, block_total_len - old_size), protected_key=key):
+                return False
             tmp_file.replace(target_file)
         except OSError:
-            if tmp_file.exists():
-                tmp_file.unlink(missing_ok=True)
             return False
+        finally:
+            if created_temp and tmp_file.exists():
+                try:
+                    tmp_file.unlink(missing_ok=True)
+                except OSError:
+                    pass
 
         entry = NvmeKVCacheEntry(
             key=key,
@@ -156,8 +193,7 @@ class NvmeKVCacheManager:
         )
 
         if key in self._index:
-            old_entry = self._index[key]
-            self._current_bytes -= len(self._pad_to_block_size(HEADER_SIZE + len(old_entry.payload_bytes) * b"\x00"))
+            self._current_bytes = max(0, self._current_bytes - old_size)
 
         self._index[key] = entry
         self._current_bytes += block_total_len
@@ -180,8 +216,14 @@ class NvmeKVCacheManager:
         else:
             key = self.compute_key(model_id, prompt_prefix)
             with self._lock:
+                if not self._worker_running:
+                    return False
+                try:
+                    self._staging_queue.put_nowait((model_id, prompt_prefix, payload))
+                except queue.Full:
+                    return False
+                # Staging becomes visible only after enqueue succeeds.
                 self._staging_dict[key] = payload
-            self._staging_queue.put((model_id, prompt_prefix, payload))
             return True
 
     def get(
@@ -201,8 +243,9 @@ class NvmeKVCacheManager:
                 return None
 
             entry = self._index[key]
-            if not entry.file_path.exists():
+            if entry.file_path.is_symlink() or not entry.file_path.exists():
                 self._misses += 1
+                self._current_bytes = max(0, self._current_bytes - self._entry_size(entry))
                 del self._index[key]
                 return None
 
@@ -218,6 +261,10 @@ class NvmeKVCacheManager:
 
                 if k_bytes != bytes.fromhex(key):
                     raise ValueError("Key mismatch")
+                file_size = os.fstat(f.fileno()).st_size
+                if (d_len > file_size - HEADER_SIZE or
+                        d_len > self.max_bytes - HEADER_SIZE):
+                    raise ValueError("Payload length exceeds cache/file budget")
 
                 payload_bytes = f.read(d_len)
                 if len(payload_bytes) < d_len:
@@ -243,25 +290,38 @@ class NvmeKVCacheManager:
             with self._lock:
                 self._corrupted_count += 1
                 self._misses += 1
-                if entry.file_path.exists():
+                self._current_bytes = max(0, self._current_bytes - self._entry_size(entry))
+                if entry.file_path.exists() or entry.file_path.is_symlink():
                     entry.file_path.unlink(missing_ok=True)
                 self._index.pop(key, None)
             return None
 
-    def _ensure_capacity(self, needed_bytes: int) -> None:
-        """LRU-вытеснение при превышении максимального лимита байт."""
-        while (self._current_bytes + needed_bytes) > self.max_bytes and self._index:
-            # Находим наименее востребованную запись (наименьший last_accessed)
-            lru_key = min(self._index.keys(), key=lambda k: self._index[k].last_accessed)
-            lru_entry = self._index.pop(lru_key)
-            if lru_entry.file_path.exists():
-                try:
-                    file_size = lru_entry.file_path.stat().st_size
-                    lru_entry.file_path.unlink(missing_ok=True)
-                    self._current_bytes = max(0, self._current_bytes - file_size)
-                except OSError:
-                    pass
+    def _ensure_capacity(self, needed_bytes: int, protected_key: str = "") -> bool:
+        """LRU eviction while preserving an entry being atomically replaced."""
+        if needed_bytes > self.max_bytes:
+            return False
+        while self._current_bytes + needed_bytes > self.max_bytes:
+            eligible = [k for k in self._index if k != protected_key]
+            if not eligible:
+                return False
+            lru_key = min(eligible, key=lambda k: self._index[k].last_accessed)
+            victim = self._index[lru_key]
+            try:
+                if victim.file_path.is_symlink():
+                    victim.file_path.unlink(missing_ok=True)
+                    size = 0
+                elif victim.file_path.exists():
+                    size = victim.file_path.stat().st_size
+                    victim.file_path.unlink(missing_ok=True)
+                else:
+                    raw_size = HEADER_SIZE + len(victim.payload_bytes)
+                    size = ((raw_size + self.block_size - 1) // self.block_size) * self.block_size
+            except OSError:
+                return False
+            self._index.pop(lru_key, None)
+            self._current_bytes = max(0, self._current_bytes - size)
             self._evictions += 1
+        return True
 
     def _scan_and_recover(self) -> None:
         """Сканирование директории кэша и восстановление индекса при старте."""
@@ -270,23 +330,30 @@ class NvmeKVCacheManager:
 
         for file_path in self.cache_dir.glob("*.raifcache"):
             try:
+                if file_path.is_symlink():
+                    file_path.unlink(missing_ok=True)
+                    continue
                 with open(file_path, "rb") as f:
+                    physical_size = os.fstat(f.fileno()).st_size
+                    if (physical_size < HEADER_SIZE or physical_size > self.max_bytes or
+                            physical_size % self.block_size != 0):
+                        raise ValueError("Invalid cache-file length")
                     raw_header = f.read(HEADER_SIZE)
                     if len(raw_header) < HEADER_SIZE:
-                        file_path.unlink(missing_ok=True)
-                        continue
+                        raise ValueError("Truncated header")
                     magic, ver, k_bytes, d_len, stored_crc, ts = HEADER_STRUCT.unpack(raw_header)
                     if magic != MAGIC_HEADER or ver != FORMAT_VERSION:
-                        file_path.unlink(missing_ok=True)
-                        continue
-
+                        raise ValueError("Invalid cache header")
+                    if (d_len > physical_size - HEADER_SIZE or
+                            d_len > self.max_bytes - HEADER_SIZE):
+                        raise ValueError("Oversized cache payload length")
+                    key = k_bytes.hex()
+                    if file_path.stem != key:
+                        raise ValueError("Cache filename not bound to its key")
                     payload_bytes = f.read(d_len)
-                    if len(payload_bytes) < d_len or (zlib.crc32(payload_bytes) & 0xFFFFFFFF) != stored_crc:
-                        file_path.unlink(missing_ok=True)
-                        continue
+                    if len(payload_bytes) != d_len or (zlib.crc32(payload_bytes) & 0xFFFFFFFF) != stored_crc:
+                        raise ValueError("Corrupted cache payload")
 
-                key = k_bytes.hex()
-                file_size = file_path.stat().st_size
                 entry = NvmeKVCacheEntry(
                     key=key,
                     model_id="recovered",
@@ -296,7 +363,7 @@ class NvmeKVCacheManager:
                     file_path=file_path,
                 )
                 self._index[key] = entry
-                self._current_bytes += file_size
+                self._current_bytes += physical_size
             except (OSError, ValueError):
                 file_path.unlink(missing_ok=True)
 
@@ -338,17 +405,14 @@ class NvmeKVCacheManager:
             self._staging_queue.join()
 
     def close(self) -> None:
-        """Остановка фонового рабочего потока и сброс кэша."""
+        """Drain accepted items, stop worker, and avoid orphaned queue receipts."""
         if not self._worker_running:
             return
         self._worker_running = False
-        try:
-            self._staging_queue.put_nowait(None)
-        except queue.Full:
-            pass
-        if self._flush_thread.is_alive():
-            self._flush_thread.join(timeout=2.0)
-        self.flush(wait=True)
+        # The consumer runs until the sentinel even when the flag is cleared.
+        self._staging_queue.put(None)
+        self._staging_queue.join()
+        self._flush_thread.join(timeout=2.0)
 
     def __enter__(self) -> "NvmeKVCacheManager":
         return self
