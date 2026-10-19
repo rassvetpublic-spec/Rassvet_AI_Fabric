@@ -78,14 +78,23 @@ class SpeculativeDecoder:
             if hasattr(client, "generate"):
                 res = client.generate({"model": model, "prompt": prompt, "max_tokens": max_tokens})
                 if isinstance(res, dict):
-                    reply = res.get("text") or res.get("response") or ""
-                    tokens = reply.split()
-                    return reply, tokens
+                    text_reply, response_reply = res.get("text"), res.get("response")
+                    # Preserve the existing fallback from an empty text field to response.
+                    if isinstance(text_reply, str) and text_reply:
+                        reply = text_reply
+                    elif isinstance(response_reply, str):
+                        reply = response_reply
+                    else:
+                        reply = text_reply
+                else:
+                    reply = res
             elif callable(client):
-                res = client(model, prompt, max_tokens)
-                if isinstance(res, str):
-                    return res, res.split()
-                return str(res), str(res).split()
+                reply = client(model, prompt, max_tokens)
+            else:
+                raise TypeError("invalid model client: expected callable or generate method")
+            if not isinstance(reply, str):
+                raise TypeError("invalid model client response: expected text string")
+            return reply, reply.split()
 
         # HTTP запрос к Ollama
         url = f"{self.endpoint_url}/api/generate"
