@@ -142,60 +142,40 @@ class WorkerFleetScheduler:
             for row in tasks_cursor:
                 task_id = row["id"]
                 provider = row["provider"]
+
+                # No verified real-provider adapter or signed target receipt exists.
+                # Do not claim, rotate an account, or synthesize a PASS for real tasks.
+                if provider not in {"mock", "codex-mock"}:
+                    continue
                 worker = self.get_idle_worker(provider)
                 if not worker:
                     continue
 
-                account = self._next_account()
                 worker.status = "BUSY"
                 worker.current_task_id = task_id
-                worker.assigned_account = account
-
+                worker.assigned_account = self._next_account()
                 start_t = time.perf_counter()
                 try:
-                    if provider in {"mock", "codex-mock"}:
-                        res = run_one(
-                            current_store,
-                            provider,
-                            owner=worker.worker_id,
-                            timeout_seconds=self.config.default_lease_seconds,
-                        )
-                        if res.get("status") == "NO_READY_TASK":
-                            worker.status = "IDLE"
-                            worker.current_task_id = None
-                            continue
-                        actual_id = res.get("task_id") or task_id
-                        worker.tasks_completed += 1
-                        dispatched.append(actual_id)
-                        self._dispatched_count += 1
-                    else:
-                        claim = current_store.claim(
-                            worker.worker_id,
-                            provider=provider,
-                            lease_seconds=self.config.default_lease_seconds,
-                        )
-                        if not claim:
-                            worker.status = "IDLE"
-                            worker.current_task_id = None
-                            continue
-
-                        # Синтетическое/протокольное завершение
-                        current_store.finish(
-                            task_id,
-                            worker.worker_id,
-                            claim["lease_token"],
-                            verdict="PASS",
-                            response=f"Задача успешно выполнена воркером {worker.name}",
-                            evidence={"provider": provider, "account": account},
-                        )
-                        worker.tasks_completed += 1
-                        dispatched.append(task_id)
-                        self._dispatched_count += 1
+                    res = run_one(
+                        current_store,
+                        provider,
+                        owner=worker.worker_id,
+                        timeout_seconds=self.config.default_lease_seconds,
+                    )
+                    if res.get("status") == "NO_READY_TASK":
+                        continue
+                    if res.get("status") != "COMPLETE":
+                        worker.tasks_failed += 1
+                        continue
+                    # FabricStore.finish returns get() with "id", not "task_id".
+                    actual_id = res.get("id") or res.get("task_id") or task_id
+                    worker.tasks_completed += 1
+                    dispatched.append(actual_id)
+                    self._dispatched_count += 1
                 except Exception:
                     worker.tasks_failed += 1
                 finally:
-                    exec_ms = (time.perf_counter() - start_t) * 1000.0
-                    worker.total_execution_ms += exec_ms
+                    worker.total_execution_ms += (time.perf_counter() - start_t) * 1000.0
                     worker.status = "IDLE"
                     worker.current_task_id = None
                     worker.last_heartbeat = time.time()
@@ -203,6 +183,8 @@ class WorkerFleetScheduler:
             summary = {
                 "dispatched_count": len(dispatched),
                 "dispatched_tasks": dispatched,
+                "mock_done_tasks": dispatched.copy(),
+                "real_pass_tasks": [],  # Only a verified adapter may populate this in future.
                 "recovered_count": recovered,
                 "total_dispatched": self._dispatched_count,
                 "active_workers_count": sum(1 for w in self.workers.values() if w.status == "BUSY"),
