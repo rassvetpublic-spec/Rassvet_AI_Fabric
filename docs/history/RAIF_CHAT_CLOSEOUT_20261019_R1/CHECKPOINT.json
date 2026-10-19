@@ -1,0 +1,181 @@
+{
+  "schema": "RAIF_CHAT_CLOSEOUT_NONCANON/1",
+  "checkpoint_id": "RAIF_W2_10_6_CHAT_CLOSEOUT_2026_10_19_R1",
+  "as_of_utc": "2026-10-19T05:34:20.176630+00:00",
+  "project_goal": "Rassvet AI Fabric as bounded Windows execution/development fabric for KAT9I_OS, CKS, RULESHUB, ANTIGRAVITYDATA and CONTROL_TOWER; no second canon, no unverified real provider grant.",
+  "status": "PROJECT_CONTINUITY_HANDOFF_PREPARED_ONLY",
+  "chat_origin": "ChatGPT project chat RAiF W2 F2.2->10.6, October 2026; transcript NOT exported verbatim.",
+  "git_snapshot": {
+    "CONTROL_TOWER": {
+      "main": "a6b39293dc48c2497eef8e64db112023fe47b975",
+      "branches": 47,
+      "issues": 52,
+      "issues_open": 27,
+      "prs_open": 11
+    },
+    "CKS": {
+      "main": "6f0413e5f24e32bd7a4e54f3845e6f36c98f6f23",
+      "branches": 65,
+      "issues": 489,
+      "issues_open": 357,
+      "prs_open": 3
+    },
+    "KAT9I_OS": {
+      "main": "2b6e08a02c7fcf0f943891834c15d38b7d572f49",
+      "branches": 43,
+      "issues": 217,
+      "issues_open": 88,
+      "prs_open": 13
+    },
+    "Rassvet_AI_Fabric": {
+      "main": "97a5f7ebfd697e29d2d4d369d134a4e9e11daf56",
+      "branches": 2,
+      "issues_open": 1,
+      "prs_open": 1
+    }
+  },
+  "remote_scope": "All branch names and all paginated issue listings from CT/CKS/KAT9I were inventoried via GitHub. Full discussion content of every issue and diff of every branch NOT inspected. Local worktrees/stashes and host process state UNKNOWN.",
+  "work": [
+    {
+      "stage": "W2 F2.2 bounded Python resolver",
+      "pr": 10,
+      "state": "MERGED",
+      "head": "776883725b9422c5e4fe15489370a4cb27b5fe5b",
+      "merge": "e5c07925d82d957e185371d06f98c164baa48ddb",
+      "ci": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38208275793",
+      "ci_verdict": "521/521 PASS",
+      "limits": "Codex P2 reported Windows PowerShell 5.1 ProcessStartInfo.ArgumentList compatibility and Russian language; exact source still present in main; runtime regression unverified."
+    },
+    {
+      "stage": "W2 10.5 Windows owned foreground synthetic worker",
+      "pr": 11,
+      "state": "MERGED",
+      "head": "479b09ec159cf706ac4223a814e7e1496e28723a",
+      "merge": "d9135a481aa8ef061844d6918c9b458c15d30d0c",
+      "ci": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38210259090",
+      "ci_verdict": "554/554 PASS",
+      "limits": "Synthetic-only; physical power-loss, real-provider target receipt and breakaway descendants unverified. QA/1 bad 7/7 SHA, QA/2 corrected 7/7."
+    },
+    {
+      "stage": "10.6 offline mock task -> isolated worktree -> diff/tests -> QA_REQUEST / DRAFT_PR_INTENT",
+      "pr": 12,
+      "state": "MERGED",
+      "head": "8b92c08e7c6c713319b5a8f7fb16df00d17c4449",
+      "merge": "65a379a3255d2f402a3b3071ad1c3049ed6e950c",
+      "ci": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38272179414",
+      "ci_verdict": "576/576 PASS",
+      "limits": "QA comment #6134133698 is auditor-reported; 5/5 blob SHA and CRLF SHA independently verified. No true autonomous LLM, production PR publication or auto-merge authority."
+    },
+    {
+      "stage": "10.7 IPC transport",
+      "pr": 16,
+      "state": "MERGED",
+      "head": "not pinned in this closeout",
+      "merge": "not pinned in this closeout",
+      "ci": "not inspected in this closeout",
+      "ci_verdict": "not inspected",
+      "limits": "Stage in current repository history; no live host acceptance asserted."
+    },
+    {
+      "stage": "10.8 scheduler CI coverage fix",
+      "pr": 19,
+      "state": "MERGED",
+      "head": "5cb7df4bb4a10884572d8751a69b7ff6f7aab780",
+      "merge": "not pinned in this closeout",
+      "ci": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/actions/runs/38363326379",
+      "ci_verdict": "569 unittest + 10 pytest PASS reported in KAT9I #318 historic log",
+      "limits": "Separate scheduler false-PASS risk in RAIF #21 remains source-verifiable."
+    }
+  ],
+  "bpr5_qa_provenance": {
+    "pr": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/pull/52",
+    "status": "MERGED_NONACTIVE_PROPOSAL_ONLY",
+    "initial_wrong_git_blobs": "7/7",
+    "corrected_git_blobs": "7/7",
+    "typed_CRLF_SHA256_verified": "7/7",
+    "metadata_repair_extra_ci": 0,
+    "no_CORE_activation": true
+  },
+  "current_prs": {
+    "RAIF_PR23": "OPEN_NON_DRAFT documentation for exact-chat Antigravity operations, no verified live send",
+    "KAT9I_PR328": "OPEN_unmerged plan v1.2 publication",
+    "CT_PR78": "OPEN_unmerged plan v1.2 publication",
+    "CT_PR111": "OPEN current P0 Terminal/FS/Process and SQLite queue hardening, QA gates remain",
+    "CKS_PR594": "DRAFT P11.D proposal"
+  },
+  "active_blockers": [
+    {
+      "issue": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/21",
+      "finding": "Source-verified RAIF WorkerFleetScheduler.tick nonmock branch claims and then falsely finishes PASS without real provider receipt on schema v1; possible task-identity mismatch after claim without task_id; live side effect not evidenced",
+      "priority": "P1"
+    },
+    {
+      "source": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/10",
+      "finding": "Codex review P2 Windows PowerShell 5.1 incompatible ProcessStartInfo.ArgumentList; current main resolver still uses this; verify compatibility on relevant entrypoint before claiming fixed",
+      "priority": "P2/UNKNOWN_RUNTIME"
+    },
+    {
+      "source": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/77",
+      "finding": "P11.C2 independent QA/host effect and promotion gates not proven; do not cut over",
+      "priority": "P0"
+    },
+    {
+      "source": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/86",
+      "finding": "Fleet remains HARD PAUSED; GitHub messages DATA until actor/command identity and actual ACK; do not activate services",
+      "priority": "GATE"
+    },
+    {
+      "source": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/76",
+      "finding": "BPR40 4.0.3 full functional and physical absorption into BPR5 approved as TARGET, not demonstrated DONE; root Drive Router is separate authority",
+      "priority": "P9"
+    },
+    {
+      "source": "https://github.com/rassvetpublic-spec/CKS/issues/396",
+      "finding": "Decision Fate and goal/obligation preservation R1-R5 remains parent intent; do not create second SSOT or restart finished work",
+      "priority": "P0_MEMORY"
+    }
+  ],
+  "authority_current": {
+    "tower": "CONTROL_TOWER README main declares Google Drive C:/Gdrive_RassvetPublic/CONTROL_TOWER sole active Tower; GitHub a read/working replica; production sync not verified",
+    "functional_direction": "KAT9I_OS orchestration and governed execution; CKS knowledge/TaskState/data provenance; RulesHUB policy; RAiF bounded Windows execution driver; BPR5 to absorb BPR40 with owner gates",
+    "non_activated": "Product direction is not proof of real host integration, per-source authority or live provider permissions."
+  },
+  "entrypoints": {
+    "primary": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/86",
+    "fallback": "https://github.com/rassvetpublic-spec/KAT9I_OS/issues/318",
+    "memory": "https://github.com/rassvetpublic-spec/CKS/issues/396",
+    "raif_bug": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/21",
+    "owner_plan": "https://github.com/rassvetpublic-spec/KAT9I_OS/pull/328",
+    "tower_plan": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/pull/78",
+    "raif_open_pr": "https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/pull/23",
+    "bpr40_to_bpr5": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/76",
+    "QA_followup": "https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/77"
+  },
+  "preservation": {
+    "project_code_history": "MERGED_PRS_PERSIST_GITHUB",
+    "public_noncanon_checkpoint": "TO_BE_COMMITTED_READBACK_VERIFIED_IN_ISOLATED_BRANCH",
+    "private_artifacts": "MOUNTED_ATTACHED_FILES_PRIVATE_ZIP_WITH_MANIFEST",
+    "verbatim_chat_export": "NOT_AVAILABLE_IN_TOOLING_NOT_EXPORTED",
+    "full_ZeroLoss": "NOT_VERIFIED",
+    "live_Windows_host_checkout": "NOT_READ",
+    "original_scripts_after_chat_delete": "UNKNOWN_UNLESS_PRIVATE_ARCHIVE_DOWNLOADED",
+    "chat_deleted": "NO"
+  },
+  "automation": {
+    "old_RAiF_10_6_MTD": "DISABLED_ALREADY",
+    "Fleet_Link_86_hourly": "ENABLED_IN_ACCOUNT_LAST_READBACK_2026_10_19",
+    "cleanup": "NO_CHANGE"
+  },
+  "guardrails": [
+    "NO_MAIN_CHANGE",
+    "NO_CORE_ROUTER_AUTHORITY_CHANGE",
+    "NO_FLEET_UNPAUSE",
+    "NO_UNVERIFIED_QA_PASS",
+    "NO_MERGE",
+    "NO_USER_AS_MESSENGER",
+    "NO_DUPLICATE_SSOT_OR_ISSUE",
+    "UNKNOWN_NOT_PASS"
+  ],
+  "next_cursor": "RAIF/POST_CHAT_CLOSEOUT_20261019_READ_CT86_CKS396_KAT318_AND_REPAIR_RAIF21_NONMOCK_FALSE_PASS_ISOLATED",
+  "archive_note": "This checkpoint is noncanonical index; do not inherit user authorizations/mtd; exact live head required on next work."
+}
