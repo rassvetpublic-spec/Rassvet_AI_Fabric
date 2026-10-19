@@ -238,7 +238,8 @@ def test_replicator_refuses_finalized_wrong_total_size(tmp_path):
     chunk = b"abcd"
     digest = hashlib.sha256(chunk).hexdigest()
     manifest = ModelManifest("toy", 1, len(chunk), 1, [digest], digest)
-    assert r.import_chunk("toy", 0, chunk, manifest)
+    # The malformed manifest is now rejected before any staging write.
+    assert r.import_chunk("toy", 0, chunk, manifest) is False
     result, _ = r.finalize_model("toy", manifest)
     assert result is False
     assert not r._get_model_path("toy").is_file()
@@ -275,3 +276,121 @@ def test_model_manifest_chunk_hashes_must_match_root_on_finalize(tmp_path):
     ok, _ = r.finalize_model("inconsistent", manifest)
     assert ok is False
     assert not r._get_model_path("inconsistent").is_file()
+
+
+def test_l3_staging_corruption_retries_peer_instead_of_skipping(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    data = b'verified payload'
+    digest = hashlib.sha256(data).hexdigest()
+    manifest = ModelManifest('staging-repair', len(data), len(data), 1, [digest], digest)
+    manager = ModelReplicator(tmp_path / 'models')
+    manager._get_staging_chunk_path(manifest.model_name, 0).write_bytes(b'corrupted bytes!')
+    status = manager.get_model_status(manifest.model_name, manifest)
+    assert status['missing_indices'] == [0]
+    calls = []
+    def fetcher(name, idx):
+        calls.append((name, idx))
+        return data
+    result = manager.replicate_from_peer(manifest, fetcher)
+    assert result['status'] == 'SUCCESS'
+    assert calls == [('staging-repair', 0)]
+    assert manager._get_model_path(manifest.model_name).read_bytes() == data
+
+
+def test_l3_model_cached_receipt_cannot_survive_unchanged_metadata_tamper(tmp_path):
+    import hashlib
+    import os
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    manager = ModelReplicator(tmp_path / 'models')
+    data = b'authentic'
+    digest = hashlib.sha256(data).hexdigest()
+    manifest = ModelManifest('verified', len(data), len(data), 1, [digest], digest)
+    assert manager.import_chunk('verified', 0, data, manifest)
+    assert manager.finalize_model('verified', manifest)[0]
+    p = manager._get_model_path('verified')
+    assert manager.get_model_status('verified', manifest)['status'] == 'COMPLETED'
+    original = p.stat()
+    p.write_bytes(b'tampered!')
+    os.utime(p, ns=(original.st_atime_ns, original.st_mtime_ns))
+    assert p.stat().st_size == original.st_size
+    assert p.stat().st_mtime_ns == original.st_mtime_ns
+    assert manager.get_model_status('verified', manifest)['status'] == 'CORRUPTED'
+
+
+def test_l3_direct_chunk_without_manifest_bounds_is_rejected(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator
+    manager = ModelReplicator(tmp_path / 'models')
+    data = b'payload'
+    assert manager.import_chunk_direct('unbounded', 0, 2**26, data, hashlib.sha256(data).hexdigest()) is False
+    assert not manager._get_model_path('unbounded').exists()
+
+
+def test_l3_import_chunk_requires_manifest_model_identity(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    manager = ModelReplicator(tmp_path / 'models')
+    data = b'data'
+    digest = hashlib.sha256(data).hexdigest()
+    manifest = ModelManifest('model-A', 4, 4, 1, [digest], digest)
+    assert manager.import_chunk('model-B', 0, data, manifest) is False
+    assert not manager._get_staging_chunk_path('model-B', 0).exists()
+
+
+def test_l3_direct_chunk_does_not_follow_model_file_symlink(tmp_path):
+    import hashlib
+    import pytest
+    from rai_fabric.model_replicator import ModelReplicator
+    manager = ModelReplicator(tmp_path / 'models')
+    outside = tmp_path / 'outside-model.bin'
+    outside.write_bytes(b'SAFE')
+    target = manager._get_model_path('redirection')
+    try:
+        target.symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip('symlinks unavailable')
+    data = b'HACK'
+    digest = hashlib.sha256(data).hexdigest()
+    assert manager.import_chunk_direct('redirection', 0, 0, data, digest, total_size=4) is False
+    assert outside.read_bytes() == b'SAFE'
+
+
+def test_l3_finalize_assembly_temp_symlink_must_not_write_elsewhere(tmp_path):
+    import hashlib
+    import pytest
+    from rai_fabric.model_replicator import ModelManifest, ModelReplicator
+    r = ModelReplicator(tmp_path / 'models')
+    payload = b'SAFE'
+    digest = hashlib.sha256(payload).hexdigest()
+    manifest = ModelManifest('safe-model', 4, 4, 1, [digest], digest)
+    assert r.import_chunk(manifest.model_name, 0, payload, manifest)
+    external = tmp_path / 'outside'
+    external.write_bytes(b'UNTOUCHED')
+    target = r._get_model_path('safe-model').with_suffix('.assembly.tmp')
+    try:
+        target.symlink_to(external)
+    except (OSError, NotImplementedError):
+        pytest.skip('symlinks unavailable')
+    ok, _ = r.finalize_model('safe-model', manifest)
+    assert ok is False
+    assert external.read_bytes() == b'UNTOUCHED'
+
+
+def test_l3_staging_symlink_must_not_write_elsewhere(tmp_path):
+    import hashlib
+    import pytest
+    from rai_fabric.model_replicator import ModelManifest, ModelReplicator
+    r = ModelReplicator(tmp_path / 'models')
+    payload = b'ABCD'
+    digest = hashlib.sha256(payload).hexdigest()
+    manifest = ModelManifest('target-model', 4, 4, 1, [digest], digest)
+    external = tmp_path / 'outside'
+    external.write_bytes(b'UNTOUCHED')
+    stage = r._get_staging_chunk_path('target-model', 0)
+    try:
+        stage.symlink_to(external)
+    except (OSError, NotImplementedError):
+        pytest.skip('symlinks unavailable')
+    assert r.import_chunk('target-model', 0, payload, manifest) is False
+    assert external.read_bytes() == b'UNTOUCHED'
