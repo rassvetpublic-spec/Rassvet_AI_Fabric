@@ -134,9 +134,19 @@ class WorkerFleetScheduler:
                 except Exception:
                     pass
 
-            # 2. Поиск доступных задач QUEUED
+            # 2. Eligible mocks must not starve behind blocked real tasks.
+            # Bounded observation only; never claim or mutate real-provider tasks.
+            deferred_real = [
+                row[0] for row in current_store.db.execute(
+                    "SELECT id FROM tasks WHERE status='QUEUED' "
+                    "AND provider NOT IN ('mock','codex-mock') "
+                    "ORDER BY created_at,id LIMIT 50"
+                )
+            ]
             tasks_cursor = current_store.db.execute(
-                "SELECT id, provider, objective FROM tasks WHERE status='QUEUED' ORDER BY created_at ASC LIMIT ?",
+                "SELECT id, provider, objective FROM tasks WHERE status='QUEUED' "
+                "AND provider IN ('mock','codex-mock') "
+                "ORDER BY created_at,id LIMIT ?",
                 (self.config.max_concurrent_workers,),
             ).fetchall()
 
