@@ -182,3 +182,27 @@ def test_generate_client_missing_response_is_rejected():
     decoder = SpeculativeDecoder(draft_client=MissingResponse(), target_client=lambda *_: "ok")
     with pytest.raises((TypeError, ValueError, RuntimeError), match="model client"):
         decoder.generate("guard", max_tokens=1)
+
+
+def test_replication_model_name_cannot_escape_windows_model_root(tmp_path):
+    from pathlib import PureWindowsPath
+    from rai_fabric.model_replicator import ModelReplicator
+    root = tmp_path / "models"
+    replicator = ModelReplicator(models_dir=root)
+    for name in (r"..\..\outside", r"C:\temp\outside", r"\\server\share\unexpected"):
+        for resulting_path in (replicator._get_model_path(name), replicator._get_staging_chunk_path(name, 0)):
+            win_path = PureWindowsPath(str(resulting_path))
+            assert ".." not in win_path.parts
+            assert not win_path.is_absolute() or str(win_path).startswith(str(PureWindowsPath(str(root))))
+
+
+def test_direct_chunk_import_rejects_out_of_manifest_bounds(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator
+    replicator = ModelReplicator(models_dir=tmp_path / "models")
+    payload = b"TEST"
+    digest = hashlib.sha256(payload).hexdigest()
+    assert replicator.import_chunk_direct("safe_model", 0, 128, payload, digest, total_size=4) is False
+    assert not replicator._get_model_path("safe_model").exists()
+    assert replicator.import_chunk_direct("safe_model", -1, 0, payload, digest, total_size=4) is False
+    assert not replicator._get_model_path("safe_model").exists()
