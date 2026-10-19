@@ -77,3 +77,26 @@ coverage/
 checkpoints/transient/
 
 .agents/teamwork/
+
+# Owner-requested local test/build output and logs (2026-10-19)
+# Keep test source and fixtures versioned; ignore only generated output.
+target/
+logs/
+log/
+*.log
+*.tmp.*
+.pytest_tmp*/
+.pytest-tmp*/
+.test-tmp/
+.test-output/
+.test-results/
+test-results/
+test-output/
+test-artifacts/
+TestResults/
+htmlcov/
+.coverage
+.coverage.*
+.tox/
+.nox/
+.qa_worktrees/
