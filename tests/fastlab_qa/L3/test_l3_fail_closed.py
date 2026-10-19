@@ -261,3 +261,17 @@ def test_replicator_cached_verification_invalidated_on_file_change(tmp_path):
     model_path.write_bytes(b"INVALID1")
     os.utime(model_path, ns=(original_mtime + 10_000_000_000, original_mtime + 10_000_000_000))
     assert r.get_model_status("cached", manifest)["status"] == "CORRUPTED"
+
+
+def test_model_manifest_chunk_hashes_must_match_root_on_finalize(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    r = ModelReplicator(models_dir=tmp_path / "models")
+    good = b"ACTUAL"
+    actual_hash = hashlib.sha256(good).hexdigest()
+    wrong_hash = hashlib.sha256(b"NOT-MATCHING").hexdigest()
+    manifest = ModelManifest("inconsistent", len(good), len(good), 1, [wrong_hash], actual_hash)
+    r._get_staging_chunk_path("inconsistent", 0).write_bytes(good)
+    ok, _ = r.finalize_model("inconsistent", manifest)
+    assert ok is False
+    assert not r._get_model_path("inconsistent").is_file()
