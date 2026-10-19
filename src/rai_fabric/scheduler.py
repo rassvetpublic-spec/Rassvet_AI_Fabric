@@ -121,6 +121,7 @@ class WorkerFleetScheduler:
         current_store = store or self.store
         with self._lock:
             dispatched: List[str] = []
+            deferred_real: List[str] = []
             recovered = 0
 
             # 1. Фоновое восстановление зависших задач по таймауту аренды
@@ -146,6 +147,7 @@ class WorkerFleetScheduler:
                 # No verified real-provider adapter or signed target receipt exists.
                 # Do not claim, rotate an account, or synthesize a PASS for real tasks.
                 if provider not in {"mock", "codex-mock"}:
+                    deferred_real.append(task_id)
                     continue
                 worker = self.get_idle_worker(provider)
                 if not worker:
@@ -185,6 +187,8 @@ class WorkerFleetScheduler:
                 "dispatched_tasks": dispatched,
                 "mock_done_tasks": dispatched.copy(),
                 "real_pass_tasks": [],  # Only a verified adapter may populate this in future.
+                "deferred_real_tasks": deferred_real,
+                "real_provider_gate": "NO_VERIFIED_TARGET_ADAPTER_OR_RECEIPT",
                 "recovered_count": recovered,
                 "total_dispatched": self._dispatched_count,
                 "active_workers_count": sum(1 for w in self.workers.values() if w.status == "BUSY"),
