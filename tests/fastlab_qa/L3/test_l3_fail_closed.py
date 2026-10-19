@@ -4,7 +4,7 @@ import urllib.error
 
 import pytest
 
-from rai_fabric.scheduler import WorkerFleetScheduler
+from rai_fabric.scheduler import SchedulerConfig, WorkerFleetScheduler
 from rai_fabric.speculative_decoder import SpeculativeDecoder
 from rai_fabric.store import FabricError, FabricStore
 
@@ -66,6 +66,29 @@ def test_mock_completion_explicitly_not_real_qa(tmp_path, monkeypatch):
         assert summary["deferred_real_tasks"] == []
         assert store.get(task["id"])["status"] == "COMPLETE"
         assert store.latest_checkpoint(task["id"])["evidence"]["simulation"] is True
+
+
+def test_deferred_real_task_does_not_starve_mock_fifo(tmp_path, monkeypatch):
+    with FabricStore(tmp_path / "queue.sqlite3", initialize=True) as store:
+        real = store.submit(
+            "Not authorized", "antigravity", str(tmp_path), task_id="real-first"
+        )
+        mock = store.submit("Safe synthetic", "mock", str(tmp_path), task_id="mock-second")
+        store.db.execute("UPDATE tasks SET created_at=1 WHERE id=?", (real["id"],))
+        store.db.execute("UPDATE tasks SET created_at=2 WHERE id=?", (mock["id"],))
+        scheduler = WorkerFleetScheduler(
+            store, config=SchedulerConfig(max_concurrent_workers=1)
+        )
+        scheduler.register_worker("Real (unavailable)", "antigravity")
+        scheduler.register_worker("Mock", "mock")
+        monkeypatch.setattr(scheduler, "_emit_telemetry", lambda *_: None)
+        summary = scheduler.tick()
+        assert summary["mock_done_tasks"] == [mock["id"]]
+        assert summary["real_pass_tasks"] == []
+        assert summary["deferred_real_tasks"] == [real["id"]]
+        assert store.get(real["id"])["status"] == "QUEUED"
+        assert store.get(real["id"])["attempt"] == 0
+        assert store.get(mock["id"])["status"] == "COMPLETE"
 
 
 def test_decoder_rejects_nonempty_but_wrong_draft_without_prompt_leak():
