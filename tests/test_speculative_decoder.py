@@ -65,17 +65,21 @@ def test_speculative_decoding_rejection_and_correction():
     assert "multiply" in res.text
 
 
-def test_speculative_decoder_offline_fallback():
-    # No clients, no live server: verify fallback behaves deterministically without crashing
-    decoder = SpeculativeDecoder(
-        endpoint_url="http://127.0.0.1:1",  # non-existent port
-        timeout=0.1,
-        lookahead_k=2,
+def test_speculative_decoder_offline_fails_closed(monkeypatch):
+    # A failed HTTP transport must never fabricate a model completion.
+    import urllib.error
+
+    def offline(*_args, **_kwargs):
+        raise urllib.error.URLError("synthetic offline test")
+
+    monkeypatch.setattr(
+        "rai_fabric.speculative_decoder.urllib.request.urlopen", offline
     )
-    res = decoder.generate("offline test prompt", max_tokens=4, draft_k=2)
-    assert isinstance(res, SpeculativeResult)
-    assert res.tokens_generated > 0
-    assert res.to_dict()["model_draft"] == "qwen2.5-coder:1.5b"
+    decoder = SpeculativeDecoder(
+        endpoint_url="http://127.0.0.1:1", timeout=0.1, lookahead_k=2
+    )
+    with pytest.raises(RuntimeError, match="model query failed"):
+        decoder.generate("offline test prompt", max_tokens=4, draft_k=2)
 
 
 def test_vram_budget_co_allocation():
