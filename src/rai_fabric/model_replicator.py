@@ -254,6 +254,50 @@ class ModelReplicator:
         self.models_dir.mkdir(parents=True, exist_ok=True)
         self.staging_dir = self.models_dir / ".staging"
         self.staging_dir.mkdir(parents=True, exist_ok=True)
+        # Metadata-bound in-process proof cache; no additional runtime files.
+        self._verified_model_cache: Dict[str, Tuple[str, int, int, int]] = {}
+
+    def _matches_manifest(self, path: Path, manifest: ModelManifest) -> bool:
+        """Verify an existing model in bounded RAM; never trust file presence alone."""
+        size = manifest.total_size_bytes
+        chunk_size = manifest.chunk_size_bytes
+        if (size <= 0 or chunk_size <= 0 or manifest.chunks_count != len(manifest.chunk_hashes)
+                or manifest.chunks_count != (size + chunk_size - 1) // chunk_size):
+            return False
+        try:
+            before = path.stat()
+            if before.st_size != size:
+                return False
+            stamp = (manifest.root_hash, before.st_size, before.st_mtime_ns, before.st_ino)
+            if self._verified_model_cache.get(str(path)) == stamp:
+                return True
+            hashes: List[str] = []
+            with path.open("rb") as source:
+                for index, expected in enumerate(manifest.chunk_hashes):
+                    remaining = min(chunk_size, size - index * chunk_size)
+                    digest = hashlib.sha256()
+                    while remaining:
+                        block = source.read(min(1024 * 1024, remaining))
+                        if not block:
+                            return False
+                        digest.update(block)
+                        remaining -= len(block)
+                    actual = digest.hexdigest()
+                    if actual != expected:
+                        return False
+                    hashes.append(actual)
+                if source.read(1):
+                    return False
+            after = path.stat()
+            if ((before.st_size, before.st_mtime_ns, before.st_ino) !=
+                    (after.st_size, after.st_mtime_ns, after.st_ino)):
+                return False
+            if calculate_merkle_root(hashes) != manifest.root_hash:
+                return False
+            self._verified_model_cache[str(path)] = stamp
+            return True
+        except OSError:
+            return False
 
     def _get_model_path(self, model_name: str) -> Path:
         safe_name = model_name.replace("\\", "_").replace(":", "_").replace("/", "_")
@@ -356,20 +400,28 @@ class ModelReplicator:
             f.seek(offset)
             f.write(chunk_data)
             f.flush()
+        self._verified_model_cache.pop(str(target_path), None)
         return True
 
     def get_model_status(self, model_name: str, manifest: Optional[ModelManifest] = None) -> Dict[str, Any]:
         """Получение текущего статуса загрузки модели и процента завершённости."""
         model_path = self._get_model_path(model_name)
-        if model_path.is_file():
+        model_present = model_path.is_file()
+        if model_present:
             size = model_path.stat().st_size
-            return {
-                "model_name": model_name,
-                "status": "COMPLETED",
-                "progress_pct": 100.0,
-                "file_path": str(model_path),
-                "total_bytes": size,
-            }
+            if manifest is None:
+                return {
+                    "model_name": model_name, "status": "PRESENT_UNVERIFIED",
+                    "progress_pct": 0.0, "file_path": str(model_path), "total_bytes": size,
+                }
+            if self._matches_manifest(model_path, manifest):
+                return {
+                    "model_name": model_name,
+                    "status": "COMPLETED",
+                    "progress_pct": 100.0,
+                    "file_path": str(model_path),
+                    "total_bytes": size,
+                }
 
         if not manifest:
             return {
@@ -391,7 +443,8 @@ class ModelReplicator:
         pct = round((downloaded / max(manifest.chunks_count, 1)) * 100, 1)
         return {
             "model_name": model_name,
-            "status": "IN_PROGRESS" if downloaded > 0 else "PENDING",
+            "status": ("CORRUPTED" if model_present else
+                       ("IN_PROGRESS" if downloaded > 0 else "PENDING")),
             "progress_pct": pct,
             "downloaded_chunks": downloaded,
             "total_chunks": manifest.chunks_count,
@@ -421,6 +474,10 @@ class ModelReplicator:
                     chunk_hashes.append(h)
                     out_f.write(data)
 
+            # Never attest a complete model if its payload size differs from the manifest.
+            if temp_target.stat().st_size != manifest.total_size_bytes:
+                temp_target.unlink()
+                return False, "Размер собранной модели не соответствует манифесту"
             # Проверка финального Merkle Root
             final_root = calculate_merkle_root(chunk_hashes)
             if final_root != manifest.root_hash:
@@ -430,6 +487,11 @@ class ModelReplicator:
 
             # Атомарная замена
             temp_target.replace(target_path)
+            verified_stat = target_path.stat()
+            self._verified_model_cache[str(target_path)] = (
+                manifest.root_hash, verified_stat.st_size,
+                verified_stat.st_mtime_ns, verified_stat.st_ino,
+            )
 
             # Очистка staging
             for i in range(manifest.chunks_count):
