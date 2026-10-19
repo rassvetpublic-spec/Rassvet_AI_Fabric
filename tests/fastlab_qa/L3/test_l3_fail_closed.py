@@ -147,3 +147,38 @@ def test_decoder_unavailable_http_fails_closed(monkeypatch):
     )
     with pytest.raises(RuntimeError, match="model query failed"):
         decoder.generate("no fabricated source", max_tokens=2)
+
+
+def test_store_cannot_mark_real_pass_even_with_injected_lease(tmp_path):
+    import hashlib
+    import time
+    for schema_version in ("1", "2"):
+        with FabricStore(tmp_path / f"lease-{schema_version}.sqlite3", initialize=True) as store:
+            store.db.execute("UPDATE meta SET value=? WHERE key='schema_version'", (schema_version,))
+            task = store.submit("Not a real effect", "antigravity", str(tmp_path))
+            store.db.execute(
+                "UPDATE tasks SET status='RUNNING', lease_owner=?, lease_hash=?, "
+                "lease_epoch=1, lease_deadline=? WHERE id=?",
+                ("synthetic-owner", hashlib.sha256(b"fake-lease").hexdigest(),
+                 time.time() + 120, task["id"]),
+            )
+            with pytest.raises(FabricError, match="PASS"):
+                store.finish(task["id"], "synthetic-owner", "fake-lease", verdict="PASS",
+                             response="no real receipt", evidence={"simulation": True})
+            assert store.get(task["id"])["status"] == "RUNNING"
+            assert store.result(task["id"]) is None
+
+
+def test_callable_model_client_none_is_not_fake_text():
+    decoder = SpeculativeDecoder(draft_client=lambda *_: None, target_client=lambda *_: "ok")
+    with pytest.raises((TypeError, ValueError, RuntimeError), match="model client"):
+        decoder.generate("guard", max_tokens=1)
+
+
+def test_generate_client_missing_response_is_rejected():
+    class MissingResponse:
+        def generate(self, _request):
+            return {"response": None}
+    decoder = SpeculativeDecoder(draft_client=MissingResponse(), target_client=lambda *_: "ok")
+    with pytest.raises((TypeError, ValueError, RuntimeError), match="model client"):
+        decoder.generate("guard", max_tokens=1)
