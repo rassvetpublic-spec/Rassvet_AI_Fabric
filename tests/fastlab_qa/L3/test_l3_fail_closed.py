@@ -33,6 +33,8 @@ def test_scheduler_real_provider_stays_queued_without_receipt(
         assert summary["dispatched_count"] == 0
         assert summary["dispatched_tasks"] == []
         assert summary["real_pass_tasks"] == []
+        assert summary["deferred_real_tasks"] == [task["id"]]
+        assert summary["real_provider_gate"] == "NO_VERIFIED_TARGET_ADAPTER_OR_RECEIPT"
         assert summary["mock_done_tasks"] == []
         assert persisted["status"] == "QUEUED"
         assert persisted["attempt"] == 0
@@ -61,6 +63,7 @@ def test_mock_completion_explicitly_not_real_qa(tmp_path, monkeypatch):
         summary = scheduler.tick()
         assert summary["mock_done_tasks"] == [task["id"]]
         assert summary["real_pass_tasks"] == []
+        assert summary["deferred_real_tasks"] == []
         assert store.get(task["id"])["status"] == "COMPLETE"
         assert store.latest_checkpoint(task["id"])["evidence"]["simulation"] is True
 
