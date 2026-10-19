@@ -16,6 +16,7 @@ from __future__ import annotations
 __version__ = "1.0.0"
 
 import json
+import math
 import logging
 import queue
 import shutil
@@ -166,11 +167,19 @@ class GpuThermalWatchdog:
         - для интерактивного диалога (is_interactive=True): предупреждение (True, warning)
         """
         tel = self.get_telemetry()
-        if not tel.get("available"):
-            return True, None
-
         temp = tel.get("temperature_c")
         free_vram = tel.get("free_vram_mb")
+        measurements_valid = (
+            tel.get("available") is True and
+            type(temp) in (int, float) and math.isfinite(temp) and
+            type(free_vram) in (int, float) and math.isfinite(free_vram) and
+            temp >= 0 and free_vram >= 0
+        )
+        if not measurements_valid:
+            reason = "GPU telemetry unavailable or invalid; thresholds unverified"
+            if not is_interactive:
+                return False, reason
+            return True, reason  # warning only, never an attested safety PASS
 
         reason = None
         if temp is not None and temp > self.max_temp_c:
@@ -296,13 +305,36 @@ class LocalGpuTransport(ITransportChannel):
                     method="POST",
                 )
                 with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                    resp_data = json.loads(resp.read().decode("utf-8"))
+                    if getattr(resp, "status", None) != 200:
+                        raise ValueError("model backend returned a non-success HTTP status")
+                    # A bounded Ollama JSON reply cannot become a fake success
+                    # merely because a proxy answered HTTP 200.
+                    raw = resp.read(8 * 1024 * 1024 + 1)
+                    if len(raw) > 8 * 1024 * 1024:
+                        raise ValueError("model backend reply exceeded size bound")
+                    resp_data = json.loads(raw.decode("utf-8"))
+                    if not isinstance(resp_data, dict) or resp_data.get("error"):
+                        raise ValueError("model backend returned an error payload")
+                    if (resp_data.get("done") is not True or
+                            resp_data.get("model") != self.model_name or
+                            not isinstance(resp_data.get("response"), str) or
+                            not resp_data["response"].strip()):
+                        raise ValueError("model backend completion contract invalid")
+                    tokens = resp_data.get("eval_count", 0)
+                    duration = resp_data.get("total_duration", 0)
+                    if (type(tokens) is not int or tokens < 0 or
+                            type(duration) not in (int, float) or
+                            not math.isfinite(duration) or duration < 0):
+                        raise ValueError("model backend metrics contract invalid")
                     response_payload = {
-                        "text": resp_data.get("response", ""),
-                        "model": resp_data.get("model", self.model_name),
-                        "eval_count": resp_data.get("eval_count", 0),
-                        "total_duration_ms": round(resp_data.get("total_duration", 0) / 1_000_000, 2),
-                        "gpu_accelerated": self._gpu_meta["available"],
+                        "text": resp_data["response"],
+                        "model": resp_data["model"],
+                        "eval_count": tokens,
+                        "total_duration_ms": round(duration / 1_000_000, 2),
+                        # Presence of an NVIDIA device is not a per-call receipt
+                        # proving that the backend ran this request on that GPU.
+                        "gpu_accelerated": None,
+                        "gpu_evidence": "UNKNOWN_NOT_ATTESTED",
                     }
 
             # Ответный конверт
@@ -320,7 +352,7 @@ class LocalGpuTransport(ITransportChannel):
             raise
         except Exception as exc:
             self._status = TransportStatus.ERROR
-            raise TransportError("LOCAL_GPU_EXECUTION_FAILED", f"Failed local GPU generation: {exc}") from exc
+            raise TransportError("LOCAL_GPU_EXECUTION_FAILED", f"Local model contract failed ({type(exc).__name__})") from exc
 
     def receive(self, timeout: float = 1.0) -> Optional[TransportMessageEnvelope]:
         try:
@@ -409,6 +441,7 @@ class LocalGpuBenchmark:
             "final_telemetry": final_telemetry,
             "vram_delta_mb": vram_delta,
             "temp_delta_c": temp_delta,
-            "gpu_accelerated": self.transport.gpu_info.get("available", False),
+            "gpu_accelerated": None,  # not proven by GPU inventory
+            "gpu_hardware_detected": self.transport.gpu_info.get("available", False),
         }
 
