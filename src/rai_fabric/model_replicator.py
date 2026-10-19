@@ -264,6 +264,8 @@ class ModelReplicator:
         if (size <= 0 or chunk_size <= 0 or manifest.chunks_count != len(manifest.chunk_hashes)
                 or manifest.chunks_count != (size + chunk_size - 1) // chunk_size):
             return False
+        if calculate_merkle_root(manifest.chunk_hashes) != manifest.root_hash:
+            return False
         try:
             before = path.stat()
             if before.st_size != size:
@@ -478,6 +480,10 @@ class ModelReplicator:
             if temp_target.stat().st_size != manifest.total_size_bytes:
                 temp_target.unlink()
                 return False, "Размер собранной модели не соответствует манифесту"
+            # Bind the signed/root manifest to the exact per-chunk hashes too.
+            if chunk_hashes != manifest.chunk_hashes:
+                temp_target.unlink()
+                return False, "Хеши чанков не соответствуют манифесту"
             # Проверка финального Merkle Root
             final_root = calculate_merkle_root(chunk_hashes)
             if final_root != manifest.root_hash:
