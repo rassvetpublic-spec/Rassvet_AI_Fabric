@@ -256,11 +256,11 @@ class ModelReplicator:
         self.staging_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_model_path(self, model_name: str) -> Path:
-        safe_name = model_name.replace(":", "_").replace("/", "_")
+        safe_name = model_name.replace("\\", "_").replace(":", "_").replace("/", "_")
         return self.models_dir / f"{safe_name}.bin"
 
     def _get_staging_chunk_path(self, model_name: str, chunk_index: int) -> Path:
-        safe_name = model_name.replace(":", "_").replace("/", "_")
+        safe_name = model_name.replace("\\", "_").replace(":", "_").replace("/", "_")
         return self.staging_dir / f"{safe_name}_chunk_{chunk_index:05d}.tmp"
 
     def export_chunk(
@@ -332,6 +332,14 @@ class ModelReplicator:
         Прямая запись чанка по смещению в итоговый файл модели без staging (Zero SSD Wear / R4).
         Проверяет SHA-256 в RAM перед выполнением seek + write.
         """
+        # An untrusted peer's chunk index/offset must never cause out-of-bounds
+        # sparse-file writes or overwrite bytes beyond a supplied manifest size.
+        if (not isinstance(chunk_index, int) or chunk_index < 0 or
+                not isinstance(offset, int) or offset < 0 or
+                (total_size is not None and
+                 (not isinstance(total_size, int) or total_size < 0 or
+                  offset > total_size or len(chunk_data) > total_size - offset))):
+            return False
         actual_hash = hashlib.sha256(chunk_data).hexdigest()
         if actual_hash != expected_hash:
             logger.error(
