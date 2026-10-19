@@ -206,3 +206,58 @@ def test_direct_chunk_import_rejects_out_of_manifest_bounds(tmp_path):
     assert not replicator._get_model_path("safe_model").exists()
     assert replicator.import_chunk_direct("safe_model", -1, 0, payload, digest, total_size=4) is False
     assert not replicator._get_model_path("safe_model").exists()
+
+
+def test_peer_replication_corrupt_existing_model_is_not_verified(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    r = ModelReplicator(models_dir=tmp_path / "models")
+    good, bad = b"correct1", b"bad-data"
+    digest = hashlib.sha256(good).hexdigest()
+    manifest = ModelManifest("safe-model", len(good), len(good), 1, [digest], digest)
+    r._get_model_path("safe-model").write_bytes(bad)
+    status = r.get_model_status("safe-model", manifest)
+    assert status["status"] == "CORRUPTED"
+    result = r.replicate_from_peer(manifest, lambda *_: good)
+    assert result["status"] == "SUCCESS"
+    assert r._get_model_path("safe-model").read_bytes() == good
+    assert r.get_model_status("safe-model", manifest)["status"] == "COMPLETED"
+
+
+def test_model_file_presence_without_manifest_is_not_attestation(tmp_path):
+    from rai_fabric.model_replicator import ModelReplicator
+    r = ModelReplicator(models_dir=tmp_path / "models")
+    r._get_model_path("unverified").write_bytes(b"arbitrary")
+    assert r.get_model_status("unverified")["status"] == "PRESENT_UNVERIFIED"
+
+
+def test_replicator_refuses_finalized_wrong_total_size(tmp_path):
+    import hashlib
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    r = ModelReplicator(models_dir=tmp_path / "models")
+    chunk = b"abcd"
+    digest = hashlib.sha256(chunk).hexdigest()
+    manifest = ModelManifest("toy", 1, len(chunk), 1, [digest], digest)
+    assert r.import_chunk("toy", 0, chunk, manifest)
+    result, _ = r.finalize_model("toy", manifest)
+    assert result is False
+    assert not r._get_model_path("toy").is_file()
+
+
+def test_replicator_cached_verification_invalidated_on_file_change(tmp_path):
+    import hashlib
+    import os
+    from rai_fabric.model_replicator import ModelReplicator, ModelManifest
+    r = ModelReplicator(models_dir=tmp_path / "models")
+    good = b"VALID001"
+    digest = hashlib.sha256(good).hexdigest()
+    manifest = ModelManifest("cached", len(good), len(good), 1, [digest], digest)
+    assert r.import_chunk("cached", 0, good, manifest)
+    ok, _ = r.finalize_model("cached", manifest)
+    assert ok is True
+    assert r.get_model_status("cached", manifest)["status"] == "COMPLETED"
+    model_path = r._get_model_path("cached")
+    original_mtime = model_path.stat().st_mtime_ns
+    model_path.write_bytes(b"INVALID1")
+    os.utime(model_path, ns=(original_mtime + 10_000_000_000, original_mtime + 10_000_000_000))
+    assert r.get_model_status("cached", manifest)["status"] == "CORRUPTED"
