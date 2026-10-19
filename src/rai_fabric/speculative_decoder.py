@@ -100,13 +100,14 @@ class SpeculativeDecoder:
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
-                text = body.get("response", "")
+                if not isinstance(body, dict) or not isinstance(body.get("response"), str):
+                    raise ValueError("Invalid model response contract")
+                text = body["response"]
                 return text, text.split()
         except Exception as exc:
-            logger.debug("Failed querying model %s via HTTP: %s", model, exc)
-            # Детерминированный fallback генератор для автономных сред
-            fallback_text = f"def solution_{abs(hash(prompt)) % 10000}(): return True"
-            return fallback_text, fallback_text.split()
+            # Never disguise an HTTP/model failure as a genuine completion.
+            logger.warning("Model query failed for %s (%s)", model, type(exc).__name__)
+            raise RuntimeError(f"model query failed: {model}") from exc
 
     def generate(
         self,
@@ -123,8 +124,10 @@ class SpeculativeDecoder:
         total_draft_tokens = 0
         total_accepted_tokens = 0
 
-        # Итеративный цикл спекулятивного драфтинга
+        # Toy lexical proxy only: split() is NOT a verified model tokenizer.
+        # Real speculative decoding needs target conditional token probabilities.
         while len(generated_tokens) < max_tokens:
+            generated_before = len(generated_tokens)
             step_k = min(k, max_tokens - len(generated_tokens))
             if step_k <= 0:
                 break
@@ -147,18 +150,17 @@ class SpeculativeDecoder:
 
             total_draft_tokens += len(candidate_tokens)
 
-            # 2. Верификация целевой моделью
-            # В параллельном спекулятивном декодировании целевая модель оценивает весь префикс + кандидаты
-            verify_prompt = current_prompt + " " + " ".join(candidate_tokens)
+            # 2. Toy verification: compare with target continuation from the SAME
+            # prefix, not from the prefix extended by unverified draft tokens.
             target_text, target_tokens = self._query_model(
-                self.target_client, self.target_model, verify_prompt, len(candidate_tokens) + 1
+                self.target_client, self.target_model, current_prompt, len(candidate_tokens) + 1
             )
 
             # 3. Верификация и принятие токенов
             accepted_in_step = 0
             for i, d_tok in enumerate(candidate_tokens):
                 # В детерминированном тесте/клиенте: если целевой токен совпадает или верификатор одобряет
-                if i < len(target_tokens) and (target_tokens[i] == d_tok or len(target_tokens[i]) > 0):
+                if i < len(target_tokens) and target_tokens[i] == d_tok:
                     generated_tokens.append(d_tok)
                     accepted_in_step += 1
                 else:
@@ -170,15 +172,17 @@ class SpeculativeDecoder:
             total_accepted_tokens += accepted_in_step
 
             # Если все K токенов приняты, добавляем бонусный токен от целевой модели (K+1)
-            if accepted_in_step == len(candidate_tokens) and len(target_tokens) > len(candidate_tokens):
+            if (accepted_in_step == len(candidate_tokens)
+                    and len(target_tokens) > len(candidate_tokens)
+                    and len(generated_tokens) < max_tokens):
                 bonus_token = target_tokens[len(candidate_tokens)]
                 generated_tokens.append(bonus_token)
-                total_accepted_tokens += 1
+                # Target bonus was not a draft token; exclude from accepted count.
 
             current_prompt = prompt + " " + " ".join(generated_tokens)
 
             # Если ни один токен не принят и не добавлен, выходим во избежание зацикливания
-            if accepted_in_step == 0 and len(generated_tokens) == 0:
+            if len(generated_tokens) == generated_before:
                 break
 
         elapsed = max(0.0001, time.perf_counter() - t_start)
