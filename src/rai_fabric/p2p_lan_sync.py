@@ -366,8 +366,10 @@ class CrossHostP2PSyncManager:
     def evaluate_peer_parity(self, peer_offer: Dict[str, Any]) -> Dict[str, Any]:
         """Сравнение локального оффера с оффером удалённого пира."""
         local_offer = self.exchange.create_sync_offer(node_id=self.node_id)
-        diff = self.exchange.compare_offers(local_offer, peer_offer)
-        diff["peer_node_id"] = peer_offer.get("node_id", "unknown-peer")
+        safe_offer = peer_offer if isinstance(peer_offer, dict) else {}
+        diff = self.exchange.compare_offers(local_offer, safe_offer)
+        diff["peer_node_id"] = safe_offer.get("node_id", "unknown-peer")
+        diff["invalid_offer"] = not isinstance(peer_offer, dict)
         return diff
 
     def reconcile_with_peer(
@@ -381,48 +383,86 @@ class CrossHostP2PSyncManager:
         Если обнаружены расхождения — верифицирует отсутствующие чекпойнты.
         """
         diff = self.evaluate_peer_parity(peer_offer)
-
+        if diff.get("invalid_offer"):
+            return {
+                "status": "DIVERGENT", "is_parity": False,
+                "errors": ["INVALID_PEER_OFFER"], "reconciled_items": [],
+                "origin_authenticated": False, "applied_to_local_store": False,
+                "evidence_grade": "UNVERIFIED_REMOTE_OFFER", "diff": diff,
+            }
         if diff["is_parity"]:
             return {
-                "status": "IN_SYNC",
+                "status": "IN_SYNC",  # backward-compatible, self-declared offer only
                 "is_parity": True,
                 "merkle_root": diff["local_root"],
                 "reconciled_count": 0,
-                "message": f"Хост '{diff['peer_node_id']}' находится в полном криптографическом паритете",
+                "origin_authenticated": False,
+                "applied_to_local_store": False,
+                "evidence_grade": "SELF_DECLARED_OFFER_ONLY",
+                "message": "Merkle root and manifest claims match; peer identity and file presence not attested",
                 "diff": diff,
             }
 
         reconciled: List[str] = []
         errors: List[str] = []
 
-        # Если передана функция получения чекпойнта от пира
+        # This routine only validates in memory. Never imply that any remote
+        # checkpoint has been written to the local canonical store.
         missing_in_local = diff.get("missing_in_local", [])
-        if fetch_checkpoint_fn and missing_in_local:
+        if len(missing_in_local) > 2048:
+            errors.append("UNBOUNDED_REMOTE_MANIFEST")
+        elif fetch_checkpoint_fn and missing_in_local:
+            remote_manifest = peer_offer.get("items_manifest", {})
             for cp_name in missing_in_local:
-                payload = fetch_checkpoint_fn(cp_name)
-                if not payload:
-                    errors.append(f"Не удалось получить {cp_name} от пира")
+                # The callback may be backed by a filesystem: no path traversal,
+                # subdirectories, drive prefixes or arbitrary remote file types.
+                if (not isinstance(cp_name, str) or not 0 < len(cp_name) <= 255 or
+                        cp_name in (".", "..") or "/" in cp_name or
+                        "\\" in cp_name or ":" in cp_name or
+                        not cp_name.endswith((".json", ".md"))):
+                    errors.append("INVALID_PEER_CHECKPOINT_NAME")
                     continue
-                # In-memory верификация хэша
-                expected_hash = peer_offer.get("items_manifest", {}).get(cp_name)
-                if expected_hash:
-                    # Валидация детерминированного хеша
-                    raw = json.dumps(payload, sort_keys=True).encode("utf-8")
-                    import hashlib
-                    actual_hash = hashlib.sha256(raw).hexdigest()
-                    if actual_hash == expected_hash:
-                        reconciled.append(cp_name)
-                    else:
-                        errors.append(f"Хэш {cp_name} не совпал с заявленным пиром")
+                expected_hash = remote_manifest.get(cp_name)
+                if (not isinstance(expected_hash, str) or len(expected_hash) != 64 or
+                        any(ch not in "0123456789abcdef" for ch in expected_hash)):
+                    errors.append("INVALID_PEER_CHECKPOINT_HASH")
+                    continue
+                try:
+                    payload = fetch_checkpoint_fn(cp_name)
+                except Exception as exc:
+                    errors.append(f"PEER_FETCH_FAILED:{type(exc).__name__}")
+                    continue
+                if not isinstance(payload, dict):
+                    errors.append("INVALID_PEER_CHECKPOINT_PAYLOAD")
+                    continue
+                try:
+                    raw = json.dumps(payload, sort_keys=True, allow_nan=False).encode("utf-8")
+                except (TypeError, ValueError):
+                    errors.append("INVALID_PEER_CHECKPOINT_JSON")
+                    continue
+                if len(raw) > 8 * 1024 * 1024:
+                    errors.append("OVERSIZE_PEER_CHECKPOINT")
+                    continue
+                import hashlib
+                if hashlib.sha256(raw).hexdigest() == expected_hash:
+                    reconciled.append(cp_name)
+                else:
+                    errors.append("PEER_CHECKPOINT_HASH_MISMATCH")
 
         return {
-            "status": "RECONCILED" if reconciled and not errors else "DIVERGENT",
+            "status": ("RECONCILED" if (reconciled and not errors and
+                                      not diff.get("divergent_files") and
+                                      not diff.get("missing_in_remote")) else "DIVERGENT"),
             "is_parity": False,
             "local_root": diff["local_root"],
             "peer_root": diff["remote_root"],
             "missing_in_local_count": len(missing_in_local),
             "reconciled_items": reconciled,
             "errors": errors,
+            "origin_authenticated": False,
+            "applied_to_local_store": False,
+            "evidence_grade": ("IN_MEMORY_HASH_MATCH_ONLY" if reconciled else
+                               "UNVERIFIED_REMOTE_OFFER"),
             "diff": diff,
         }
 
@@ -454,7 +494,9 @@ class CrossHostP2PSyncManager:
                 "merkle_root": p.get("merkle_root"),
                 "checkpoints_count": p.get("checkpoints_count"),
                 "is_self": False,
-                "is_synced": is_peer_synced,
+                "is_synced": is_peer_synced,  # legacy: advertised root equality
+                "origin_authenticated": False,
+                "parity_evidence": "REMOTE_ROOT_HINT_ONLY",
                 "status": p.get("status", "ONLINE"),
             })
 
@@ -466,6 +508,7 @@ class CrossHostP2PSyncManager:
             "total_nodes": total_nodes,
             "synced_nodes": synced_count,
             "network_parity_pct": round((synced_count / max(total_nodes, 1)) * 100, 1),
+            "remote_parity_authenticated": False,
             "local_merkle_root": local_root,
             "nodes": nodes_summary,
             "timestamp": time.time(),
