@@ -17,6 +17,7 @@ from __future__ import annotations
 __version__ = "1.0.0"
 
 import hashlib
+import hmac
 import json
 import logging
 import time
@@ -60,13 +61,28 @@ class P2PMerkleExchange:
         remote_offer: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Сравнение локального и удалённого оффера с выявлением дельты."""
+        # Offers are untrusted hints. Matching self-declared roots alone are
+        # insufficient: names can differ while the hash multiset is identical.
+        local_offer = local_offer if isinstance(local_offer, dict) else {}
+        remote_offer = remote_offer if isinstance(remote_offer, dict) else {}
         local_root = local_offer.get("merkle_root", "")
         remote_root = remote_offer.get("merkle_root", "")
-
-        is_parity = (local_root == remote_root) and bool(local_root)
-
-        local_items: Dict[str, str] = local_offer.get("items_manifest", {})
-        remote_items: Dict[str, str] = remote_offer.get("items_manifest", {})
+        local_raw = local_offer.get("items_manifest")
+        remote_raw = remote_offer.get("items_manifest")
+        local_items: Dict[str, str] = local_raw if isinstance(local_raw, dict) else {}
+        remote_items: Dict[str, str] = remote_raw if isinstance(remote_raw, dict) else {}
+        items_valid = (isinstance(local_raw, dict) and isinstance(remote_raw, dict) and
+                       all(isinstance(k, str) and isinstance(v, str) and len(v) == 64 and
+                           all(c in "0123456789abcdef" for c in v)
+                           for itemset in (local_items, remote_items)
+                           for k, v in itemset.items()))
+        local_calculated = (calculate_merkle_root(list(local_items.values()))
+                            if items_valid else None)
+        remote_calculated = (calculate_merkle_root(list(remote_items.values()))
+                             if items_valid else None)
+        is_parity = bool(items_valid and isinstance(local_root, str) and local_root and
+                         local_items == remote_items and local_root == remote_root and
+                         local_root == local_calculated and remote_root == remote_calculated)
 
         missing_in_remote: List[str] = [k for k in local_items if k not in remote_items]
         missing_in_local: List[str] = [k for k in remote_items if k not in local_items]
@@ -93,18 +109,20 @@ class P2PMerkleExchange:
         items: Dict[str, str],
     ) -> Optional[Dict[str, Any]]:
         """Генерация криптографического пути доказательства (Merkle Proof) для чекпойнта."""
-        if checkpoint_name not in items:
+        if (not isinstance(items, dict) or checkpoint_name not in items or
+                not all(isinstance(name, str) and isinstance(digest, str) and
+                        len(digest) == 64 and
+                        all(ch in "0123456789abcdef" for ch in digest)
+                        for name, digest in items.items())):
             return None
 
-        sorted_keys = sorted(items.keys())
+        # Canonical TriTower root sorts by digest VALUE, not filename.
+        # Stable filename tie-break selects the intended leaf when hashes repeat.
+        ordered = sorted(items.items(), key=lambda pair: (pair[1], pair[0]))
         target_hash = items[checkpoint_name]
-
-        # Строим уровни дерева с отслеживанием индекса
-        current_layer = [items[k] for k in sorted_keys]
-        try:
-            target_idx = current_layer.index(target_hash)
-        except ValueError:
-            return None
+        current_layer = [digest for _, digest in ordered]
+        target_idx = next(i for i, (name, _) in enumerate(ordered)
+                          if name == checkpoint_name)
 
         proof_path: List[Dict[str, str]] = []
 
@@ -151,14 +169,20 @@ class P2PMerkleExchange:
         expected_root: str,
     ) -> bool:
         """Детерминированная валидация пути Merkle Proof против ожидаемого корня."""
+        is_hash = lambda h: (isinstance(h, str) and len(h) == 64 and
+                             all(c in "0123456789abcdef" for c in h))
+        if (not is_hash(file_hash) or not is_hash(expected_root) or
+                not isinstance(proof_path, list) or len(proof_path) > 64):
+            return False
         current = file_hash
-
         for step in proof_path:
-            direction = step.get("direction", "right")
-            sibling = step.get("sibling_hash", "")
-            if direction == "right":
+            if (not isinstance(step, dict) or
+                    step.get("direction") not in ("left", "right") or
+                    not is_hash(step.get("sibling_hash"))):
+                return False
+            sibling = step["sibling_hash"]
+            if step["direction"] == "right":
                 current = hash_pair(current, sibling)
             else:
                 current = hash_pair(sibling, current)
-
-        return current == expected_root
+        return hmac.compare_digest(current, expected_root)
