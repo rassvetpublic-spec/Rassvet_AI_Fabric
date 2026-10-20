@@ -420,6 +420,53 @@ class ModelReplicator:
         except OSError:
             return False
 
+    @staticmethod
+    def _try_lock_legacy_append(target_path: Path) -> Optional[int]:
+        """Nonblocking cross-process lease for one model's manifest-free append.
+
+        A persistent one-byte sidecar permits Windows byte-range locking and
+        POSIX flock without requiring deletion/re-creation (which would race).
+        This lease is not a model receipt or independent identity proof.
+        """
+        lock_path = target_path.with_name(target_path.name + ".append.lock")
+        if lock_path.is_symlink():
+            return None
+        flags = os.O_RDWR | os.O_CREAT
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+        try:
+            fd = os.open(lock_path, flags, 0o600)
+        except OSError:
+            return None
+        try:
+            if os.fstat(fd).st_size == 0:
+                os.write(fd, b"\x00")
+            os.lseek(fd, 0, os.SEEK_SET)
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except (OSError, ImportError):
+            os.close(fd)
+            return None
+
+    @staticmethod
+    def _release_legacy_append(fd: int) -> None:
+        try:
+            if os.name == "nt":
+                import msvcrt
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        except OSError as exc:
+            logger.warning("Legacy append lease release failed: %s", type(exc).__name__)
+        finally:
+            os.close(fd)
+
     def import_chunk_direct(
         self,
         model_name: str,
@@ -459,32 +506,39 @@ class ModelReplicator:
             return False
 
         target_path = self._get_model_path(model_name)
-        if target_path.is_symlink():
+        # For legacy append, the lease spans every state check and the write.
+        # Without it two callers can both check the same old size and both ACK
+        # success even when one payload silently overwrites the other.
+        lease_fd = self._try_lock_legacy_append(target_path) if legacy_append else None
+        if legacy_append and lease_fd is None:
             return False
-        if legacy_append:
-            # Fail without creating a new sparse file, and recheck the actual
-            # descriptor after open against a concurrent file-size change.
+        try:
+            if target_path.is_symlink():
+                return False
+            if legacy_append:
+                try:
+                    current_size = target_path.stat().st_size if target_path.exists() else 0
+                except OSError:
+                    return False
+                if offset != current_size:
+                    return False
+            # O_NOFOLLOW protects the destination component on POSIX.
+            flags = os.O_RDWR | os.O_CREAT
+            flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
             try:
-                current_size = target_path.stat().st_size if target_path.exists() else 0
+                fd = os.open(target_path, flags, 0o600)
+                with os.fdopen(fd, "r+b") as f:
+                    if legacy_append and os.fstat(f.fileno()).st_size != offset:
+                        return False
+                    f.seek(offset)
+                    f.write(chunk_data)
+                    f.flush()
+                return True
             except OSError:
                 return False
-            if offset != current_size:
-                return False
-        # O_NOFOLLOW defends final component on POSIX. Windows still receives
-        # the explicit symlink check above; no active host paths are modified.
-        flags = os.O_RDWR | os.O_CREAT
-        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
-        try:
-            fd = os.open(target_path, flags, 0o600)
-            with os.fdopen(fd, "r+b") as f:
-                if legacy_append and os.fstat(f.fileno()).st_size != offset:
-                    return False
-                f.seek(offset)
-                f.write(chunk_data)
-                f.flush()
-            return True
-        except OSError:
-            return False
+        finally:
+            if lease_fd is not None:
+                self._release_legacy_append(lease_fd)
 
     def get_model_status(self, model_name: str, manifest: Optional[ModelManifest] = None) -> Dict[str, Any]:
         """Получение текущего статуса загрузки модели и процента завершённости."""
