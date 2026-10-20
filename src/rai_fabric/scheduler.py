@@ -228,7 +228,7 @@ class WorkerFleetScheduler:
         try:
             from multiprocessing.connection import Client
             address = self.config.telemetry_pipe
-            family = "AF_PIPE" if os.name == "nt" and address.startswith(r"\\.\pipe\\") else "AF_INET"
+            family = "AF_PIPE" if os.name == "nt" and address.startswith('\\\\.\\pipe\\') else "AF_INET"
             conn_target = address if family == "AF_PIPE" else ("127.0.0.1", 18899)
             conn = Client(conn_target, family=family)
             event = {
