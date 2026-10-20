@@ -16,6 +16,7 @@ from __future__ import annotations
 __version__ = "1.0.0"
 
 import logging
+import math
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -59,6 +60,8 @@ class DistributedWorkerPool:
         gpu_transport: Optional[LocalGpuTransport] = None,
         max_queue_depth: int = 1000,
     ) -> None:
+        if type(max_queue_depth) is not int or not 1 <= max_queue_depth <= 100000:
+            raise ValueError("max_queue_depth must be a bounded positive integer")
         self.gpu_transport = gpu_transport or LocalGpuTransport()
         self.max_queue_depth = max_queue_depth
 
@@ -85,7 +88,20 @@ class DistributedWorkerPool:
         compute_power: float = 1.0,
     ) -> bool:
         """Регистрация воркера в пуле с аппаратным профилем."""
+        # A corrupt/NaN worker score can quietly distort routing decisions.
+        try:
+            vram = float(vram_free_mb)
+            compute = float(compute_power)
+        except (TypeError, ValueError, OverflowError):
+            return False
+        if (not isinstance(worker_id, str) or not worker_id.strip() or
+                not math.isfinite(vram) or vram < 0 or
+                not math.isfinite(compute) or compute <= 0):
+            return False
         with self._lock:
+            if worker_id in self._workers:
+                # Do not reset an existing worker's queue/stats accidentally.
+                return False
             self._workers[worker_id] = {
                 "worker_id": worker_id,
                 "capabilities": capabilities or ["inference", "code-eval"],
@@ -137,15 +153,21 @@ class DistributedWorkerPool:
     def enqueue_worker_task(self, worker_id: str, task: Dict[str, Any]) -> bool:
         """Помещение задачи в очередь конкретного воркера."""
         with self._lock:
-            if worker_id not in self._workers:
+            if (worker_id not in self._workers or
+                    self._workers[worker_id]["status"] != "ONLINE" or
+                    not isinstance(task, dict) or not task.get("task_id")):
                 return False
-            self._workers[worker_id]["pending_queue"].append(task)
+            if sum(len(w["pending_queue"]) for w in self._workers.values()) >= self.max_queue_depth:
+                return False
+            self._workers[worker_id]["pending_queue"].append(dict(task))
             return True
 
     def steal_work(self, idle_worker_id: str) -> Optional[Dict[str, Any]]:
         """Проактивный перехват задачи из хвоста наиболее загруженного воркера (Work-Stealing / R7)."""
         with self._lock:
-            if idle_worker_id not in self._workers:
+            idle_worker = self._workers.get(idle_worker_id)
+            if (not idle_worker or idle_worker["status"] != "ONLINE" or
+                    idle_worker["active_tasks"] != 0 or idle_worker["pending_queue"]):
                 return None
 
             busiest_worker = None
@@ -202,15 +224,29 @@ class DistributedWorkerPool:
             if not self.gpu_transport.is_connected():
                 self.gpu_transport.connect()
 
-            self.gpu_transport.send(env)
+            if self.gpu_transport.send(env) is not True:
+                raise TransportError("INFERENCE_DISPATCH_FAILED", "Provider did not accept the request")
             reply_env = self.gpu_transport.receive(timeout=15.0)
 
             duration_ms = round((time.time() - t0) * 1000.0, 2)
 
-            if not reply_env or "reply" not in reply_env.payload:
-                raise TransportError("INFERENCE_TIMEOUT", "Did not receive valid inference reply")
-
-            reply_data = reply_env.payload["reply"]
+            # SHA envelopes are integrity checks, not independently authenticated
+            # receipts. Even the integrity check and exact request correlation
+            # must succeed before the pool records any completion.
+            if (not isinstance(reply_env, TransportMessageEnvelope) or
+                    not reply_env.verify_signature() or
+                    reply_env.payload_type != "response" or
+                    reply_env.channel != env.channel or
+                    not isinstance(reply_env.payload, dict) or
+                    reply_env.payload.get("ref_id") != env.message_id):
+                raise TransportError("INFERENCE_RECEIPT_MISMATCH", "Reply identity/integrity not verified")
+            reply_data = reply_env.payload.get("reply")
+            if (not isinstance(reply_data, dict) or
+                    not isinstance(reply_data.get("text"), str) or
+                    not reply_data["text"].strip() or
+                    type(reply_data.get("eval_count", 0)) is not int or
+                    reply_data.get("eval_count", 0) < 0):
+                raise TransportError("INFERENCE_RESULT_INVALID", "Reply payload incomplete or malformed")
             eval_count = reply_data.get("eval_count", 0)
 
             with self._lock:
