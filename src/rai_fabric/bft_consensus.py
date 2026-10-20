@@ -207,6 +207,12 @@ class BFTConsensusNode:
             self._stats["byzantine_rejected"] += 1
             return None
 
+        # Old/replayed rounds and cross-epoch proposals cannot reset vote state.
+        if (proposal.epoch != self.current_epoch or
+                proposal.sequence_number <= self.sequence_number):
+            self._stats["byzantine_rejected"] += 1
+            return None
+
         # Проверка согласованности с локальным деревом (если передано)
         if local_expected_merkle and local_expected_merkle != proposal.merkle_root:
             self._stats["byzantine_rejected"] += 1
@@ -235,7 +241,10 @@ class BFTConsensusNode:
         if not self.active_proposal:
             return None
 
-        if vote.sequence_number != self.active_proposal.sequence_number:
+        if (vote.sequence_number != self.active_proposal.sequence_number or
+                vote.epoch != self.active_proposal.epoch or vote.phase != "PREPARE" or
+                self.phase not in (BFTPhase.PRE_PREPARED, BFTPhase.PREPARED)):
+            self._stats["byzantine_rejected"] += 1
             return None
 
         if not self.verify_signature(vote.voter_id, vote.compute_digest(), vote.signature):
@@ -270,7 +279,10 @@ class BFTConsensusNode:
         if not self.active_proposal:
             return False
 
-        if vote.sequence_number != self.active_proposal.sequence_number:
+        if (vote.sequence_number != self.active_proposal.sequence_number or
+                vote.epoch != self.active_proposal.epoch or vote.phase != "COMMIT" or
+                self.phase not in (BFTPhase.PREPARED, BFTPhase.COMMITTED)):
+            self._stats["byzantine_rejected"] += 1
             return False
 
         if not self.verify_signature(vote.voter_id, vote.compute_digest(), vote.signature):
@@ -302,8 +314,12 @@ class BFTConsensusNode:
 
     def propose_membership_change(self, action: str, target_node_id: str) -> Dict[str, Any]:
         """Формирование предложения изменения состава валидаторов (ADD_NODE / REMOVE_NODE / R8)."""
-        if action not in ("ADD_NODE", "REMOVE_NODE"):
-            raise ValueError(f"Invalid membership action: {action}")
+        if action not in ("ADD_NODE", "REMOVE_NODE") or not isinstance(target_node_id, str) or not target_node_id.strip():
+            raise ValueError(f"Invalid membership proposal: {action!r}, {target_node_id!r}")
+        if (action == "REMOVE_NODE" and target_node_id not in self.cluster_nodes) or (action == "ADD_NODE" and target_node_id in self.cluster_nodes):
+            raise ValueError("Membership target already matches current state")
+        if action == "REMOVE_NODE" and self.n <= 4:
+            raise ValueError("Cannot reduce consensus cluster below four validators")
         self.sequence_number += 1
         digest = hashlib.sha256(f"{action}:{target_node_id}:{self.current_epoch}:{self.sequence_number}".encode("utf-8")).digest()
         sig = self.sign_digest(digest)
@@ -327,6 +343,11 @@ class BFTConsensusNode:
         Применение изменения состава узлов кластера при наличии кворума подписей (2f_old + 1).
         Увеличивает эпоху, пересчитывает N, f и quorum_size без остановки работы (R8).
         """
+        if (action not in ("ADD_NODE", "REMOVE_NODE") or
+                not isinstance(target_node_id, str) or not target_node_id.strip() or
+                (action == "REMOVE_NODE" and (target_node_id not in self.cluster_nodes or self.n <= 4)) or
+                (action == "ADD_NODE" and target_node_id in self.cluster_nodes)):
+            return False
         valid_signatures = 0
         digest = hashlib.sha256(f"{action}:{target_node_id}:{self.current_epoch}:{self.sequence_number}".encode("utf-8")).digest()
         for voter_id, sig in commit_signatures.items():
