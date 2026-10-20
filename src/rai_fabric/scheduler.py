@@ -143,12 +143,27 @@ class WorkerFleetScheduler:
                     "ORDER BY created_at,id LIMIT 50"
                 )
             ]
-            tasks_cursor = current_store.db.execute(
-                "SELECT id, provider, objective FROM tasks WHERE status='QUEUED' "
-                "AND provider IN ('mock','codex-mock') "
-                "ORDER BY created_at,id LIMIT ?",
-                (self.config.max_concurrent_workers,),
-            ).fetchall()
+            # Bound the tick by runnable work, not merely by the oldest queued
+            # rows. An unserved provider or unresolved dependency must not
+            # consume a slot and permanently starve an eligible mock task.
+            available_providers = sorted({
+                w.provider for w in self.workers.values()
+                if w.status == "IDLE" and w.provider in {"mock", "codex-mock"}
+            })
+            if available_providers and self.config.max_concurrent_workers > 0:
+                placeholders = ",".join("?" for _ in available_providers)
+                tasks_cursor = current_store.db.execute(
+                    "SELECT t.id, t.provider, t.objective FROM tasks t "
+                    "WHERE t.status='QUEUED' "
+                    f"AND t.provider IN ({placeholders}) "
+                    "AND NOT EXISTS ("
+                    "SELECT 1 FROM dependencies d JOIN tasks parent ON parent.id=d.depends_on "
+                    "WHERE d.task_id=t.id AND parent.status!='COMPLETE') "
+                    "ORDER BY t.created_at,t.id LIMIT ?",
+                    (*available_providers, self.config.max_concurrent_workers),
+                ).fetchall()
+            else:
+                tasks_cursor = []
 
             for row in tasks_cursor:
                 task_id = row["id"]
