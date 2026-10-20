@@ -228,8 +228,15 @@ class WorkerFleetScheduler:
         try:
             from multiprocessing.connection import Client
             address = self.config.telemetry_pipe
-            family = "AF_PIPE" if os.name == "nt" and address.startswith('\\\\.\\pipe\\') else "AF_INET"
-            conn_target = address if family == "AF_PIPE" else ("127.0.0.1", 18899)
+            if os.name == "nt":
+                pipe_prefix = '\\\\.\\pipe\\'
+                # Reject invalid/empty Windows pipe targets without implicit TCP.
+                if not isinstance(address, str) or not address.startswith(pipe_prefix) or len(address) <= len(pipe_prefix):
+                    return
+                family, conn_target = "AF_PIPE", address
+            else:
+                # Historical non-Windows loopback compatibility; no new endpoint.
+                family, conn_target = "AF_INET", ("127.0.0.1", 18899)
             conn = Client(conn_target, family=family)
             event = {
                 "event_type": "raif.scheduler.tick",
