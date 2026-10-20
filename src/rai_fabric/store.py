@@ -259,24 +259,20 @@ class FabricStore:
         with self.atomic():
             # W2 has no verified real-target adapter. Gate direct claim(),
             # not only worker.run_one(), or an operator can bypass the worker.
-            version_row = self.db.execute(
-                "SELECT value FROM meta WHERE key='schema_version'"
-            ).fetchone()
-            schema2 = bool(version_row and version_row[0] == "2")
-            if schema2 and provider not in (None, "mock", "codex-mock"):
-                raise FabricError("W2: реальный исполнитель заблокирован до target adapter")
+            if provider not in (None, "mock", "codex-mock"):
+                raise FabricError("Реальный provider запрещён без verified target adapter/receipt")
             now = time.time()
             row = self.db.execute("""
                 SELECT * FROM tasks t WHERE t.status='QUEUED'
                 AND (? IS NULL OR t.provider=?)
                 AND (? IS NULL OR t.id=?)
-                AND (?=0 OR t.provider IN ('mock','codex-mock'))
+                AND t.provider IN ('mock','codex-mock')
                 AND NOT EXISTS (
                     SELECT 1 FROM dependencies d
                     JOIN tasks parent ON parent.id=d.depends_on
                     WHERE d.task_id=t.id AND parent.status!='COMPLETE')
                 ORDER BY t.created_at,t.id LIMIT 1
-            """, (provider, provider, task_id, task_id, int(schema2))).fetchone()
+            """, (provider, provider, task_id, task_id)).fetchone()
             if row is None:
                 return None
             token = secrets.token_urlsafe(32)
@@ -339,6 +335,8 @@ class FabricStore:
             now = time.time()
             row = self.db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
             self._assert_lease(row, owner, token, now)
+            if verdict == "PASS" and row["provider"] not in ("mock", "codex-mock"):
+                raise FabricError("PASS реального provider без verified target receipt запрещён")
             if verdict == "PASS":
                 version_row = self.db.execute(
                     "SELECT value FROM meta WHERE key='schema_version'"
