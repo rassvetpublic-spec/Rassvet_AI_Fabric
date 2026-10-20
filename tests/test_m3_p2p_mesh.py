@@ -12,6 +12,7 @@ import io
 import os
 import shutil
 import tempfile
+import time
 from pathlib import Path
 import pytest
 
@@ -146,9 +147,9 @@ def test_lan_discovery_ewma_integration():
         port=11434,
         merkle_root="abc",
         checkpoints_count=10,
-        timestamp=1000.0,
+        timestamp=time.time(),
     )
-    discovery.register_peer(beacon)
+    assert discovery.register_peer(beacon) is True
 
     peers = discovery.get_active_peers()
     assert len(peers) == 1

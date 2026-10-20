@@ -433,13 +433,20 @@ class ModelReplicator:
         Прямая запись чанка по смещению в итоговый файл модели без staging (Zero SSD Wear / R4).
         Проверяет SHA-256 в RAM перед выполнением seek + write.
         """
-        # An untrusted peer's chunk index/offset must never cause out-of-bounds
-        # sparse-file writes or overwrite bytes beyond a supplied manifest size.
+        # Preserve the old, small sequential-append call form without allowing
+        # unbounded sparse writes. This mode is *not* a verified model receipt:
+        # callers still need a ModelManifest for a COMPLETED status.
+        legacy_append = total_size is None
+        legacy_cap = 64 * 1024 * 1024  # strict maximum for manifest-free files
         if (type(chunk_index) is not int or chunk_index < 0 or
                 type(offset) is not int or offset < 0 or
-                type(total_size) is not int or total_size <= 0 or
-                not isinstance(chunk_data, bytes) or not chunk_data or
-                offset > total_size or len(chunk_data) > total_size - offset):
+                not isinstance(chunk_data, bytes) or not chunk_data):
+            return False
+        if legacy_append:
+            if offset > legacy_cap or len(chunk_data) > legacy_cap - offset:
+                return False
+        elif (type(total_size) is not int or total_size <= 0 or
+              offset > total_size or len(chunk_data) > total_size - offset):
             return False
         actual_hash = hashlib.sha256(chunk_data).hexdigest()
         if actual_hash != expected_hash:
@@ -454,6 +461,15 @@ class ModelReplicator:
         target_path = self._get_model_path(model_name)
         if target_path.is_symlink():
             return False
+        if legacy_append:
+            # Fail without creating a new sparse file, and recheck the actual
+            # descriptor after open against a concurrent file-size change.
+            try:
+                current_size = target_path.stat().st_size if target_path.exists() else 0
+            except OSError:
+                return False
+            if offset != current_size:
+                return False
         # O_NOFOLLOW defends final component on POSIX. Windows still receives
         # the explicit symlink check above; no active host paths are modified.
         flags = os.O_RDWR | os.O_CREAT
@@ -461,6 +477,8 @@ class ModelReplicator:
         try:
             fd = os.open(target_path, flags, 0o600)
             with os.fdopen(fd, "r+b") as f:
+                if legacy_append and os.fstat(f.fileno()).st_size != offset:
+                    return False
                 f.seek(offset)
                 f.write(chunk_data)
                 f.flush()
