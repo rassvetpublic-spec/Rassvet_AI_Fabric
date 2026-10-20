@@ -17,7 +17,9 @@ from __future__ import annotations
 
 __version__ = "1.0.0"
 
+import copy
 import logging
+import math
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -46,10 +48,21 @@ class NodeDiscoveryRegistry:
         lease_ttl_seconds: float = DEFAULT_LEASE_TTL,
     ) -> bool:
         """Регистрация нового узла кластера или обновление существующего."""
-        if not node_id:
+        # Registration is not authentication. Invalid roles or leases must not
+        # silently become healthy compute nodes.
+        if (not isinstance(node_id, str) or not node_id.strip() or len(node_id) > 128 or
+                role not in self.VALID_ROLES or
+                not isinstance(endpoint, str) or not endpoint.strip() or len(endpoint) > 512 or
+                type(lease_ttl_seconds) not in (int, float) or
+                not math.isfinite(lease_ttl_seconds) or
+                not 0 < lease_ttl_seconds <= 3600 or
+                (capabilities is not None and
+                 (not isinstance(capabilities, list) or len(capabilities) > 32 or
+                  not all(isinstance(x, str) and 0 < len(x) <= 128 for x in capabilities))) or
+                (resources is not None and not isinstance(resources, dict))):
             return False
 
-        assigned_role = role if role in self.VALID_ROLES else "COMPUTE_NODE"
+        assigned_role = role
         now = time.time()
 
         with self._lock:
@@ -57,8 +70,8 @@ class NodeDiscoveryRegistry:
                 "node_id": node_id,
                 "role": assigned_role,
                 "endpoint": endpoint,
-                "capabilities": capabilities or ["inference"],
-                "resources": resources or {},
+                "capabilities": copy.deepcopy(capabilities) if capabilities is not None else ["inference"],
+                "resources": copy.deepcopy(resources) if resources is not None else {},
                 "lease_ttl_seconds": lease_ttl_seconds,
                 "registered_at": now,
                 "last_heartbeat": now,
@@ -77,10 +90,16 @@ class NodeDiscoveryRegistry:
             node = self._nodes.get(node_id)
             if not node:
                 return False
-            node["last_heartbeat"] = time.time()
+            now = time.time()
+            if resources is not None and not isinstance(resources, dict):
+                return False
+            if now - node["last_heartbeat"] > node["lease_ttl_seconds"] * 2:
+                node["status"] = "DEGRADED"
+                return False  # expired lease needs explicit re-registration
+            node["last_heartbeat"] = now
             node["status"] = "ONLINE"
-            if resources:
-                node["resources"].update(resources)
+            if resources is not None:
+                node["resources"].update(copy.deepcopy(resources))
             return True
 
     def unregister_node(self, node_id: str) -> bool:
@@ -96,7 +115,7 @@ class NodeDiscoveryRegistry:
         """Получение копии карточки узла."""
         with self._lock:
             node = self._nodes.get(node_id)
-            return dict(node) if node else None
+            return copy.deepcopy(node) if node else None
 
     def list_active_nodes(
         self,
@@ -121,7 +140,7 @@ class NodeDiscoveryRegistry:
                 if capability and capability not in node["capabilities"]:
                     continue
 
-                active.append(dict(node))
+                active.append(copy.deepcopy(node))
 
         return active
 
@@ -147,7 +166,10 @@ class NodeDiscoveryRegistry:
         """Формирование агрегированного топологического среза кластера."""
         now = time.time()
         with self._lock:
-            nodes_copy = [dict(n) for n in self._nodes.values()]
+            nodes_copy = [copy.deepcopy(n) for n in self._nodes.values()]
+            for n in nodes_copy:
+                if now - n["last_heartbeat"] > n["lease_ttl_seconds"] * 2:
+                    n["status"] = "DEGRADED"
 
         role_counts: Dict[str, int] = {}
         for n in nodes_copy:
@@ -172,15 +194,23 @@ class NodeDiscoveryRegistry:
             with urllib.request.urlopen(req, timeout=1.5) as resp:
                 if resp.status == 200:
                     import json
-                    data = json.loads(resp.read().decode("utf-8"))
-                    node_id = data.get("node_id", "node-gpu-rtx5070ti-01")
-                    self.register_node(
+                    raw = resp.read(8193)
+                    if len(raw) > 8192:
+                        return None
+                    data = json.loads(raw.decode("utf-8"))
+                    if not isinstance(data, dict):
+                        return None
+                    node_id = data.get("node_id")
+                    if not isinstance(node_id, str) or not node_id.strip():
+                        return None  # Never invent the identity of a GPU from HTTP 200.
+                    if not self.register_node(
                         node_id=node_id,
                         role="COMPUTE_NODE",
                         endpoint=clean_ep,
                         capabilities=data.get("capabilities", ["inference", "code-eval"]),
                         resources=data.get("resources", {}),
-                    )
+                    ):
+                        return None
                     return self.get_node(node_id)
         except Exception:
             pass

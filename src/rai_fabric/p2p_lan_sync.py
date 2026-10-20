@@ -16,8 +16,10 @@ from __future__ import annotations
 
 __version__ = "1.0.0"
 
+import ipaddress
 import json
 import logging
+import math
 import socket
 import time
 from pathlib import Path
@@ -87,11 +89,33 @@ class LanBeacon:
 
     @classmethod
     def from_bytes(cls, raw: bytes) -> Optional[LanBeacon]:
+        # Beacon is an untrusted discovery hint, not an authenticated origin.
+        if not isinstance(raw, bytes) or not raw or len(raw) > 8192:
+            return None
         try:
             data = json.loads(raw.decode("utf-8"))
-            if data.get("stage") == "STAGE_R29_LAN_P2P" and "node_id" in data:
-                return cls.from_dict(data)
-        except Exception as exc:
+            if not isinstance(data, dict) or data.get("protocol") != "BPR5_NEXTGEN_R3.3" or data.get("stage") != "STAGE_R29_LAN_P2P":
+                return None
+            if (not isinstance(data.get("node_id"), str) or
+                    not 0 < len(data["node_id"]) <= 128 or
+                    not isinstance(data.get("host"), str) or
+                    not 0 < len(data["host"]) <= 255 or
+                    type(data.get("port")) is not int or not 1 <= data["port"] <= 65535 or
+                    not isinstance(data.get("merkle_root"), str) or
+                    not 0 < len(data["merkle_root"]) <= 128 or
+                    type(data.get("checkpoints_count")) is not int or data["checkpoints_count"] < 0 or
+                    type(data.get("ttl_seconds")) not in (int, float) or
+                    not math.isfinite(data["ttl_seconds"]) or
+                    not 0 < data["ttl_seconds"] <= 300 or
+                    type(data.get("timestamp")) not in (int, float) or
+                    not math.isfinite(data["timestamp"]) or
+                    data["timestamp"] <= 0 or
+                    not isinstance(data.get("capabilities"), list) or
+                    len(data["capabilities"]) > 32 or
+                    not all(isinstance(c, str) and 0 < len(c) <= 128 for c in data["capabilities"])):
+                return None
+            return cls.from_dict(data)
+        except (ValueError, TypeError, KeyError, UnicodeDecodeError, OverflowError) as exc:
             logger.debug("Failed to parse LanBeacon packet: %s", exc)
         return None
 
@@ -123,6 +147,10 @@ class EWMAPingTracker:
     def record_ping(self, peer_id: str, rtt_ms: float, timestamp: Optional[float] = None) -> float:
         """Регистрация замера RTT и обновление скользящего среднего EWMA."""
         ts = timestamp if timestamp is not None else time.time()
+        if (not isinstance(peer_id, str) or not peer_id or
+                type(rtt_ms) not in (int, float) or not math.isfinite(rtt_ms) or rtt_ms < 0 or
+                type(ts) not in (int, float) or not math.isfinite(ts)):
+            raise ValueError("Invalid peer RTT/timestamp telemetry")
         if peer_id not in self._peers:
             self._peers[peer_id] = {
                 "rtt_ewma": float(rtt_ms),
@@ -186,9 +214,23 @@ class LanPeerDiscovery:
         self.ping_tracker = ping_tracker or EWMAPingTracker()
         self.peers: Dict[str, Dict[str, Any]] = {}
 
-    def register_peer(self, beacon: LanBeacon) -> None:
-        """Регистрация или обновление пира по полученному маяку."""
+    def register_peer(self, beacon: LanBeacon) -> bool:
+        """Record an unverified discovery hint only while its lease and order are valid."""
         now = time.time()
+        if (not isinstance(beacon, LanBeacon) or
+                not isinstance(beacon.node_id, str) or not 0 < len(beacon.node_id) <= 128 or
+                not isinstance(beacon.host, str) or not beacon.host.strip() or
+                not 1 <= beacon.port <= 65535 or
+                not isinstance(beacon.merkle_root, str) or not beacon.merkle_root or
+                beacon.checkpoints_count < 0 or
+                not math.isfinite(beacon.ttl_seconds) or not 0 < beacon.ttl_seconds <= 300 or
+                not math.isfinite(beacon.timestamp) or
+                beacon.timestamp + beacon.ttl_seconds <= now or
+                beacon.timestamp > now + 5.0):
+            return False
+        prior = self.peers.get(beacon.node_id)
+        if prior and beacon.timestamp <= prior.get("remote_timestamp", 0):
+            return False
         self.ping_tracker.record_ping(beacon.node_id, rtt_ms=1.0, timestamp=now)
         self.peers[beacon.node_id] = {
             "node_id": beacon.node_id,
@@ -199,9 +241,11 @@ class LanPeerDiscovery:
             "checkpoints_count": beacon.checkpoints_count,
             "capabilities": beacon.capabilities,
             "last_seen_ts": now,
+            "remote_timestamp": beacon.timestamp,
             "expires_at": now + beacon.ttl_seconds,
             "status": "ONLINE",
         }
+        return True
 
     def register_synthetic_peer(self, peer_data: Dict[str, Any]) -> None:
         """Регистрация синтетического пира для детерминированного тестирования без сети."""
@@ -239,7 +283,8 @@ class LanPeerDiscovery:
             st = self.ping_tracker.get_state(nid, now=now)
             p["status"] = st
             p["ewma_metrics"] = self.ping_tracker.get_peer_metrics(nid, now=now)
-        return list(self.peers.values())
+        return [dict(p) for p in self.peers.values()
+                if p["status"] in (PeerState.ONLINE, PeerState.DEGRADED)]
 
     def broadcast_beacon(
         self,
@@ -268,12 +313,25 @@ class LanPeerDiscovery:
     def receive_beacon_packet(self, raw_bytes: bytes, sender_addr: Tuple[str, int]) -> Optional[LanBeacon]:
         """Обработка входящего пакета маяка."""
         beacon = LanBeacon.from_bytes(raw_bytes)
-        if beacon:
-            # Если хост был указан как 0.0.0.0 или пустой, подставляем адрес отправителя
-            if beacon.host in ("0.0.0.0", "", "localhost"):
-                beacon.host = sender_addr[0]
-            self.register_peer(beacon)
-        return beacon
+        if beacon is None:
+            return None
+        now = time.time()
+        if (beacon.timestamp + beacon.ttl_seconds <= now or
+                beacon.timestamp > now + 5.0):
+            return None
+        try:
+            source_ip = str(ipaddress.IPv4Address(sender_addr[0]))
+            if not isinstance(sender_addr[1], int) or not 1 <= sender_addr[1] <= 65535:
+                return None
+        except (IndexError, ValueError, TypeError, ipaddress.AddressValueError):
+            return None
+        prior = self.peers.get(beacon.node_id)
+        if prior and beacon.timestamp <= prior.get("remote_timestamp", 0):
+            return None  # Replayed or older advertisement cannot roll back topology.
+        # UDP sender address is an observed hint; advertised host is untrusted.
+        # This does NOT authenticate the sender or authorize execution.
+        beacon.host = source_ip
+        return beacon if self.register_peer(beacon) else None
 
 
 class CrossHostP2PSyncManager:
