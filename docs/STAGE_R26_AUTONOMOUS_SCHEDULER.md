@@ -3,8 +3,25 @@
 **Идентификатор этапа:** `RAIF_10_8_STAGE_R26`  
 **Канонический чекпойнт:** `CHECKPOINT_2026-10-14_STEP3_RAIF_10_8_SCHEDULER`  
 **Связанные Issue:** [Rassvet_AI_Fabric#17](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/17), [#20](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/20)  
-**Статус:** `IMPLEMENTED / VALIDATED / PRODUCTION_READY`  
+**Актуальный статус main (проверка 21.10.2026):** `SOURCE_RISK_VERIFIED / MOCK_ONLY_TEST_COVERAGE / REAL_PROVIDER_QA_UNKNOWN / NOT_PRODUCTION_READY`  
+**Исторический статус от 14.10.2026:** `IMPLEMENTED / VALIDATED / PRODUCTION_READY` — сохранён как утверждение исходного этапа, **не является действующим подтверждением готовности к боевой эксплуатации**.  
+**Обязательная корректирующая запись:** [RAIF #21](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/21).  
+
 **Классификатор:** `[Класс A - X]`
+
+---
+
+## 0. Граница доказательств и допуск к выпуску (21.10.2026)
+
+Проверены исходники `Rassvet_AI_Fabric/main@32be4df878b13d3c36242a2d0eb81f2406eafc84`. В `src/rai_fabric/scheduler.py` (Git blob `d534e95316e7f65562483de53cefe1b0da5d6860`) немоковый путь всё ещё содержит `FabricStore.claim()` и немедленный `finish(verdict="PASS")` **без подтверждённого запуска реального провайдера или сверенного target receipt**. Это **риск, воспроизводимый анализом исходников**, не доказательство фактического инцидента на хосте. `FabricStore` main (blob `d4472dae5d341a9e1053a8247c16f7f1915f3f63`) остаётся вне исправленной ветки. Действующий `main` **не имеет права называться `PRODUCTION_READY` для реальных исполнителей**.
+
+**Границы исторических проверок:** `tests/test_scheduler.py` охватывает mock-сценарии; исторические результаты раздела 3 и заявленная архитектура раздела 1 не удостоверяют реальное исполнение `antigravity`/`codex-app`, Windows/host exact HEAD, GPU, независимый QA или production deployment. Успешный mock transport не равен `PRODUCTION_QA_PASS`.
+
+**Изолированный кандидат, НЕ установленный в main:** `labqa/l3-wave4-windows-telemetry-deny-invalid-20261020-r1@3e2bf8ce9399c4b2a59f06416e6d219376dc68c3`. Wave1–Wave4 закрывают отрицательные source-кейсы nonmock false PASS, готовность mock-очереди и безопасную маршрутизацию telemetry на уровне отдельных тестов. На точном Wave4 было **23 PASS / 0 FAIL**, Linux/Python 3.13.5, с симуляцией Windows веток и заглушками внешнего I/O; это `SELF_TEST_ONLY`, **не** независимый Windows QA. По отношению к актуальному main ветка расходится: 4 коммита впереди / 1 позади. Нельзя смешивать доказательства разных SHA или объявлять Wave4 установленным.
+
+**Выпуск заблокирован до отдельной проверки:** owner review и отсутствие пересечений изменений → проверенный exact интеграционный SHA → native Windows offline QA в изолированном worktree и фактический exit/JUnit/dirty/ignored → независимый QA-ACCEPT → только затем scoped canary, deployed readback и rollback. Никакие пункты этого перечня не считаются пройденными из факта публикации branch/ZIP/issue. `UNKNOWN != PASS`. Fleet [CONTROL_TOWER #86](https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/86) остаётся `HARD_PAUSED`; [#113](https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/113) — `DATA_ONLY`.
+
+Разделы 1–3 ниже сохраняют **историческое техническое описание и заявленные проверки Stage R26**; они не заменяют актуальный release gate. Этот документ не изменяет active authority, правила хоста, маршрутизатор, main или действующий runtime.
 
 ---
 
