@@ -163,6 +163,79 @@
         "DETERMINISTIC"
       ]
     },
+    "ZkReceiptProof.to_dict": {
+      "fn_id": "tri_tower_sync.ZkReceiptProof.to_dict",
+      "description": "Функция ZkReceiptProof.to_dict",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "Dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ZkMmrCompressor.generate_zk_receipt": {
+      "fn_id": "tri_tower_sync.ZkMmrCompressor.generate_zk_receipt",
+      "description": "Генерация компактного zk-SNARK доказательства O(1) для всего дерева MMR.",
+      "args": [
+        "mmr",
+        "checkpoints_count",
+        "circuit_epoch"
+      ],
+      "inputs": {
+        "mmr": {
+          "type": "MerkleMountainRange",
+          "required": true,
+          "default": null
+        },
+        "checkpoints_count": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "circuit_epoch": {
+          "type": "int",
+          "required": false,
+          "default": "1"
+        }
+      },
+      "outputs": {
+        "return_type": "ZkReceiptProof"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "ZkMmrCompressor.verify_zk_receipt": {
+      "fn_id": "tri_tower_sync.ZkMmrCompressor.verify_zk_receipt",
+      "description": "Верификация zk-SNARK доказательства за O(1) без необходимости обхода дерева.",
+      "args": [
+        "zk_proof",
+        "expected_root"
+      ],
+      "inputs": {
+        "zk_proof": {
+          "type": "ZkReceiptProof",
+          "required": true,
+          "default": null
+        },
+        "expected_root": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "TriTowerSyncAdapter.audit_checkpoints": {
       "fn_id": "tri_tower_sync.TriTowerSyncAdapter.audit_checkpoints",
       "description": "Сканирование контрольных точек и вычисление криптографического Merkle-дайджеста.",

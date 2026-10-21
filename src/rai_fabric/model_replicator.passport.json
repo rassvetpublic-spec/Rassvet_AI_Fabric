@@ -55,6 +55,94 @@
         "DETERMINISTIC"
       ]
     },
+    "FastCDCChunker.adaptive_chunk_stream": {
+      "fn_id": "model_replicator.FastCDCChunker.adaptive_chunk_stream",
+      "description": "Разбиение потока на чанки с динамической адаптацией под сетевой канал (8 MB <-> 32 MB).",
+      "args": [
+        "data_stream",
+        "sizer"
+      ],
+      "inputs": {
+        "data_stream": {
+          "type": "BinaryIO",
+          "required": true,
+          "default": null
+        },
+        "sizer": {
+          "type": "Optional[AdaptiveChunkSizer]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Iterator[Tuple[bytes, str]]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AdaptiveChunkSizer.estimated_bandwidth_mbps": {
+      "fn_id": "model_replicator.AdaptiveChunkSizer.estimated_bandwidth_mbps",
+      "description": "Функция AdaptiveChunkSizer.estimated_bandwidth_mbps",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "float"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AdaptiveChunkSizer.record_transfer": {
+      "fn_id": "model_replicator.AdaptiveChunkSizer.record_transfer",
+      "description": "Обновление оценки пропускной способности сети по результатам передачи.",
+      "args": [
+        "transferred_bytes",
+        "duration_sec"
+      ],
+      "inputs": {
+        "transferred_bytes": {
+          "type": "int",
+          "required": true,
+          "default": null
+        },
+        "duration_sec": {
+          "type": "float",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "float"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "AdaptiveChunkSizer.determine_chunk_bounds": {
+      "fn_id": "model_replicator.AdaptiveChunkSizer.determine_chunk_bounds",
+      "description": "Возвращает (min_size, avg_size, max_size) в байтах в диапазоне 8 MB <-> 32 MB:",
+      "args": [
+        "bandwidth_mbps"
+      ],
+      "inputs": {
+        "bandwidth_mbps": {
+          "type": "Optional[float]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[int, int, int]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
     "ZstdCompressorWrapper.compress_chunk": {
       "fn_id": "model_replicator.ZstdCompressorWrapper.compress_chunk",
       "description": "Функция ZstdCompressorWrapper.compress_chunk",
@@ -85,6 +173,88 @@
     "ZstdCompressorWrapper.decompress_chunk": {
       "fn_id": "model_replicator.ZstdCompressorWrapper.decompress_chunk",
       "description": "Функция ZstdCompressorWrapper.decompress_chunk",
+      "args": [
+        "compressed_chunk"
+      ],
+      "inputs": {
+        "compressed_chunk": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bytes"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvcompZstdCompressorWrapper.enable_mock_gpu": {
+      "fn_id": "model_replicator.NvcompZstdCompressorWrapper.enable_mock_gpu",
+      "description": "Включение мок-режима GPU nvCOMP для детерминированного тестирования.",
+      "args": [
+        "enabled"
+      ],
+      "inputs": {
+        "enabled": {
+          "type": "bool",
+          "required": false,
+          "default": "True"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvcompZstdCompressorWrapper.is_gpu_accelerated": {
+      "fn_id": "model_replicator.NvcompZstdCompressorWrapper.is_gpu_accelerated",
+      "description": "Функция NvcompZstdCompressorWrapper.is_gpu_accelerated",
+      "args": [],
+      "inputs": {},
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvcompZstdCompressorWrapper.compress_chunk": {
+      "fn_id": "model_replicator.NvcompZstdCompressorWrapper.compress_chunk",
+      "description": "Сжатие чанка с возвратом (сжатые_байты, используемый_бэкенд).",
+      "args": [
+        "chunk",
+        "level"
+      ],
+      "inputs": {
+        "chunk": {
+          "type": "bytes",
+          "required": true,
+          "default": null
+        },
+        "level": {
+          "type": "Optional[int]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "Tuple[bytes, str]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "NvcompZstdCompressorWrapper.decompress_chunk": {
+      "fn_id": "model_replicator.NvcompZstdCompressorWrapper.decompress_chunk",
+      "description": "Декомпрессия с автоопределением формата NVCP, ZSTD, ZLIB.",
       "args": [
         "compressed_chunk"
       ],

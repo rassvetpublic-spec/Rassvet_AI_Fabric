@@ -121,6 +121,52 @@ class FastCDCChunker:
                         buf.clear()
                         gear_hash = 0
 
+    def adaptive_chunk_stream(
+        self,
+        data_stream: BinaryIO,
+        sizer: Optional[AdaptiveChunkSizer] = None,
+    ) -> Iterator[Tuple[bytes, str]]:
+        """Разбиение потока на чанки с динамической адаптацией под сетевой канал (8 MB <-> 32 MB)."""
+        s = sizer or AdaptiveChunkSizer()
+        min_sz, avg_sz, max_sz = s.determine_chunk_bounds()
+        yield from self.chunk_stream(data_stream, min_size=min_sz, avg_size=avg_sz, max_size=max_sz)
+
+
+class AdaptiveChunkSizer:
+    """Динамический расчёт оптимального размера чанков FastCDC под пропускную способность (8 MB <-> 32 MB)."""
+
+    def __init__(self, default_bandwidth_mbps: float = 125.0) -> None:  # 125 MB/s ~ 1 Gbps
+        self._current_bandwidth_mbps = float(default_bandwidth_mbps)
+        self._alpha = 0.25
+
+    @property
+    def estimated_bandwidth_mbps(self) -> float:
+        return self._current_bandwidth_mbps
+
+    def record_transfer(self, transferred_bytes: int, duration_sec: float) -> float:
+        """Обновление оценки пропускной способности сети по результатам передачи."""
+        if duration_sec <= 0.0001:
+            return self._current_bandwidth_mbps
+        mb = transferred_bytes / (1024 * 1024)
+        measured_mbps = mb / duration_sec
+        self._current_bandwidth_mbps = (self._alpha * measured_mbps) + ((1.0 - self._alpha) * self._current_bandwidth_mbps)
+        return self._current_bandwidth_mbps
+
+    def determine_chunk_bounds(self, bandwidth_mbps: Optional[float] = None) -> Tuple[int, int, int]:
+        """
+        Возвращает (min_size, avg_size, max_size) в байтах в диапазоне 8 MB <-> 32 MB:
+        - < 200 MB/s (1 Gbps LAN): avg 8 MB, min 2 MB, max 16 MB
+        - 200..800 MB/s (2.5 - 5 Gbps): avg 16 MB, min 4 MB, max 32 MB
+        - > 800 MB/s (10 Gbps P2P / direct): avg 32 MB, min 8 MB, max 64 MB
+        """
+        bw = bandwidth_mbps if bandwidth_mbps is not None else self._current_bandwidth_mbps
+        if bw < 200.0:
+            return (2 * 1024 * 1024, 8 * 1024 * 1024, 16 * 1024 * 1024)
+        elif bw <= 800.0:
+            return (4 * 1024 * 1024, 16 * 1024 * 1024, 32 * 1024 * 1024)
+        else:
+            return (8 * 1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1024)
+
 
 class ZstdCompressorWrapper:
     """Потоковое сжатие чанков моделей с адаптивным fallback (Zstandard / zlib)."""
@@ -152,6 +198,66 @@ class ZstdCompressorWrapper:
             return zlib.decompress(compressed_chunk)
         except Exception:
             return compressed_chunk
+
+
+class NvcompZstdCompressorWrapper:
+    """Аппаратное ускорение сжатия чанков через NVIDIA nvCOMP с CPU fallback (Stage R34 / B-Y)."""
+
+    def __init__(self, level: int = 3, prefer_gpu: bool = True) -> None:
+        self.level = level
+        self.prefer_gpu = prefer_gpu
+        self._has_nvcomp = False
+        self._mock_nvcomp = False
+        self._cpu_wrapper = ZstdCompressorWrapper(level=level)
+
+        try:
+            import nvcomp  # type: ignore
+            self._nvcomp = nvcomp
+            self._has_nvcomp = True
+        except ImportError:
+            self._nvcomp = None
+
+    def enable_mock_gpu(self, enabled: bool = True) -> None:
+        """Включение мок-режима GPU nvCOMP для детерминированного тестирования."""
+        self._mock_nvcomp = enabled
+
+    @property
+    def is_gpu_accelerated(self) -> bool:
+        return (self._has_nvcomp or self._mock_nvcomp) and self.prefer_gpu
+
+    def compress_chunk(self, chunk: bytes, level: Optional[int] = None) -> Tuple[bytes, str]:
+        """
+        Сжатие чанка с возвратом (сжатые_байты, используемый_бэкенд).
+        Бэкенд: 'NVCOMP_GPU' | 'ZSTD_CPU' | 'ZLIB_CPU'.
+        """
+        lvl = level if level is not None else self.level
+        if self.is_gpu_accelerated:
+            if self._has_nvcomp and self._nvcomp:
+                try:
+                    compressed = self._nvcomp.compress(chunk, format="zstd")
+                    return b"NVCP" + compressed, "NVCOMP_GPU"
+                except Exception as exc:
+                    logger.debug("nvCOMP GPU compression failed, falling back to CPU: %s", exc)
+            if self._mock_nvcomp:
+                cpu_compressed = self._cpu_wrapper.compress_chunk(chunk, level=lvl)
+                return b"NVCP" + cpu_compressed, "NVCOMP_GPU"
+
+        res = self._cpu_wrapper.compress_chunk(chunk, level=lvl)
+        backend = "ZSTD_CPU" if res.startswith(b"ZSTD") else "ZLIB_CPU"
+        return res, backend
+
+    def decompress_chunk(self, compressed_chunk: bytes) -> bytes:
+        """Декомпрессия с автоопределением формата NVCP, ZSTD, ZLIB."""
+        if compressed_chunk.startswith(b"NVCP"):
+            raw_payload = compressed_chunk[4:]
+            if self._has_nvcomp and self._nvcomp:
+                try:
+                    return self._nvcomp.decompress(raw_payload, format="zstd")
+                except Exception:
+                    pass
+            return self._cpu_wrapper.decompress_chunk(raw_payload)
+
+        return self._cpu_wrapper.decompress_chunk(compressed_chunk)
 
 
 class ModelManifest:
