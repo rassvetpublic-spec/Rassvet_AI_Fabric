@@ -13,3 +13,10 @@
 5. **Политика CI/CD:** Windows-only CI, не запускать CI на каждом commit.
 
 При межчатовой работе используй [проектный runbook](docs/agent-interop/ANTIGRAVITY_CHAT_OPERATIONS.md).
+
+<!-- BEGIN BPR5-FLEET-SSOT-REF/1 -->
+## BPR5 NextGen — единый SSOT инженерной работы агентов
+Канонические источники: [активный паспорт BPR5](https://github.com/rassvetpublic-spec/CONTROL_TOWER/blob/main/protocols/bpr5/UNIFIED_ACTIVE_PROTOCOL_PASSPORT.json), [ядро BPR5micro 5.1.0 / R3.3](https://github.com/rassvetpublic-spec/CONTROL_TOWER/blob/main/protocols/bpr5/BPR5/BPR5micro_CORE.yaml) и [принципы BPR5](https://github.com/rassvetpublic-spec/CONTROL_TOWER/blob/main/protocols/bpr5/BPR5_PRINCIPLES_SSOT_RU.md) (текст принципов вступает в основной контур после утверждения CONTROL_TOWER PR #129).
+Правило работы: удерживать исходную цель, область и ограничения; для изменения плана применять `-- → == → ++ → ~~` только к затронутым зависимостям; доказывать фактический результат и сохранять чекпойнт/курсор. `UNKNOWN != PASS`; отчёт исполнителя не является независимым QA.
+Этот указатель не активирует BPR автоматически, не предоставляет прав на merge, платный CI или операции с runtime; более строгие локальные правила и действительные полномочия сохраняются. Не копировать каноническое содержимое, чтобы не создавать второй SSOT.
+<!-- END BPR5-FLEET-SSOT-REF/1 -->
