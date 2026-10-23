@@ -121,6 +121,7 @@ class WorkerFleetScheduler:
         current_store = store or self.store
         with self._lock:
             dispatched: List[str] = []
+            deferred_real: List[str] = []
             recovered = 0
 
             # 1. Фоновое восстановление зависших задач по таймауту аренды
@@ -133,69 +134,75 @@ class WorkerFleetScheduler:
                 except Exception:
                     pass
 
-            # 2. Поиск доступных задач QUEUED
-            tasks_cursor = current_store.db.execute(
-                "SELECT id, provider, objective FROM tasks WHERE status='QUEUED' ORDER BY created_at ASC LIMIT ?",
-                (self.config.max_concurrent_workers,),
-            ).fetchall()
+            # 2. Eligible mocks must not starve behind blocked real tasks.
+            # Bounded observation only; never claim or mutate real-provider tasks.
+            deferred_real = [
+                row[0] for row in current_store.db.execute(
+                    "SELECT id FROM tasks WHERE status='QUEUED' "
+                    "AND provider NOT IN ('mock','codex-mock') "
+                    "ORDER BY created_at,id LIMIT 50"
+                )
+            ]
+            # Bound the tick by runnable work, not merely by the oldest queued
+            # rows. An unserved provider or unresolved dependency must not
+            # consume a slot and permanently starve an eligible mock task.
+            available_providers = sorted({
+                w.provider for w in self.workers.values()
+                if w.status == "IDLE" and w.provider in {"mock", "codex-mock"}
+            })
+            if available_providers and self.config.max_concurrent_workers > 0:
+                placeholders = ",".join("?" for _ in available_providers)
+                tasks_cursor = current_store.db.execute(
+                    "SELECT t.id, t.provider, t.objective FROM tasks t "
+                    "WHERE t.status='QUEUED' "
+                    f"AND t.provider IN ({placeholders}) "
+                    "AND NOT EXISTS ("
+                    "SELECT 1 FROM dependencies d JOIN tasks parent ON parent.id=d.depends_on "
+                    "WHERE d.task_id=t.id AND parent.status!='COMPLETE') "
+                    "ORDER BY t.created_at,t.id LIMIT ?",
+                    (*available_providers, self.config.max_concurrent_workers),
+                ).fetchall()
+            else:
+                tasks_cursor = []
 
             for row in tasks_cursor:
                 task_id = row["id"]
                 provider = row["provider"]
+
+                # No verified real-provider adapter or signed target receipt exists.
+                # Do not claim, rotate an account, or synthesize a PASS for real tasks.
+                if provider not in {"mock", "codex-mock"}:
+                    deferred_real.append(task_id)
+                    continue
                 worker = self.get_idle_worker(provider)
                 if not worker:
                     continue
 
-                account = self._next_account()
                 worker.status = "BUSY"
                 worker.current_task_id = task_id
-                worker.assigned_account = account
-
+                worker.assigned_account = self._next_account()
                 start_t = time.perf_counter()
                 try:
-                    if provider in {"mock", "codex-mock"}:
-                        res = run_one(
-                            current_store,
-                            provider,
-                            owner=worker.worker_id,
-                            timeout_seconds=self.config.default_lease_seconds,
-                        )
-                        if res.get("status") == "NO_READY_TASK":
-                            worker.status = "IDLE"
-                            worker.current_task_id = None
-                            continue
-                        actual_id = res.get("task_id") or task_id
-                        worker.tasks_completed += 1
-                        dispatched.append(actual_id)
-                        self._dispatched_count += 1
-                    else:
-                        claim = current_store.claim(
-                            worker.worker_id,
-                            provider=provider,
-                            lease_seconds=self.config.default_lease_seconds,
-                        )
-                        if not claim:
-                            worker.status = "IDLE"
-                            worker.current_task_id = None
-                            continue
-
-                        # Синтетическое/протокольное завершение
-                        current_store.finish(
-                            task_id,
-                            worker.worker_id,
-                            claim["lease_token"],
-                            verdict="PASS",
-                            response=f"Задача успешно выполнена воркером {worker.name}",
-                            evidence={"provider": provider, "account": account},
-                        )
-                        worker.tasks_completed += 1
-                        dispatched.append(task_id)
-                        self._dispatched_count += 1
+                    res = run_one(
+                        current_store,
+                        provider,
+                        owner=worker.worker_id,
+                        timeout_seconds=self.config.default_lease_seconds,
+                    )
+                    if res.get("status") == "NO_READY_TASK":
+                        continue
+                    if res.get("status") != "COMPLETE":
+                        worker.tasks_failed += 1
+                        continue
+                    # FabricStore.finish returns get() with "id", not "task_id".
+                    actual_id = res.get("id") or res.get("task_id") or task_id
+                    worker.tasks_completed += 1
+                    dispatched.append(actual_id)
+                    self._dispatched_count += 1
                 except Exception:
                     worker.tasks_failed += 1
                 finally:
-                    exec_ms = (time.perf_counter() - start_t) * 1000.0
-                    worker.total_execution_ms += exec_ms
+                    worker.total_execution_ms += (time.perf_counter() - start_t) * 1000.0
                     worker.status = "IDLE"
                     worker.current_task_id = None
                     worker.last_heartbeat = time.time()
@@ -203,6 +210,10 @@ class WorkerFleetScheduler:
             summary = {
                 "dispatched_count": len(dispatched),
                 "dispatched_tasks": dispatched,
+                "mock_done_tasks": dispatched.copy(),
+                "real_pass_tasks": [],  # Only a verified adapter may populate this in future.
+                "deferred_real_tasks": deferred_real,
+                "real_provider_gate": "NO_VERIFIED_TARGET_ADAPTER_OR_RECEIPT",
                 "recovered_count": recovered,
                 "total_dispatched": self._dispatched_count,
                 "active_workers_count": sum(1 for w in self.workers.values() if w.status == "BUSY"),
@@ -217,8 +228,15 @@ class WorkerFleetScheduler:
         try:
             from multiprocessing.connection import Client
             address = self.config.telemetry_pipe
-            family = "AF_PIPE" if os.name == "nt" and address.startswith(r"\\.\pipe\\") else "AF_INET"
-            conn_target = address if family == "AF_PIPE" else ("127.0.0.1", 18899)
+            if os.name == "nt":
+                pipe_prefix = '\\\\.\\pipe\\'
+                # Reject invalid/empty Windows pipe targets without implicit TCP.
+                if not isinstance(address, str) or not address.startswith(pipe_prefix) or len(address) <= len(pipe_prefix):
+                    return
+                family, conn_target = "AF_PIPE", address
+            else:
+                # Historical non-Windows loopback compatibility; no new endpoint.
+                family, conn_target = "AF_INET", ("127.0.0.1", 18899)
             conn = Client(conn_target, family=family)
             event = {
                 "event_type": "raif.scheduler.tick",
