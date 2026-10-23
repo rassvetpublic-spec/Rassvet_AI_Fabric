@@ -136,13 +136,15 @@ class WorkerFleetScheduler:
 
             # 2. Eligible mocks must not starve behind blocked real tasks.
             # Bounded observation only; never claim or mutate real-provider tasks.
-            deferred_real = [
+            deferred_rows = [
                 row[0] for row in current_store.db.execute(
                     "SELECT id FROM tasks WHERE status='QUEUED' "
                     "AND provider NOT IN ('mock','codex-mock') "
-                    "ORDER BY created_at,id LIMIT 50"
+                    "ORDER BY created_at,id LIMIT 51"
                 )
             ]
+            deferred_real = deferred_rows[:50]
+            deferred_real_has_more = len(deferred_rows) > 50
             # Bound the tick by runnable work, not merely by the oldest queued
             # rows. An unserved provider or unresolved dependency must not
             # consume a slot and permanently starve an eligible mock task.
@@ -187,6 +189,7 @@ class WorkerFleetScheduler:
                         current_store,
                         provider,
                         owner=worker.worker_id,
+                        task_id=task_id,
                         timeout_seconds=self.config.default_lease_seconds,
                     )
                     if res.get("status") == "NO_READY_TASK":
@@ -213,6 +216,7 @@ class WorkerFleetScheduler:
                 "mock_done_tasks": dispatched.copy(),
                 "real_pass_tasks": [],  # Only a verified adapter may populate this in future.
                 "deferred_real_tasks": deferred_real,
+                "deferred_real_has_more": deferred_real_has_more,
                 "real_provider_gate": "NO_VERIFIED_TARGET_ADAPTER_OR_RECEIPT",
                 "recovered_count": recovered,
                 "total_dispatched": self._dispatched_count,
