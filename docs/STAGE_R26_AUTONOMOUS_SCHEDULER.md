@@ -117,3 +117,11 @@
 - [Отчёт CONTROL_TOWER #113](https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/113#issuecomment-6357743042) · [архив receipt/JUnit/SQLite](https://drive.google.com/file/d/1i08BuJ30o2x-o0D6yDdNmL6eT1obGYVM/view?usp=drivesdk) · опубликованный SHA256 архива: `5fbc2f1b65e0daea87c0a21fd622bafde67a104914b66c13c2627cce4d114dec`.
 - **Граница вывода:** подтверждён mock-only fail-closed на локальной тестовой базе. Не подтверждены работа real-provider adapter/target receipt, живая отправка Named Pipe или production Fleet. `CONTROL_TOWER #86` остаётся `HARD_PAUSED`; `UNKNOWN != PASS`.
 
+### 4.5. Кандидат пакетного исправления контракта scheduler/worker (изолированная ветка, 23.10.2026)
+
+- **Отдельный source-only кандидат**, не установленный в main: `labqa/l3-scheduler-dispatch-safe-batch-20261023-r1`. Исторические 34/34 native Windows и 1/1 offline smoke относятся к прежнему коммиту `56f7154…`, не дают QA-ACCEPT новому кандидату.
+- `WorkerFleetScheduler.tick()` закрепляет точно выбранный `task_id` за `worker.run_one()`; при отмене выбранной задачи между чтением очереди и claim следующая задача не запускается вне выборки. Прямой legacy `run_one(store, provider)` сохраняется через необязательный `task_id=None`.
+- `worker.run_one()` для `antigravity`/`codex-app` явно fail-closed до проверки наличия CLI и до subprocess, вне зависимости от `--allow-external`; схема SQLite v1/v2 остаётся заблокированной без verified target adapter/receipt.
+- `tick()` ограничивает вывод списка `deferred_real_tasks` 50 записями и добавляет `deferred_real_has_more` после read-only выборки максимум 51 строки. Это поле в **возвращаемой сводке**, а не гарантия передачи через IPC.
+- Изолированные Python 3.13.5/pytest 9.0.2 Linux тесты с `qa_no_io_guard.py`: **34/34 PASS**, включая 11 новых параметризованных кейсов на реальном исходном scheduler/store/worker (синтетические состояния SQLite). Это **авторский offline regression**, не independent QA или Windows admission для нового SHA.
+- Сборка остаётся HOLD до независимой native Windows scoped-проверки конкретного HEAD. `main`, authority, Fleet, платные API и живые эффекты не меняются. `UNKNOWN != PASS`.
