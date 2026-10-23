@@ -3,8 +3,9 @@
 **Идентификатор этапа:** `RAIF_10_8_STAGE_R26`  
 **Канонический чекпойнт:** `CHECKPOINT_2026-10-14_STEP3_RAIF_10_8_SCHEDULER`  
 **Связанные Issue:** [Rassvet_AI_Fabric#17](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/17), [#20](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/20)  
-**Актуальный статус main (проверка 21.10.2026):** `SOURCE_RISK_VERIFIED / MOCK_ONLY_TEST_COVERAGE / REAL_PROVIDER_QA_UNKNOWN / NOT_PRODUCTION_READY`  
-**Исторический статус от 14.10.2026:** `IMPLEMENTED / VALIDATED / PRODUCTION_READY` — сохранён как утверждение исходного этапа, **не является действующим подтверждением готовности к боевой эксплуатации**.  
+**Актуальный статус main (проверка 23.10.2026):** `DEPLOYED_MAIN / WAVE1_4_VERIFIED / 34_OF_34_WINDOWS_QA_PASS / REAL_PROVIDER_CANARY_PENDING_ADMISSION`  
+**Исторический статус от 21.10.2026:** `SOURCE_RISK_VERIFIED / MOCK_ONLY_TEST_COVERAGE / NOT_PRODUCTION_READY` (исходный дефект nonmock PASS устранён в коммите 56f7154).  
+**Исторический статус от 14.10.2026:** `IMPLEMENTED / VALIDATED / PRODUCTION_READY` — сохранён как утверждение исходного этапа.  
 **Обязательная корректирующая запись:** [RAIF #21](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/21).  
 
 **Классификатор:** `[Класс A - X]`
@@ -70,3 +71,38 @@
 - **Тесты планировщика:** `tests/test_scheduler.py` — **PASS** (детерминированный FIFO-порядок, пулинг, ротация аккаунтов, восстановление аренды);
 - **Тесты Claude Failover:** `tests/test_claude_failover.py` — **10/10 PASS** (офлайн-переключение при 429/503 и авто-возврат);
 - **Сквозные E2E тесты:** `tests/test_e2e_fabric_supervisor_transport.py` — **PASS** (конвейер FabricStore -> Supervisor -> RealTransport).
+
+---
+
+## 4. Пострелизный аддендум: фиксация выпуска 56f7154 (23.10.2026)
+
+**Статус выпуска:** `DEPLOYED_MAIN / FASTLAB_L3_VERIFIED_STAGE_R26`  
+**Выпущенный SHA:** `56f7154ee22640063d17bae402ecaeb8c5c29124` (fast-forward merge в `main` под мандатом владельца MTD 011011, опубликован на `origin/main`).  
+**Связанный чекпойнт:** `FASTLAB_L3_INTEGRATED_CANDIDATE_20261023_R1`  
+**Google Drive L3 квитанция:** [`FASTLAB_L3_INTEGRATED_CANDIDATE_20261023_R1.zip`](https://drive.google.com/file/d/1I2637t7czL4t90cltJPICY_Gj07XmPVy/view?usp=drivesdk) (SHA-256: `28A04738B4B0E26C6304C7ECE303C6D0FF3D781DB93B471C774B9806ABFA3C7A`).
+
+### 4.1. Разрешённые дефекты и актуальные контракты (Downstream Contract Review)
+
+1. **Запрет синтетического PASS для реальных провайдеров (`FabricStore.finish`):**
+   - Устранён критический дефект ложного немедленного завершения немоковых задач без реального исполнения.
+   - Метод `FabricStore.finish()` при вызове с `verdict="PASS"` для задач с `provider not in ('mock', 'codex-mock')` гарантированно выбрасывает `FabricError`.
+   - В `FabricStore.submit()` запрещено создание немоковых задач, зависящих от моковых заглушек.
+
+2. **Справедливость диспетчеризации мок-очереди (`WorkerFleetScheduler._claim_pending_tasks`):**
+   - Устранено голодание задач: зависшая, заблокированная зависимостями или не имеющая зарегистрированного воркера задача больше не блокирует последующие готовые мок-задачи в FIFO-очереди.
+
+3. **Безопасный контракт именованного канала телеметрии Windows (`\\.\pipe\fleet_metrics`):**
+   - В `_emit_telemetry()` на платформе Windows (`os.name == 'nt'`) строго валидируется префикс `\\.\pipe\` и непустое имя канала.
+   - Некорректные или удалённые адреса пайпов отклоняются fail-closed (`return`) без несанкционированного fallback в сетевой сокет TCP (`AF_INET`).
+   - Обеспечена полная совместимость с сервером метрик `CONTROL_TOWER/services/metrics_intake/pipe_server.py`.
+
+### 4.2. Результаты нативного Windows QA
+- Проверено на хосте `RASSVET_DESKTOP` (Windows 11 / PowerShell 7.6.7 / Python 3.13.14 / pytest 9.1.1):
+  - Пакет Wave1–Wave4: **23/23 PASS** (с `qa_no_io_guard.py`);
+  - Регрессия Horizon `main`: **5/5 PASS**;
+  - Пропускная способность и консенсус планировщика: **6/6 PASS**;
+  - Итог: **34/34 PASS, exit code 0**.
+
+### 4.3. Статус канареечного тестирования (Canary Status)
+- **SEPARATELY_ADMITTED_CANARY:** Запуск боевых сервисов флота, подключение внешних сетевых провайдеров (Claude/Gemini API) и снятие паузы с супервизора (`CONTROL_TOWER #86 HARD_PAUSED`) требуют **отдельного явного допуска владельца**.
+- В отсутствие отдельного допуска планировщик находится в проверенном офлайн-состоянии; фоновые демоны не запускаются.
