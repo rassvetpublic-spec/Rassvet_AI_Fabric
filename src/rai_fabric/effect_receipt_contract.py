@@ -6,7 +6,6 @@ This module never claims, executes, finishes, writes or starts a process.
 """
 from __future__ import annotations
 
-import hashlib
 import hmac
 import math
 from dataclasses import dataclass
@@ -104,7 +103,8 @@ def verify_effect_receipt(
         raise ReceiptRejected("MISSING_PINNED_IDENTITY")
     if not _hash(intent.payload_sha256):
         raise ReceiptRejected("INVALID_INTENT_DIGEST")
-    if type(intent.lease_epoch) is not int or intent.lease_epoch <= 0:
+    if (type(intent.lease_epoch) is not int or intent.lease_epoch <= 0
+            or type(receipt.lease_epoch) is not int or receipt.lease_epoch <= 0):
         raise ReceiptRejected("INVALID_LEASE_EPOCH")
     if not all(isinstance(t, (float, int)) and math.isfinite(t)
                for t in (now_utc, intent.lease_deadline_utc, receipt.observed_at_utc)):
