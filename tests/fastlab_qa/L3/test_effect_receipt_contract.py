@@ -130,3 +130,10 @@ def test_target_verifier_failure_fails_closed():
         raise RuntimeError("no trusted target")
     with pytest.raises(ReceiptRejected, match="TARGET_READBACK_FAILED"):
         accept(verified=raise_it)
+
+
+@pytest.mark.parametrize("invalid_epoch", [True, 2.0])
+def test_receipt_epoch_requires_exact_integer_type(invalid_epoch):
+    i, r, g, v = fixture()
+    with pytest.raises(ReceiptRejected, match="INVALID_LEASE_EPOCH"):
+        accept(intent=i, receipt=replace(r, lease_epoch=invalid_epoch))
