@@ -15,7 +15,8 @@ from .store import FabricError, FabricStore
 
 
 def run_one(store: FabricStore, provider: str, *, allow_external: bool = False,
-            timeout_seconds: int = 300, owner: str | None = None) -> dict[str, Any]:
+            timeout_seconds: int = 300, owner: str | None = None,
+            task_id: str | None = None) -> dict[str, Any]:
     # W2 is explicitly opt-in for a fresh DB. External providers have no
     # verified target receipt adapter yet: refuse BEFORE claiming or spawning.
     version = store.db.execute(
@@ -23,20 +24,17 @@ def run_one(store: FabricStore, provider: str, *, allow_external: bool = False,
     ).fetchone()
     if version and version[0] == "2" and provider not in {"mock", "codex-mock"}:
         raise FabricError("W2: внешний worker заблокирован до verified effect adapter")
-    if provider == "codex-app":
-        raise FabricError("Драйвер Codex App Server не реализован в 0.1.0; задача не захвачена")
-    if provider not in {"mock", "codex-mock", "antigravity"}:
+    # A legacy --allow-external flag is not a grant or verified-effect adapter.
+    # Do not even probe executable discovery before a receipt-verifying adapter exists.
+    if provider in {"antigravity", "codex-app"}:
+        raise FabricError("Реальный provider заблокирован: нет verified target adapter/receipt; задача не захвачена")
+    if provider not in {"mock", "codex-mock"}:
         raise FabricError("Исполнение через этого провайдера не поддерживается")
-    if provider == "antigravity" and not allow_external:
-        raise FabricError("Для внешнего исполнителя требуется --allow-external; задача не захвачена")
-    if provider == "antigravity" and not shutil.which("agy"):
-        raise FabricError("Antigravity CLI (agy) недоступен; задача не захвачена")
-    if provider == "antigravity" and str(shutil.which("agy")).lower().endswith((".cmd", ".bat")):
-        raise FabricError("Запуск .cmd/.bat в Windows требует проверенной безопасной передачи аргументов; задача не захвачена")
     if timeout_seconds < 5 or timeout_seconds > 3600:
         raise FabricError("Тайм-аут должен составлять от 5 до 3600 секунд")
     owner = owner or f"rai-local-{uuid.uuid4().hex[:8]}"
-    claim = store.claim(owner, provider=provider, lease_seconds=min(3600, max(120, timeout_seconds + 30)))
+    claim = store.claim(owner, provider=provider, task_id=task_id,
+                        lease_seconds=min(3600, max(120, timeout_seconds + 30)))
     if claim is None:
         return {"status": "NO_READY_TASK", "provider": provider}
     task_id, token = claim["task_id"], claim["lease_token"]

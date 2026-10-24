@@ -3,7 +3,7 @@
 **Идентификатор этапа:** `RAIF_10_8_STAGE_R26`  
 **Канонический чекпойнт:** `CHECKPOINT_2026-10-14_STEP3_RAIF_10_8_SCHEDULER`  
 **Связанные Issue:** [Rassvet_AI_Fabric#17](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/17), [#20](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/20)  
-**Актуальный статус main (проверка 23.10.2026):** `DEPLOYED_MAIN / WAVE1_4_VERIFIED / 34_OF_34_WINDOWS_QA_PASS / REAL_PROVIDER_CANARY_PENDING_ADMISSION`  
+**Актуальный статус main (проверка 23.10.2026):** `DEPLOYED_MAIN / WAVE1_4_VERIFIED / 34_OF_34_WINDOWS_QA_PASS / MINIMAL_OFFLINE_SMOKE_1_OF_1_PASS / LIVE_REAL_PROVIDER_NOT_ADMITTED`  
 **Исторический статус от 21.10.2026:** `SOURCE_RISK_VERIFIED / MOCK_ONLY_TEST_COVERAGE / NOT_PRODUCTION_READY` (исходный дефект nonmock PASS устранён в коммите 56f7154).  
 **Исторический статус от 14.10.2026:** `IMPLEMENTED / VALIDATED / PRODUCTION_READY` — сохранён как утверждение исходного этапа.  
 **Обязательная корректирующая запись:** [RAIF #21](https://github.com/rassvetpublic-spec/Rassvet_AI_Fabric/issues/21).  
@@ -12,7 +12,9 @@
 
 ---
 
-## 0. Граница доказательств и допуск к выпуску (21.10.2026)
+## 0. Историческая граница доказательств (срез 21.10.2026)
+
+> Раздел 0 документирует исходный риск до интеграции. Фразы «действующий main», «не установленный в main» и release HOLD ниже относятся строго к 21.10.2026. Фактическое пострелизное состояние 23.10.2026 приведено в разделе 4.
 
 Проверены исходники `Rassvet_AI_Fabric/main@32be4df878b13d3c36242a2d0eb81f2406eafc84`. В `src/rai_fabric/scheduler.py` (Git blob `d534e95316e7f65562483de53cefe1b0da5d6860`) немоковый путь всё ещё содержит `FabricStore.claim()` и немедленный `finish(verdict="PASS")` **без подтверждённого запуска реального провайдера или сверенного target receipt**. Это **риск, воспроизводимый анализом исходников**, не доказательство фактического инцидента на хосте. `FabricStore` main (blob `d4472dae5d341a9e1053a8247c16f7f1915f3f63`) остаётся вне исправленной ветки. Действующий `main` **не имеет права называться `PRODUCTION_READY` для реальных исполнителей**.
 
@@ -88,13 +90,14 @@
    - Метод `FabricStore.finish()` при вызове с `verdict="PASS"` для задач с `provider not in ('mock', 'codex-mock')` гарантированно выбрасывает `FabricError`.
    - В `FabricStore.submit()` запрещено создание немоковых задач, зависящих от моковых заглушек.
 
-2. **Справедливость диспетчеризации мок-очереди (`WorkerFleetScheduler._claim_pending_tasks`):**
+2. **Справедливость диспетчеризации мок-очереди (`WorkerFleetScheduler.tick`):**
    - Устранено голодание задач: зависшая, заблокированная зависимостями или не имеющая зарегистрированного воркера задача больше не блокирует последующие готовые мок-задачи в FIFO-очереди.
 
 3. **Безопасный контракт именованного канала телеметрии Windows (`\\.\pipe\fleet_metrics`):**
    - В `_emit_telemetry()` на платформе Windows (`os.name == 'nt'`) строго валидируется префикс `\\.\pipe\` и непустое имя канала.
    - Некорректные или удалённые адреса пайпов отклоняются fail-closed (`return`) без несанкционированного fallback в сетевой сокет TCP (`AF_INET`).
-   - Обеспечена полная совместимость с сервером метрик `CONTROL_TOWER/services/metrics_intake/pipe_server.py`.
+   - По исходникам имя канала и семейство `AF_PIPE` согласуются с `CONTROL_TOWER/services/metrics_intake/pipe_server.py`; фактическая сквозная доставка и приём на Windows **не проверялись** в minimal offline smoke. Поэтому `END_TO_END_IPC=UNKNOWN`, а не `PASS`.
+   - `tick()` возвращает `mock_done_tasks`, `real_pass_tasks` и `deferred_real_tasks`, но текущий `_emit_telemetry()` передаёт в IPC только сводные счётчики (`dispatched_count`, `total_dispatched`, `active_workers`, `idle_workers`) и служебные поля. Downstream не должен ожидать по IPC трёх списков без отдельного изменения контракта.
 
 ### 4.2. Результаты нативного Windows QA
 - Проверено на хосте `RASSVET_DESKTOP` (Windows 11 / PowerShell 7.6.7 / Python 3.13.14 / pytest 9.1.1):
@@ -105,4 +108,20 @@
 
 ### 4.3. Статус канареечного тестирования (Canary Status)
 - **SEPARATELY_ADMITTED_CANARY:** Запуск боевых сервисов флота, подключение внешних сетевых провайдеров (Claude/Gemini API) и снятие паузы с супервизора (`CONTROL_TOWER #86 HARD_PAUSED`) требуют **отдельного явного допуска владельца**.
-- В отсутствие отдельного допуска планировщик находится в проверенном офлайн-состоянии; фоновые демоны не запускаются.
+- Отдельный минимальный offline smoke с временной SQLite уже прошёл с разрешения владельца; это **не** разрешение запускать живой Fleet или реальные модели. Постоянный supervisor/runtime на основании данного теста не активируется.
+
+### 4.4. Minimal offline smoke после публикации в main (23.10.2026)
+
+- Целевой исходный SHA: `56f7154ee22640063d17bae402ecaeb8c5c29124` (тест производился на опубликованном `main` до следующего doc-only коммита).
+- `RASSVET_DESKTOP`, Python 3.13.14, pytest 9.1.1: **1/1 PASS, exit 0, 0.25 s**. Один `tick()` на изолированной временной SQLite: `smoke-mock` → `COMPLETE`; `smoke-real` (`antigravity`) остаётся `QUEUED`, `attempt=0`, `lease_owner=NULL`, `external_run_id=NULL`, `CLAIMED` событий 0, `real_pass_tasks=[]`.
+- [Отчёт CONTROL_TOWER #113](https://github.com/rassvetpublic-spec/CONTROL_TOWER/issues/113#issuecomment-6357743042) · [архив receipt/JUnit/SQLite](https://drive.google.com/file/d/1i08BuJ30o2x-o0D6yDdNmL6eT1obGYVM/view?usp=drivesdk) · опубликованный SHA256 архива: `5fbc2f1b65e0daea87c0a21fd622bafde67a104914b66c13c2627cce4d114dec`.
+- **Граница вывода:** подтверждён mock-only fail-closed на локальной тестовой базе. Не подтверждены работа real-provider adapter/target receipt, живая отправка Named Pipe или production Fleet. `CONTROL_TOWER #86` остаётся `HARD_PAUSED`; `UNKNOWN != PASS`.
+
+### 4.5. Кандидат пакетного исправления контракта scheduler/worker (изолированная ветка, 23.10.2026)
+
+- **Отдельный source-only кандидат**, не установленный в main: `labqa/l3-scheduler-dispatch-safe-batch-20261023-r1`. Исторические 34/34 native Windows и 1/1 offline smoke относятся к прежнему коммиту `56f7154…`, не дают QA-ACCEPT новому кандидату.
+- `WorkerFleetScheduler.tick()` закрепляет точно выбранный `task_id` за `worker.run_one()`; при отмене выбранной задачи между чтением очереди и claim следующая задача не запускается вне выборки. Прямой legacy `run_one(store, provider)` сохраняется через необязательный `task_id=None`.
+- `worker.run_one()` для `antigravity`/`codex-app` явно fail-closed до проверки наличия CLI и до subprocess, вне зависимости от `--allow-external`; схема SQLite v1/v2 остаётся заблокированной без verified target adapter/receipt.
+- `tick()` ограничивает вывод списка `deferred_real_tasks` 50 записями и добавляет `deferred_real_has_more` после read-only выборки максимум 51 строки. Это поле в **возвращаемой сводке**, а не гарантия передачи через IPC.
+- Изолированные Python 3.13.5/pytest 9.0.2 Linux тесты с `qa_no_io_guard.py`: **34/34 PASS**, включая 11 новых параметризованных кейсов на реальном исходном scheduler/store/worker (синтетические состояния SQLite). Это **авторский offline regression**, не independent QA или Windows admission для нового SHA.
+- Сборка остаётся HOLD до независимой native Windows scoped-проверки конкретного HEAD. `main`, authority, Fleet, платные API и живые эффекты не меняются. `UNKNOWN != PASS`.
