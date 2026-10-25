@@ -19,6 +19,12 @@ class VerifierError(Exception):
     """Ошибка верификации эффекта или мандата."""
 
 
+ALLOWED_MANDATE_SCOPES = frozenset({
+    "OWNER_AUTHORIZED_FINAL_PASS",
+    "EVIDENCE_ADMISSIBLE_ONLY",
+})
+
+
 @dataclass(frozen=True)
 class PinnedGrant:
     grant_ref: str
@@ -51,6 +57,8 @@ class OwnerGrantSigner:
         host_id: Optional[str] = None,
         mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
     ) -> PinnedGrant:
+        if mandate_scope not in ALLOWED_MANDATE_SCOPES:
+            raise VerifierError(f"UNAUTHORIZED_MANDATE_SCOPE: {mandate_scope}")
         hid = host_id or self.host_id
         sig = hmac.new(
             self._private_key,
@@ -72,63 +80,41 @@ DEFAULT_SIGNING_KEY = b"rassvet-desktop-default-signing-key"
 
 
 class LocalTrustedGrantRegistry:
-    """Локальный реестр мандатов владельца хоста (MTD 011011).
+    """Локальный проверяющий реестр мандатов владельца хоста (MTD 011011).
 
-    Мандат должен быть проверен локально и криптографически опечатан, а не доверяться утверждению из сообщения.
+    Реестр является STRICTLY VERIFYING-ONLY (только проверка и импорт подписанных мандатов).
+    Локальная эмиссия/генерация подписи внутри реестра исключена.
+    Все мандаты создаются внешним защищённым OwnerGrantSigner и регистрируются через register_signed_grant.
     Использование публичного дефолтного ключа на путях реальных провайдеров запрещено.
     """
 
     def __init__(
         self,
         expected_host_id: str = "RASSVET_DESKTOP",
-        signing_key: bytes | None = None,
         owner_verifying_key: bytes | None = None,
+        signing_key: bytes | None = None,
     ):
         self.expected_host_id = expected_host_id
         key = owner_verifying_key or signing_key
         if key is None:
-            self._signing_key = DEFAULT_SIGNING_KEY
+            self._verifying_key = DEFAULT_SIGNING_KEY
             self.is_default_key = True
         else:
-            self._signing_key = key
+            self._verifying_key = key
             self.is_default_key = (key == DEFAULT_SIGNING_KEY)
         self._grants: dict[str, PinnedGrant] = {}
 
     def register_signed_grant(self, grant: PinnedGrant) -> None:
-        """Регистрация мандата, уже подписанного независимым владельцем."""
+        """Регистрация мандата, уже подписанного независимым владельцем (единственный путь импорта)."""
+        if not isinstance(grant, PinnedGrant):
+            raise VerifierError("INVALID_GRANT_TYPE")
         if not self._verify_grant(grant):
             raise VerifierError("INVALID_OWNER_GRANT_SIGNATURE")
         self._grants[grant.grant_ref] = grant
 
-    def register_grant(
-        self,
-        grant_ref: str,
-        task_id: str,
-        target_id: str,
-        deadline_utc: float,
-        host_id: Optional[str] = None,
-        mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
-        signature: Optional[str] = None,
-    ) -> None:
-        hid = host_id or self.expected_host_id
-        if signature:
-            sig = signature
-        else:
-            sig = hmac.new(
-                self._signing_key,
-                f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}:{mandate_scope}".encode("utf-8"),
-                hashlib.sha256,
-            ).hexdigest()
-        grant = PinnedGrant(
-            grant_ref=grant_ref,
-            task_id=task_id,
-            host_id=hid,
-            target_id=target_id,
-            deadline_utc=deadline_utc,
-            signature=sig,
-            mandate_scope=mandate_scope,
-        )
-        self._grants[grant_ref] = grant
+    def register_grant(self, *args, **kwargs) -> None:
+        """Запрещено: реестр является строго verifying-only, не имеет права выпускать подписи."""
+        raise VerifierError("LOCAL_MINTING_FORBIDDEN: LocalTrustedGrantRegistry is verifying-only. Use OwnerGrantSigner.issue_grant() and register_signed_grant()")
 
     def revoke_grant(self, grant_ref: str) -> None:
         self._grants.pop(grant_ref, None)
@@ -137,17 +123,16 @@ class LocalTrustedGrantRegistry:
         return self._grants.get(grant_ref)
 
     def _verify_grant(self, grant: PinnedGrant) -> bool:
-        expected_sig_with_scope = hmac.new(
-            self._signing_key,
+        # Строгая проверка скоупа по allowlist
+        if grant.mandate_scope not in ALLOWED_MANDATE_SCOPES:
+            return False
+        # Строгая криптографическая проверка подписи строго со скоупом (никаких легаси-обходов)
+        expected_sig = hmac.new(
+            self._verifying_key,
             f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}:{grant.mandate_scope}".encode("utf-8"),
             hashlib.sha256,
         ).hexdigest()
-        expected_sig_legacy = hmac.new(
-            self._signing_key,
-            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        return hmac.compare_digest(grant.signature, expected_sig_with_scope) or hmac.compare_digest(grant.signature, expected_sig_legacy)
+        return hmac.compare_digest(grant.signature, expected_sig)
 
     def authorize(self, intent: EffectIntent) -> bool:
         """Валидация мандата в момент поступления квитанции."""

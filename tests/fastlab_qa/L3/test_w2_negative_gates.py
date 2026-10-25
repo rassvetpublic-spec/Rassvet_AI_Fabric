@@ -20,7 +20,9 @@ from rai_fabric.w2_effect_bridge import (
     register_real_intent, lease_real_task, commit_verified_effect_receipt
 )
 from rai_fabric.effect_receipt_contract import EffectIntent, TargetEffectReceipt, ReceiptRejected
-from rai_fabric.trusted_target_verifier import LocalTrustedGrantRegistry, LocalTargetReadbackVerifier
+from rai_fabric.trusted_target_verifier import (
+    LocalTrustedGrantRegistry, LocalTargetReadbackVerifier, OwnerGrantSigner, VerifierError, PinnedGrant
+)
 
 NOW = 1_800_000_100.0
 CONTENT = b'a real-looking local file'
@@ -84,11 +86,13 @@ class CandidateGateRegression(unittest.TestCase):
         )
         (self.root / 'file.txt').write_bytes(CONTENT)
         self.owner_key = b"test-owner-signing-key-32bytes!"
+        self.signer = OwnerGrantSigner(self.owner_key, "RASSVET_DESKTOP")
         self.grant = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=self.owner_key)
-        self.grant.register_grant(
+        grant = self.signer.issue_grant(
             self.intent.owner_grant_ref, self.intent.task_id,
             self.intent.target_id, self.intent.lease_deadline_utc
         )
+        self.grant.register_signed_grant(grant)
         self.verifier = LocalTargetReadbackVerifier()
         self.verifier.register_target_root(self.intent.target_id, self.root)
         self.verifier.register_target_revision(self.intent.target_id, PINNED_REVISION)
@@ -146,7 +150,7 @@ class CandidateGateRegression(unittest.TestCase):
     def test_cancelled_task_cannot_reanimate_into_complete(self):
         """Отменённая задача не может быть реанимирована в COMPLETE."""
         store = self.fresh_store()
-        lease_info = lease_real_task(store, self.intent)
+        lease_info = lease_real_task(store, self.intent, self.grant)
         store.db.execute("UPDATE tasks SET status='CANCELLED',cancel_requested=1 WHERE id=?", (self.intent.task_id,))
         
         # Должен выбросить именно TASK_CANCELLED
@@ -162,7 +166,7 @@ class CandidateGateRegression(unittest.TestCase):
     def test_mismatched_persisted_intent_must_be_denied(self):
         """Подделка данных в effect_intents отклоняется даже при активной аренде."""
         store = self.fresh_store()
-        lease_info = lease_real_task(store, self.intent)
+        lease_info = lease_real_task(store, self.intent, self.grant)
         store.db.execute(
             "UPDATE effect_intents SET payload_sha256=? WHERE task_id=?",
             ('f' * 64, self.intent.task_id)
@@ -191,7 +195,7 @@ class CandidateGateRegression(unittest.TestCase):
     def test_mismatched_lease_token_must_be_denied(self):
         """Попытка коммита без токена аренды или с чужим токеном категорически отклоняется."""
         store = self.fresh_store()
-        lease_info = lease_real_task(store, self.intent)
+        lease_info = lease_real_task(store, self.intent, self.grant)
         
         # 1. Отсутствие токена аренды
         with self.assertRaisesRegex(ReceiptRejected, "MISSING_LEASE_TOKEN"):
@@ -214,7 +218,7 @@ class CandidateGateRegression(unittest.TestCase):
     def test_null_or_empty_lease_hash_bypass_must_be_denied(self):
         """Проверка P0-B: задача в статусе RUNNING с lease_hash=NULL не должна совершать переход в COMPLETE без токена."""
         store = self.fresh_store()
-        lease_info = lease_real_task(store, self.intent)
+        lease_info = lease_real_task(store, self.intent, self.grant)
         # Обнуляем lease_hash в БД для симуляции обхода
         store.db.execute("UPDATE tasks SET lease_hash=NULL WHERE id=?", (self.intent.task_id,))
         with self.assertRaisesRegex(ReceiptRejected, "MISSING_OR_INVALID_LEASE_HASH"):
@@ -229,7 +233,7 @@ class CandidateGateRegression(unittest.TestCase):
     def test_mismatched_lease_owner_in_store_must_be_denied(self):
         """Проверка P0-B: несовпадение владельца аренды (lease_owner) блокирует коммит через CAS."""
         store = self.fresh_store()
-        lease_info = lease_real_task(store, self.intent)
+        lease_info = lease_real_task(store, self.intent, self.grant)
         store.db.execute("UPDATE tasks SET lease_owner='other-owner' WHERE id=?", (self.intent.task_id,))
         with self.assertRaisesRegex(ReceiptRejected, "CAS_GUARD_FAILED|LEASE_OWNER_MISMATCH"):
             commit_verified_effect_receipt(
@@ -241,18 +245,28 @@ class CandidateGateRegression(unittest.TestCase):
         self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
 
     def test_self_issued_or_unauthorized_owner_grant_must_be_denied(self):
-        """Проверка P0-A: самовыданный грант с дефолтным ключом или чужой подписью отклоняется."""
-        # 1. Подделка подписи гранта
+        """Проверка P0-A (R5): попытка локального минта в verifying-only реестре или чужой подписи отклоняется."""
+        # 1. Попытка локального минта через register_grant запрещена
+        with self.assertRaisesRegex(VerifierError, "LOCAL_MINTING_FORBIDDEN"):
+            self.grant.register_grant("any-ref", "task-1", "target-1", NOW + 100)
+
+        # 2. Подделка подписи гранта отклоняется
         unauthorized_grant = replace(self.grant._grants[self.intent.owner_grant_ref], signature="bad-signature-" + "0" * 48)
         self.grant._grants[self.intent.owner_grant_ref] = unauthorized_grant
         self.assertFalse(self.grant.authorize(self.intent))
 
-        # 2. Использование дефолтного публичного ключа для реального провайдера запрещено
+        # 3. Регистрация гранта с невалидной подписью отклоняется в register_signed_grant
+        with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_SIGNATURE"):
+            self.grant.register_signed_grant(unauthorized_grant)
+
+        # 4. Использование дефолтного публичного ключа для реального провайдера запрещено
         default_registry = LocalTrustedGrantRegistry("RASSVET_DESKTOP")
-        default_registry.register_grant(
+        default_signer = OwnerGrantSigner(b"rassvet-desktop-default-signing-key", "RASSVET_DESKTOP")
+        default_grant = default_signer.issue_grant(
             self.intent.owner_grant_ref, self.intent.task_id,
             self.intent.target_id, self.intent.lease_deadline_utc
         )
+        default_registry.register_signed_grant(default_grant)
         store = FabricStoreMirror()
         migrate_store_v1_to_v2(store)
         self.addCleanup(store.db.close)
@@ -270,12 +284,13 @@ class CandidateGateRegression(unittest.TestCase):
         """Проверка P0-D: квитанция со скоупом EVIDENCE_ADMISSIBLE_ONLY не переводит задачу в COMPLETE/PASS."""
         store = self.fresh_store()
         lease_info = lease_real_task(store, self.intent, grant_registry=self.grant)
-        # Регистрируем мандат со скоупом EVIDENCE_ADMISSIBLE_ONLY с валидной HMAC подписью
-        self.grant.register_grant(
+        # Регистрируем мандат со скоупом EVIDENCE_ADMISSIBLE_ONLY через OwnerGrantSigner
+        admissible_grant = self.signer.issue_grant(
             self.intent.owner_grant_ref, self.intent.task_id,
             self.intent.target_id, self.intent.lease_deadline_utc,
             mandate_scope="EVIDENCE_ADMISSIBLE_ONLY"
         )
+        self.grant.register_signed_grant(admissible_grant)
         evidence = commit_verified_effect_receipt(
             store, self.intent, self.receipt, now_utc=NOW,
             grant_registry=self.grant, target_verifier=self.verifier,
@@ -286,6 +301,58 @@ class CandidateGateRegression(unittest.TestCase):
         self.assertNotEqual(task_status, "COMPLETE")
         self.assertEqual(task_status, "RUNNING")
         self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 1)
+
+    def test_mandatory_grant_registry_on_lease_real_task(self):
+        """Проверка P0-B (R5): вызов lease_real_task без обязательного grant_registry отклоняется."""
+        store = self.fresh_store()
+        with self.assertRaisesRegex(FabricError, "MANDATORY_GRANT_REGISTRY_REQUIRED"):
+            lease_real_task(store, self.intent, grant_registry=None)
+
+    def test_scope_elevation_tampering_rejected(self):
+        """Проверка P0-C (R5): легаси-подпись без скоупа не должна авторизовывать FINAL_PASS."""
+        import hmac
+        from rai_fabric.trusted_target_verifier import PinnedGrant
+        legacy_sig = hmac.new(
+            self.owner_key,
+            f"{self.intent.owner_grant_ref}:{self.intent.task_id}:RASSVET_DESKTOP:{self.intent.target_id}:{self.intent.lease_deadline_utc}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        tampered_grant = PinnedGrant(
+            grant_ref=self.intent.owner_grant_ref,
+            task_id=self.intent.task_id,
+            host_id="RASSVET_DESKTOP",
+            target_id=self.intent.target_id,
+            deadline_utc=self.intent.lease_deadline_utc,
+            signature=legacy_sig,
+            mandate_scope="OWNER_AUTHORIZED_FINAL_PASS"
+        )
+        self.grant._grants[self.intent.owner_grant_ref] = tampered_grant
+        self.assertFalse(self.grant.authorize(self.intent))
+
+    def test_unknown_mandate_scope_rejected(self):
+        """Проверка P0-C (R5): неизвестный или непредусмотренный скоуп мандата отклоняется (fail-closed)."""
+        from rai_fabric.trusted_target_verifier import OwnerGrantSigner, PinnedGrant
+        signer = OwnerGrantSigner(self.owner_key, "RASSVET_DESKTOP")
+        # 1. Signer отклоняет недопустимый scope на этапе выпуска
+        with self.assertRaisesRegex(VerifierError, "UNAUTHORIZED_MANDATE_SCOPE"):
+            signer.issue_grant(
+                self.intent.owner_grant_ref, self.intent.task_id,
+                self.intent.target_id, self.intent.lease_deadline_utc,
+                mandate_scope="UNAUTHORIZED_SUPERUSER_SCOPE"
+            )
+
+        # 2. Если мандат с неизвестным скоупом внедрён в обход, authorize() и _verify_grant отклоняют его
+        forged_grant = PinnedGrant(
+            grant_ref=self.intent.owner_grant_ref,
+            task_id=self.intent.task_id,
+            host_id="RASSVET_DESKTOP",
+            target_id=self.intent.target_id,
+            deadline_utc=self.intent.lease_deadline_utc,
+            signature="forged_sig",
+            mandate_scope="UNAUTHORIZED_SUPERUSER_SCOPE"
+        )
+        self.grant._grants[self.intent.owner_grant_ref] = forged_grant
+        self.assertFalse(self.grant.authorize(self.intent))
 
 
 if __name__ == '__main__':

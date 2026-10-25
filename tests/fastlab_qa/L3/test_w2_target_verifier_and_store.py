@@ -10,7 +10,7 @@ from rai_fabric.effect_receipt_contract import (
     EffectIntent, TargetEffectReceipt, ReceiptRejected
 )
 from rai_fabric.trusted_target_verifier import (
-    LocalTrustedGrantRegistry, LocalTargetReadbackVerifier
+    LocalTrustedGrantRegistry, LocalTargetReadbackVerifier, OwnerGrantSigner
 )
 from rai_fabric.w2_effect_bridge import (
     register_real_intent, commit_verified_effect_receipt, lease_real_task
@@ -20,6 +20,20 @@ DIGEST = "a" * 64
 CONTENT_BODY = "hello-target-content"
 CONTENT_SHA = hashlib.sha256(CONTENT_BODY.encode("utf-8")).hexdigest()
 NOW = 1_800_000_100.0
+OWNER_KEY = b"test-owner-signing-key-32bytes!"
+SIGNER = OwnerGrantSigner(OWNER_KEY, "RASSVET_DESKTOP")
+
+
+def register_valid_grant(grant_reg, intent, scope="OWNER_AUTHORIZED_FINAL_PASS"):
+    grant = SIGNER.issue_grant(
+        grant_ref=intent.owner_grant_ref,
+        task_id=intent.task_id,
+        target_id=intent.target_id,
+        deadline_utc=intent.lease_deadline_utc,
+        mandate_scope=scope,
+    )
+    grant_reg.register_signed_grant(grant)
+    return grant
 
 
 @pytest.fixture
@@ -31,7 +45,7 @@ def w2_env(tmp_path):
     target_root = tmp_path / "target_root"
     target_root.mkdir()
 
-    grant_reg = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=b"test-owner-signing-key-32bytes!")
+    grant_reg = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=OWNER_KEY)
     target_ver = LocalTargetReadbackVerifier("RASSVET_DESKTOP")
     target_ver.register_target_root("approved-project", target_root)
     target_ver.register_target_revision("approved-project", "rev-01")
@@ -94,7 +108,7 @@ def test_payload_tamper_rejected_and_rolls_back(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
 
     # Записываем правильный файл
@@ -119,7 +133,7 @@ def test_non_applied_verdict_rejected(w2_env, bad_verdict):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
@@ -135,7 +149,7 @@ def test_stale_or_expired_lease_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
@@ -151,7 +165,7 @@ def test_host_mismatch_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
@@ -167,9 +181,9 @@ def test_duplicate_effect_replay_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
-    lease_info = lease_real_task(store, intent)
+    lease_info = lease_real_task(store, intent, grant_registry=grant_reg)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     # Первый коммит проходит штатно
@@ -194,7 +208,7 @@ def test_target_readback_content_mismatch_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
 
     # На диске файл с другим содержимым
@@ -210,7 +224,7 @@ def test_target_readback_content_mismatch_rejected(w2_env):
 def test_direct_store_finish_without_effect_receipt_rejected(w2_env):
     store, grant_reg, _, _, ws = w2_env
     intent, _ = make_valid_pair()
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
 
     # Попытка вызвать claim/finish напрямую на real provider без verified effect receipt
@@ -222,9 +236,9 @@ def test_full_positive_w2_effect_cycle(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
+    register_valid_grant(grant_reg, intent)
     register_real_intent(store, intent, grant_reg, workspace=ws)
-    lease_info = lease_real_task(store, intent)
+    lease_info = lease_real_task(store, intent, grant_registry=grant_reg)
 
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 

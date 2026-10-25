@@ -83,12 +83,15 @@ def register_real_intent(
 def lease_real_task(
     store: FabricStore,
     intent: EffectIntent,
-    grant_registry: LocalTrustedGrantRegistry | None = None,
+    grant_registry: LocalTrustedGrantRegistry,
     *,
     owner: str = "antigravity",
     lease_token: str | None = None,
 ) -> dict[str, Any]:
     """Авторизованный W2 lease gate: перевод задачи реального провайдера в статус RUNNING."""
+    if grant_registry is None or not isinstance(grant_registry, LocalTrustedGrantRegistry):
+        raise FabricError("MANDATORY_GRANT_REGISTRY_REQUIRED: Real provider tasks require an authenticated LocalTrustedGrantRegistry")
+
     with store.atomic():
         task_row = store.db.execute("SELECT * FROM tasks WHERE id=?", (intent.task_id,)).fetchone()
         if not task_row:
@@ -119,12 +122,11 @@ def lease_real_task(
         ):
             raise FabricError("PERSISTED_INTENT_MISMATCH")
 
-        # Проверка мандата владельца при получении лизы
-        if grant_registry is not None:
-            if not grant_registry.authorize(intent):
-                raise FabricError("UNAUTHORIZED_CLAIM: Owner grant verification failed")
-            if getattr(grant_registry, "is_default_key", False) and intent.provider not in ("mock", "codex-mock"):
-                raise FabricError("DEFAULT_SIGNING_KEY_FORBIDDEN: Real provider lease requires injected owner authority")
+        # Обязательная проверка мандата владельца при получении лизы
+        if not grant_registry.authorize(intent):
+            raise FabricError("UNAUTHORIZED_CLAIM: Owner grant verification failed")
+        if getattr(grant_registry, "is_default_key", False) and intent.provider not in ("mock", "codex-mock"):
+            raise FabricError("DEFAULT_SIGNING_KEY_FORBIDDEN: Real provider lease requires injected owner authority")
 
         now = time.time()
         if intent.lease_deadline_utc <= now:
@@ -276,9 +278,14 @@ def commit_verified_effect_receipt(
             evidence.verifier_ref, now_utc
         ))
 
-        # Проверка скоупа мандата владельца (P0-D: EVIDENCE_ADMISSIBLE_NOT_QA_PASS vs OWNER FINAL PASS)
+        # Проверка скоупа мандата владельца (P0-C: ALLOWED_MANDATE_SCOPES allowlist & fail-closed)
+        from .trusted_target_verifier import ALLOWED_MANDATE_SCOPES
         grant = grant_registry.get_grant(intent.owner_grant_ref) if hasattr(grant_registry, "get_grant") else None
-        mandate_scope = getattr(grant, "mandate_scope", "OWNER_AUTHORIZED_FINAL_PASS") if grant else "OWNER_AUTHORIZED_FINAL_PASS"
+        if not grant:
+            raise ReceiptRejected("OWNER_GRANT_NOT_FOUND")
+        mandate_scope = getattr(grant, "mandate_scope", None)
+        if mandate_scope not in ALLOWED_MANDATE_SCOPES:
+            raise ReceiptRejected(f"UNKNOWN_MANDATE_SCOPE: {mandate_scope}")
 
         if mandate_scope == "EVIDENCE_ADMISSIBLE_ONLY":
             # Фиксируем квитанцию, но НЕ переводим задачу в COMPLETE/PASS
@@ -295,49 +302,51 @@ def commit_verified_effect_receipt(
                 {"readback_sha256": evidence.readback_sha256, "verifier_ref": evidence.verifier_ref},
             )
             return evidence
+        elif mandate_scope == "OWNER_AUTHORIZED_FINAL_PASS":
+            # Переводим задачу в COMPLETE с признаком PASS через единый строго защищённый CAS:
+            # WHERE id=? AND status='RUNNING' AND lease_epoch=? AND lease_owner=? AND lease_hash=? AND cancel_requested=0
+            result_payload = canonical({
+                "status": "COMPLETE",
+                "verdict": "PASS",
+                "evidence_classification": evidence.classification,
+                "verifier_ref": evidence.verifier_ref,
+                "readback_sha256": evidence.readback_sha256,
+            })
+            cursor = store.db.execute("""
+                UPDATE tasks
+                SET status='COMPLETE', result_json=?, updated_at=?,
+                    lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
+                WHERE id=?
+                  AND status='RUNNING'
+                  AND lease_epoch=?
+                  AND lease_owner=?
+                  AND lease_hash=?
+                  AND cancel_requested=0
+            """, (
+                result_payload,
+                now_utc,
+                intent.task_id,
+                receipt.lease_epoch,
+                stored_lease_owner,
+                stored_lease_hash,
+            ))
+            if cursor.rowcount != 1:
+                raise ReceiptRejected("CAS_GUARD_FAILED")
 
-        # Переводим задачу в COMPLETE с признаком PASS через единый строго защищённый CAS:
-        # WHERE id=? AND status='RUNNING' AND lease_epoch=? AND lease_owner=? AND lease_hash=? AND cancel_requested=0
-        result_payload = canonical({
-            "status": "COMPLETE",
-            "verdict": "PASS",
-            "evidence_classification": evidence.classification,
-            "verifier_ref": evidence.verifier_ref,
-            "readback_sha256": evidence.readback_sha256,
-        })
-        cursor = store.db.execute("""
-            UPDATE tasks
-            SET status='COMPLETE', result_json=?, updated_at=?,
-                lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
-            WHERE id=?
-              AND status='RUNNING'
-              AND lease_epoch=?
-              AND lease_owner=?
-              AND lease_hash=?
-              AND cancel_requested=0
-        """, (
-            result_payload,
-            now_utc,
-            intent.task_id,
-            receipt.lease_epoch,
-            stored_lease_owner,
-            stored_lease_hash,
-        ))
-        if cursor.rowcount != 1:
-            raise ReceiptRejected("CAS_GUARD_FAILED")
-
-        # Записываем событие и чекпойнт
-        store._event(intent.task_id, "EFFECT_COMMITTED", {
-            "operation_id": intent.operation_id,
-            "verifier_ref": evidence.verifier_ref,
-            "readback_sha256": evidence.readback_sha256,
-        })
-        store._checkpoint(
-            intent.task_id,
-            "TARGET_EFFECT_COMMITTED",
-            "PASS",
-            "VERIFIED_COMPLETE",
-            {"readback_sha256": evidence.readback_sha256, "verifier_ref": evidence.verifier_ref},
-        )
+            # Записываем событие и чекпойнт
+            store._event(intent.task_id, "EFFECT_COMMITTED", {
+                "operation_id": intent.operation_id,
+                "verifier_ref": evidence.verifier_ref,
+                "readback_sha256": evidence.readback_sha256,
+            })
+            store._checkpoint(
+                intent.task_id,
+                "TARGET_EFFECT_COMMITTED",
+                "PASS",
+                "VERIFIED_COMPLETE",
+                {"readback_sha256": evidence.readback_sha256, "verifier_ref": evidence.verifier_ref},
+            )
+        else:
+            raise ReceiptRejected(f"UNAUTHORIZED_MANDATE_SCOPE: {mandate_scope}")
 
     return evidence
