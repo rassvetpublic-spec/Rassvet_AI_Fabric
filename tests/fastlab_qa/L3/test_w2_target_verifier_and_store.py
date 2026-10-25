@@ -7,7 +7,7 @@ import pytest
 from rai_fabric.store import FabricStore, FabricError
 from rai_fabric.w2_migration import migrate_store_v1_to_v2
 from rai_fabric.effect_receipt_contract import (
-    EffectIntent, TargetEffectReceipt, ReceiptRejected
+    EffectIntent, TargetEffectReceipt, ReceiptRejected, verify_effect_receipt
 )
 from rai_fabric.trusted_target_verifier import (
     LocalTrustedGrantRegistry, LocalTargetReadbackVerifier
@@ -31,7 +31,10 @@ def w2_env(tmp_path):
     target_root = tmp_path / "target_root"
     target_root.mkdir()
 
-    grant_reg = LocalTrustedGrantRegistry("RASSVET_DESKTOP")
+    grant_reg = LocalTrustedGrantRegistry(
+        "RASSVET_DESKTOP",
+        verify_issuer=lambda grant, intent: grant.issuer_ref == "OFFLINE_TEST_ONLY",
+    )
     target_ver = LocalTargetReadbackVerifier("RASSVET_DESKTOP")
     target_ver.register_target_root("approved-project", target_root)
 
@@ -62,7 +65,7 @@ def make_valid_pair(task_id="task-001", operation_id="test_file.txt", target_id=
         lease_epoch=1,
         verdict="APPLIED_VERIFIED",
         applied_sha256=DIGEST,
-        target_revision="rev-01",
+        target_revision="sha256:" + CONTENT_SHA,
         readback_sha256=CONTENT_SHA,
         attestation_ref="attestation-ref-1",
         observed_at_utc=NOW - 1,
@@ -85,7 +88,7 @@ def test_unauthorized_grant_rejected_at_intent_submission(w2_env):
     intent, _ = make_valid_pair()
     # Мандат НЕ зарегистрирован в grant_reg
     with pytest.raises(ReceiptRejected, match="OWNER_GRANT_DENIED"):
-        register_real_intent(store, intent, grant_reg, workspace=ws)
+        register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
     assert store.list() == []
 
 
@@ -93,8 +96,8 @@ def test_payload_tamper_rejected_and_rolls_back(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id, envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256, issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
 
     # Записываем правильный файл
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
@@ -118,8 +121,8 @@ def test_non_applied_verdict_rejected(w2_env, bad_verdict):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id, envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256, issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     with pytest.raises(ReceiptRejected, match="NOT_TARGET_VERIFIED"):
@@ -134,8 +137,8 @@ def test_stale_or_expired_lease_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id, envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256, issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     # Время проверки наступило ПОСЛЕ истечения срока аренды
@@ -150,8 +153,8 @@ def test_host_mismatch_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id, envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256, issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     # Чужой хост в receipt
@@ -162,41 +165,37 @@ def test_host_mismatch_rejected(w2_env):
         )
 
 
-def test_duplicate_effect_replay_rejected(w2_env):
+def test_shadow_candidate_cannot_complete_or_create_receipt(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
-
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id,
+        intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id,
+        envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256,
+        issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
-    # Первый коммит проходит штатно
-    ev1 = commit_verified_effect_receipt(
-        store, intent, receipt, now_utc=NOW,
-        grant_registry=grant_reg, target_verifier=target_ver
-    )
-    assert ev1.classification == "EVIDENCE_ADMISSIBLE_NOT_QA_PASS"
-    assert store.get(intent.task_id)["status"] == "COMPLETE"
-
-    # Повторная посылка той же квитанции (Replay) категорически отклоняется
-    with pytest.raises(ReceiptRejected, match="DUPLICATE_EFFECT_REPLAY"):
-        commit_verified_effect_receipt(
-            store, intent, receipt, now_utc=NOW,
-            grant_registry=grant_reg, target_verifier=target_ver
-        )
+    for _ in range(2):
+        with pytest.raises(ReceiptRejected, match="ACTIVE_RUNNING_LEASE_REQUIRED"):
+            commit_verified_effect_receipt(
+                store, intent, receipt, now_utc=NOW,
+                grant_registry=grant_reg, target_verifier=target_ver,
+            )
+    assert store.get(intent.task_id)["status"] == "QUEUED"
+    assert store.db.execute("SELECT COUNT(*) FROM effect_receipts").fetchone()[0] == 0
 
 
 def test_target_readback_content_mismatch_rejected(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
 
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id, envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256, issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
 
     # На диске файл с другим содержимым
     (target_root / intent.operation_id).write_bytes(b"tampered-disk-data")
 
-    with pytest.raises(ReceiptRejected, match="TARGET_READBACK_MISMATCH"):
+    with pytest.raises(ReceiptRejected, match="TRUSTED_READBACK_ABSENT"):
         commit_verified_effect_receipt(
             store, intent, receipt, now_utc=NOW,
             grant_registry=grant_reg, target_verifier=target_ver
@@ -206,39 +205,34 @@ def test_target_readback_content_mismatch_rejected(w2_env):
 def test_direct_store_finish_without_effect_receipt_rejected(w2_env):
     store, grant_reg, _, _, ws = w2_env
     intent, _ = make_valid_pair()
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id, envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256, issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
 
     # Попытка вызвать claim/finish напрямую на real provider без verified effect receipt
     with pytest.raises(FabricError, match="Реальный provider запрещён без verified target adapter/receipt"):
         store.claim("attacker", provider="antigravity")
 
 
-def test_full_positive_w2_effect_cycle(w2_env):
+def test_positive_receipt_is_admissible_but_never_real_provider_pass(w2_env):
     store, grant_reg, target_ver, target_root, ws = w2_env
     intent, receipt = make_valid_pair()
-
-    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
-    register_real_intent(store, intent, grant_reg, workspace=ws)
-
+    grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id,
+        intent.lease_deadline_utc, provider=intent.provider, operation_id=intent.operation_id,
+        envelope_id=intent.envelope_id, payload_sha256=intent.payload_sha256,
+        issuer_ref="OFFLINE_TEST_ONLY")
+    register_real_intent(store, intent, grant_reg, workspace=ws, shadow_only=True)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
-
-    evidence = commit_verified_effect_receipt(
-        store, intent, receipt, now_utc=NOW,
-        grant_registry=grant_reg, target_verifier=target_ver
+    admitted = verify_effect_receipt(
+        intent, receipt, now_utc=NOW,
+        authorize_grant=grant_reg.authorize,
+        verify_target=target_ver.verify_target,
     )
-    assert evidence.classification == "EVIDENCE_ADMISSIBLE_NOT_QA_PASS"
-    assert evidence.task_id == intent.task_id
-    assert evidence.readback_sha256 == CONTENT_SHA
-
-    # Проверка состояния БД
-    task = store.get(intent.task_id)
-    assert task["status"] == "COMPLETE"
-    raw_res = store.db.execute("SELECT result_json FROM tasks WHERE id=?", (intent.task_id,)).fetchone()[0]
-    assert '"verdict":"PASS"' in raw_res
-    assert '"status":"COMPLETE"' in raw_res
-
-    receipt_rows = store.db.execute("SELECT * FROM effect_receipts").fetchall()
-    assert len(receipt_rows) == 1
-    assert receipt_rows[0]["verdict"] == "APPLIED_VERIFIED"
-    assert receipt_rows[0]["applied_sha256"] == DIGEST
+    assert admitted.classification == "EVIDENCE_ADMISSIBLE_NOT_QA_PASS"
+    assert admitted.readback_sha256 == CONTENT_SHA
+    with pytest.raises(ReceiptRejected, match="ACTIVE_RUNNING_LEASE_REQUIRED"):
+        commit_verified_effect_receipt(
+            store, intent, receipt, now_utc=NOW,
+            grant_registry=grant_reg, target_verifier=target_ver,
+        )
+    assert store.get(intent.task_id)["status"] == "QUEUED"
+    assert store.db.execute("SELECT COUNT(*) FROM effect_receipts").fetchone()[0] == 0
