@@ -83,7 +83,8 @@ class CandidateGateRegression(unittest.TestCase):
             DIGEST, ATTESTATION_REF, NOW - 1
         )
         (self.root / 'file.txt').write_bytes(CONTENT)
-        self.grant = LocalTrustedGrantRegistry()
+        self.owner_key = b"test-owner-signing-key-32bytes!"
+        self.grant = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=self.owner_key)
         self.grant.register_grant(
             self.intent.owner_grant_ref, self.intent.task_id,
             self.intent.target_id, self.intent.lease_deadline_utc
@@ -209,6 +210,82 @@ class CandidateGateRegression(unittest.TestCase):
             )
         self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING')
         self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
+
+    def test_null_or_empty_lease_hash_bypass_must_be_denied(self):
+        """Проверка P0-B: задача в статусе RUNNING с lease_hash=NULL не должна совершать переход в COMPLETE без токена."""
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent)
+        # Обнуляем lease_hash в БД для симуляции обхода
+        store.db.execute("UPDATE tasks SET lease_hash=NULL WHERE id=?", (self.intent.task_id,))
+        with self.assertRaisesRegex(ReceiptRejected, "MISSING_OR_INVALID_LEASE_HASH"):
+            commit_verified_effect_receipt(
+                store, self.intent, self.receipt, now_utc=NOW,
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=None
+            )
+        self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING')
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
+
+    def test_mismatched_lease_owner_in_store_must_be_denied(self):
+        """Проверка P0-B: несовпадение владельца аренды (lease_owner) блокирует коммит через CAS."""
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent)
+        store.db.execute("UPDATE tasks SET lease_owner='other-owner' WHERE id=?", (self.intent.task_id,))
+        with self.assertRaisesRegex(ReceiptRejected, "CAS_GUARD_FAILED|LEASE_OWNER_MISMATCH"):
+            commit_verified_effect_receipt(
+                store, self.intent, self.receipt, now_utc=NOW,
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=lease_info["lease_token"]
+            )
+        self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING')
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
+
+    def test_self_issued_or_unauthorized_owner_grant_must_be_denied(self):
+        """Проверка P0-A: самовыданный грант с дефолтным ключом или чужой подписью отклоняется."""
+        # 1. Подделка подписи гранта
+        unauthorized_grant = replace(self.grant._grants[self.intent.owner_grant_ref], signature="bad-signature-" + "0" * 48)
+        self.grant._grants[self.intent.owner_grant_ref] = unauthorized_grant
+        self.assertFalse(self.grant.authorize(self.intent))
+
+        # 2. Использование дефолтного публичного ключа для реального провайдера запрещено
+        default_registry = LocalTrustedGrantRegistry("RASSVET_DESKTOP")
+        default_registry.register_grant(
+            self.intent.owner_grant_ref, self.intent.task_id,
+            self.intent.target_id, self.intent.lease_deadline_utc
+        )
+        store = FabricStoreMirror()
+        migrate_store_v1_to_v2(store)
+        self.addCleanup(store.db.close)
+        with self.assertRaisesRegex(ReceiptRejected, "DEFAULT_SIGNING_KEY_FORBIDDEN|OWNER_GRANT_DENIED"):
+            register_real_intent(store, self.intent, default_registry, workspace=self.root)
+
+    def test_unauthorized_actor_cannot_acquire_real_lease(self):
+        """Проверка P0-C: неавторизованный вызывающий процесс без валидного мандата не может перевести задачу в RUNNING."""
+        store = self.fresh_store()
+        tampered_intent = replace(self.intent, payload_sha256="b" * 64)
+        with self.assertRaisesRegex(FabricError, "PERSISTED_INTENT_MISMATCH|UNAUTHORIZED_CLAIM"):
+            lease_real_task(store, tampered_intent, grant_registry=self.grant)
+
+    def test_evidence_admissible_without_owner_finalization_mandate_does_not_promote_task_to_pass(self):
+        """Проверка P0-D: квитанция со скоупом EVIDENCE_ADMISSIBLE_ONLY не переводит задачу в COMPLETE/PASS."""
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent, grant_registry=self.grant)
+        # Регистрируем мандат со скоупом EVIDENCE_ADMISSIBLE_ONLY с валидной HMAC подписью
+        self.grant.register_grant(
+            self.intent.owner_grant_ref, self.intent.task_id,
+            self.intent.target_id, self.intent.lease_deadline_utc,
+            mandate_scope="EVIDENCE_ADMISSIBLE_ONLY"
+        )
+        evidence = commit_verified_effect_receipt(
+            store, self.intent, self.receipt, now_utc=NOW,
+            grant_registry=self.grant, target_verifier=self.verifier,
+            lease_token=lease_info["lease_token"]
+        )
+        self.assertEqual(evidence.classification, "EVIDENCE_ADMISSIBLE_NOT_QA_PASS")
+        task_status = store.db.execute('SELECT status FROM tasks WHERE id=?', (self.intent.task_id,)).fetchone()[0]
+        self.assertNotEqual(task_status, "COMPLETE")
+        self.assertEqual(task_status, "RUNNING")
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 1)
 
 
 if __name__ == '__main__':

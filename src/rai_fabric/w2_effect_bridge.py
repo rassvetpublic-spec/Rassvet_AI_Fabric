@@ -39,6 +39,8 @@ def register_real_intent(
     # Проверка мандата владельца перед созданием задачи
     if not grant_registry.authorize(intent):
         raise ReceiptRejected("OWNER_GRANT_DENIED")
+    if getattr(grant_registry, "is_default_key", False) and intent.provider not in ("mock", "codex-mock"):
+        raise ReceiptRejected("DEFAULT_SIGNING_KEY_FORBIDDEN: Real provider intents require injected owner authority")
 
     ws = str(Path(workspace).resolve()) if workspace else str(Path.cwd().resolve())
 
@@ -81,6 +83,8 @@ def register_real_intent(
 def lease_real_task(
     store: FabricStore,
     intent: EffectIntent,
+    grant_registry: LocalTrustedGrantRegistry | None = None,
+    *,
     owner: str = "antigravity",
     lease_token: str | None = None,
 ) -> dict[str, Any]:
@@ -100,15 +104,42 @@ def lease_real_task(
         if not intent_row:
             raise FabricError("INTENT_NOT_REGISTERED")
 
+        # Строгая сверка всех полей зарегистрированного намерения против caller intent
+        if (
+            intent_row["task_id"] != intent.task_id
+            or intent_row["provider"] != intent.provider
+            or intent_row["target_id"] != intent.target_id
+            or intent_row["host_id"] != intent.host_id
+            or intent_row["operation_id"] != intent.operation_id
+            or intent_row["envelope_id"] != intent.envelope_id
+            or intent_row["lease_epoch"] != intent.lease_epoch
+            or intent_row["lease_deadline_utc"] != intent.lease_deadline_utc
+            or intent_row["payload_sha256"] != intent.payload_sha256
+            or intent_row["owner_grant_ref"] != intent.owner_grant_ref
+        ):
+            raise FabricError("PERSISTED_INTENT_MISMATCH")
+
+        # Проверка мандата владельца при получении лизы
+        if grant_registry is not None:
+            if not grant_registry.authorize(intent):
+                raise FabricError("UNAUTHORIZED_CLAIM: Owner grant verification failed")
+            if getattr(grant_registry, "is_default_key", False) and intent.provider not in ("mock", "codex-mock"):
+                raise FabricError("DEFAULT_SIGNING_KEY_FORBIDDEN: Real provider lease requires injected owner authority")
+
         now = time.time()
+        if intent.lease_deadline_utc <= now:
+            raise FabricError("LEASE_DEADLINE_EXPIRED")
+
         token = lease_token if lease_token is not None else secrets.token_urlsafe(32)
         digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        store.db.execute("""
+        cursor = store.db.execute("""
             UPDATE tasks
             SET status='RUNNING', lease_owner=?, lease_hash=?, lease_epoch=?,
                 lease_deadline=?, attempt=attempt+1, updated_at=?
-            WHERE id=? AND status='QUEUED'
+            WHERE id=? AND status='QUEUED' AND cancel_requested=0
         """, (owner, digest, intent.lease_epoch, intent.lease_deadline_utc, now, intent.task_id))
+        if cursor.rowcount != 1:
+            raise FabricError("CLAIM_CAS_FAILED")
 
         store._event(intent.task_id, "CLAIMED_REAL_TASK", {"owner": owner, "epoch": intent.lease_epoch})
         store._checkpoint(intent.task_id, "DISPATCHED_REAL_TASK", "PARTIAL", "EXECUTE",
@@ -132,6 +163,7 @@ def commit_verified_effect_receipt(
     grant_registry: LocalTrustedGrantRegistry,
     target_verifier: LocalTargetReadbackVerifier,
     lease_token: str | None = None,
+    lease_owner: str = "antigravity",
 ) -> AdmissibleEvidence:
     """Атомарная валидация и коммит эффекта в W2 FabricStore через авторизованный шлюз владельца."""
     # 1. Строгая криптографическая валидация через контракт
@@ -187,19 +219,32 @@ def commit_verified_effect_receipt(
         if task_row["lease_epoch"] != receipt.lease_epoch or task_row["lease_epoch"] <= 0:
             raise ReceiptRejected("STALE_LEASE_EPOCH")
 
-        if task_row["lease_owner"] is None:
+        # Обязательное наличие и проверка lease_owner
+        stored_lease_owner = task_row["lease_owner"]
+        if not stored_lease_owner or not isinstance(stored_lease_owner, str):
             raise ReceiptRejected("TASK_UNLEASED")
+        if lease_owner is not None and stored_lease_owner != lease_owner:
+            raise ReceiptRejected("LEASE_OWNER_MISMATCH")
 
         if task_row["lease_deadline"] is not None and task_row["lease_deadline"] < now_utc:
             raise ReceiptRejected("LEASE_EXPIRED")
 
+        # Безусловное требование валидного 64-hex lease_hash (P0-B: никаких обходов при NULL/пустом хэше)
+        stored_lease_hash = task_row["lease_hash"]
+        if (
+            not stored_lease_hash
+            or not isinstance(stored_lease_hash, str)
+            or len(stored_lease_hash) != 64
+            or any(c not in "0123456789abcdefABCDEF" for c in stored_lease_hash)
+        ):
+            raise ReceiptRejected("MISSING_OR_INVALID_LEASE_HASH")
+
         # Валидация криптографического токена аренды против task_row["lease_hash"]
-        if task_row["lease_hash"]:
-            if not lease_token:
-                raise ReceiptRejected("MISSING_LEASE_TOKEN")
-            token_digest = hashlib.sha256(lease_token.encode("utf-8")).hexdigest()
-            if not hmac.compare_digest(task_row["lease_hash"], token_digest):
-                raise ReceiptRejected("LEASE_TOKEN_MISMATCH")
+        if not lease_token or not isinstance(lease_token, str):
+            raise ReceiptRejected("MISSING_LEASE_TOKEN")
+        token_digest = hashlib.sha256(lease_token.encode("utf-8")).hexdigest()
+        if not hmac.compare_digest(stored_lease_hash.lower(), token_digest.lower()):
+            raise ReceiptRejected("LEASE_TOKEN_MISMATCH")
 
         # Расчет evidence_sha256 для соответствия W2-чекам store.py
         receipt_dict = {
@@ -231,7 +276,28 @@ def commit_verified_effect_receipt(
             evidence.verifier_ref, now_utc
         ))
 
-        # Переводим задачу в COMPLETE с признаком PASS через guarded CAS с контролем lease_hash
+        # Проверка скоупа мандата владельца (P0-D: EVIDENCE_ADMISSIBLE_NOT_QA_PASS vs OWNER FINAL PASS)
+        grant = grant_registry.get_grant(intent.owner_grant_ref) if hasattr(grant_registry, "get_grant") else None
+        mandate_scope = getattr(grant, "mandate_scope", "OWNER_AUTHORIZED_FINAL_PASS") if grant else "OWNER_AUTHORIZED_FINAL_PASS"
+
+        if mandate_scope == "EVIDENCE_ADMISSIBLE_ONLY":
+            # Фиксируем квитанцию, но НЕ переводим задачу в COMPLETE/PASS
+            store._event(intent.task_id, "EFFECT_EVIDENCE_RECORDED", {
+                "operation_id": intent.operation_id,
+                "verifier_ref": evidence.verifier_ref,
+                "readback_sha256": evidence.readback_sha256,
+            })
+            store._checkpoint(
+                intent.task_id,
+                "TARGET_EFFECT_ADMISSIBLE",
+                "PARTIAL",
+                "EVIDENCE_HELD",
+                {"readback_sha256": evidence.readback_sha256, "verifier_ref": evidence.verifier_ref},
+            )
+            return evidence
+
+        # Переводим задачу в COMPLETE с признаком PASS через единый строго защищённый CAS:
+        # WHERE id=? AND status='RUNNING' AND lease_epoch=? AND lease_owner=? AND lease_hash=? AND cancel_requested=0
         result_payload = canonical({
             "status": "COMPLETE",
             "verdict": "PASS",
@@ -239,20 +305,24 @@ def commit_verified_effect_receipt(
             "verifier_ref": evidence.verifier_ref,
             "readback_sha256": evidence.readback_sha256,
         })
-        if task_row["lease_hash"]:
-            cursor = store.db.execute("""
-                UPDATE tasks
-                SET status='COMPLETE', result_json=?, updated_at=?,
-                    lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
-                WHERE id=? AND status='RUNNING' AND lease_epoch=? AND lease_hash=? AND cancel_requested=0
-            """, (result_payload, now_utc, intent.task_id, receipt.lease_epoch, task_row["lease_hash"]))
-        else:
-            cursor = store.db.execute("""
-                UPDATE tasks
-                SET status='COMPLETE', result_json=?, updated_at=?,
-                    lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
-                WHERE id=? AND status='RUNNING' AND lease_epoch=? AND cancel_requested=0
-            """, (result_payload, now_utc, intent.task_id, receipt.lease_epoch))
+        cursor = store.db.execute("""
+            UPDATE tasks
+            SET status='COMPLETE', result_json=?, updated_at=?,
+                lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
+            WHERE id=?
+              AND status='RUNNING'
+              AND lease_epoch=?
+              AND lease_owner=?
+              AND lease_hash=?
+              AND cancel_requested=0
+        """, (
+            result_payload,
+            now_utc,
+            intent.task_id,
+            receipt.lease_epoch,
+            stored_lease_owner,
+            stored_lease_hash,
+        ))
         if cursor.rowcount != 1:
             raise ReceiptRejected("CAS_GUARD_FAILED")
 

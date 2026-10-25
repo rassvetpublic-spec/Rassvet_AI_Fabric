@@ -31,7 +31,7 @@ def w2_env(tmp_path):
     target_root = tmp_path / "target_root"
     target_root.mkdir()
 
-    grant_reg = LocalTrustedGrantRegistry("RASSVET_DESKTOP")
+    grant_reg = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=b"test-owner-signing-key-32bytes!")
     target_ver = LocalTargetReadbackVerifier("RASSVET_DESKTOP")
     target_ver.register_target_root("approved-project", target_root)
     target_ver.register_target_revision("approved-project", "rev-01")

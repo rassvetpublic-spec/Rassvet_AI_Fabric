@@ -27,18 +27,78 @@ class PinnedGrant:
     target_id: str
     deadline_utc: float
     signature: str = ""
+    mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS"
+
+
+class OwnerGrantSigner:
+    """Защищённый эмитент мандатов владельца (MTD 011011).
+
+    Работает вне локального непроверенного реестра, криптографически подписывая мандаты секретным ключом владельца.
+    """
+
+    def __init__(self, owner_private_key: bytes, host_id: str = "RASSVET_DESKTOP"):
+        if not owner_private_key or len(owner_private_key) < 16:
+            raise ValueError("OWNER_KEY_TOO_SHORT: Owner signing key must be at least 16 bytes")
+        self._private_key = owner_private_key
+        self.host_id = host_id
+
+    def issue_grant(
+        self,
+        grant_ref: str,
+        task_id: str,
+        target_id: str,
+        deadline_utc: float,
+        host_id: Optional[str] = None,
+        mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
+    ) -> PinnedGrant:
+        hid = host_id or self.host_id
+        sig = hmac.new(
+            self._private_key,
+            f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}:{mandate_scope}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        return PinnedGrant(
+            grant_ref=grant_ref,
+            task_id=task_id,
+            host_id=hid,
+            target_id=target_id,
+            deadline_utc=deadline_utc,
+            signature=sig,
+            mandate_scope=mandate_scope,
+        )
+
+
+DEFAULT_SIGNING_KEY = b"rassvet-desktop-default-signing-key"
 
 
 class LocalTrustedGrantRegistry:
     """Локальный реестр мандатов владельца хоста (MTD 011011).
 
     Мандат должен быть проверен локально и криптографически опечатан, а не доверяться утверждению из сообщения.
+    Использование публичного дефолтного ключа на путях реальных провайдеров запрещено.
     """
 
-    def __init__(self, expected_host_id: str = "RASSVET_DESKTOP", signing_key: bytes | None = None):
+    def __init__(
+        self,
+        expected_host_id: str = "RASSVET_DESKTOP",
+        signing_key: bytes | None = None,
+        owner_verifying_key: bytes | None = None,
+    ):
         self.expected_host_id = expected_host_id
-        self._signing_key = signing_key or b"rassvet-desktop-default-signing-key"
+        key = owner_verifying_key or signing_key
+        if key is None:
+            self._signing_key = DEFAULT_SIGNING_KEY
+            self.is_default_key = True
+        else:
+            self._signing_key = key
+            self.is_default_key = (key == DEFAULT_SIGNING_KEY)
         self._grants: dict[str, PinnedGrant] = {}
+
+    def register_signed_grant(self, grant: PinnedGrant) -> None:
+        """Регистрация мандата, уже подписанного независимым владельцем."""
+        if not self._verify_grant(grant):
+            raise VerifierError("INVALID_OWNER_GRANT_SIGNATURE")
+        self._grants[grant.grant_ref] = grant
 
     def register_grant(
         self,
@@ -47,24 +107,47 @@ class LocalTrustedGrantRegistry:
         target_id: str,
         deadline_utc: float,
         host_id: Optional[str] = None,
+        mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
+        signature: Optional[str] = None,
     ) -> None:
         hid = host_id or self.expected_host_id
-        sig = hmac.new(
-            self._signing_key,
-            f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        self._grants[grant_ref] = PinnedGrant(
+        if signature:
+            sig = signature
+        else:
+            sig = hmac.new(
+                self._signing_key,
+                f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}:{mandate_scope}".encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+        grant = PinnedGrant(
             grant_ref=grant_ref,
             task_id=task_id,
             host_id=hid,
             target_id=target_id,
             deadline_utc=deadline_utc,
             signature=sig,
+            mandate_scope=mandate_scope,
         )
+        self._grants[grant_ref] = grant
 
     def revoke_grant(self, grant_ref: str) -> None:
         self._grants.pop(grant_ref, None)
+
+    def get_grant(self, grant_ref: str) -> Optional[PinnedGrant]:
+        return self._grants.get(grant_ref)
+
+    def _verify_grant(self, grant: PinnedGrant) -> bool:
+        expected_sig_with_scope = hmac.new(
+            self._signing_key,
+            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}:{grant.mandate_scope}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        expected_sig_legacy = hmac.new(
+            self._signing_key,
+            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        return hmac.compare_digest(grant.signature, expected_sig_with_scope) or hmac.compare_digest(grant.signature, expected_sig_legacy)
 
     def authorize(self, intent: EffectIntent) -> bool:
         """Валидация мандата в момент поступления квитанции."""
@@ -81,14 +164,7 @@ class LocalTrustedGrantRegistry:
             return False
         if grant.deadline_utc < intent.lease_deadline_utc:
             return False
-        expected_sig = hmac.new(
-            self._signing_key,
-            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        if not hmac.compare_digest(grant.signature, expected_sig):
-            return False
-        return True
+        return self._verify_grant(grant)
 
 
 class LocalTargetReadbackVerifier:
