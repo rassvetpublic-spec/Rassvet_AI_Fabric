@@ -1,5 +1,6 @@
-"""BPR5micro adversarial REPRO for FASTLAB L3 Block C source candidate.
-All 6 negative tests must be GREEN against the hardened candidate source.
+"""BPR5micro non-vacuous adversarial test suite for FASTLAB L3 Block C.
+All negative tests verify specific failure modes and specific error codes
+with otherwise valid, pinned revision, valid content, and (where applicable) active lease.
 Only SQLite :memory: + TemporaryDirectory; no live provider/host/network.
 """
 from __future__ import annotations
@@ -8,16 +9,25 @@ import sqlite3
 import sys
 import tempfile
 import time
-import types
 import unittest
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 
-# Ensure rai_fabric is importable
-import rai_fabric
-
 from rai_fabric.store import FabricStore, FabricError
+from rai_fabric.w2_migration import migrate_store_v1_to_v2
+from rai_fabric.w2_effect_bridge import (
+    register_real_intent, lease_real_task, commit_verified_effect_receipt
+)
+from rai_fabric.effect_receipt_contract import EffectIntent, TargetEffectReceipt, ReceiptRejected
+from rai_fabric.trusted_target_verifier import LocalTrustedGrantRegistry, LocalTargetReadbackVerifier
+
+NOW = 1_800_000_100.0
+CONTENT = b'a real-looking local file'
+DIGEST = hashlib.sha256(CONTENT).hexdigest()
+PINNED_REVISION = "pinned-target-rev-01"
+ATTESTATION_REF = "attestation-trusted-01"
+
 
 class FabricStoreMirror(FabricStore):
     def __init__(self):
@@ -41,12 +51,13 @@ class FabricStoreMirror(FabricStore):
             self.db.execute('ROLLBACK')
             raise
 
-    def submit(self, objective, provider, workspace, task_id):
+    def submit(self, objective, provider, workspace, *, task_id=None, depends_on=None):
+        t_id = task_id or f"task-{time.time()}"
         self.db.execute(
             'INSERT INTO tasks(id,objective,provider,workspace,status,updated_at) VALUES(?,?,?,?,?,?)',
-            (task_id, objective, provider, workspace, 'QUEUED', time.time())
+            (t_id, objective, provider, workspace, 'QUEUED', time.time())
         )
-        return {'id': task_id, 'status': 'QUEUED'}
+        return {'id': t_id, 'status': 'QUEUED'}
 
     def _event(self, *args):
         pass
@@ -55,30 +66,21 @@ class FabricStoreMirror(FabricStore):
         pass
 
 
-from rai_fabric.w2_migration import migrate_store_v1_to_v2
-from rai_fabric.w2_effect_bridge import register_real_intent, commit_verified_effect_receipt
-from rai_fabric.effect_receipt_contract import EffectIntent, TargetEffectReceipt, ReceiptRejected
-from rai_fabric.trusted_target_verifier import LocalTrustedGrantRegistry, LocalTargetReadbackVerifier
-
-NOW = 1_800_000_100.0
-CONTENT = b'a real-looking local file'
-DIGEST = hashlib.sha256(CONTENT).hexdigest()
-
-
 class CandidateGateRegression(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='raif-w2-red-')
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name) / 'approved'
         self.root.mkdir()
+        # Intent and receipt have valid, fully correlated parameters with PINNED_REVISION
         self.intent = EffectIntent(
             'test-task', 'antigravity', 'approved-target', 'RASSVET_DESKTOP',
             'file.txt', 'envelope-1', 1, NOW + 100, 'a' * 64, 'self-issued-grant'
         )
         self.receipt = TargetEffectReceipt(
             'test-task', 'antigravity', 'approved-target', 'RASSVET_DESKTOP',
-            'file.txt', 'envelope-1', 1, 'APPLIED_VERIFIED', 'a' * 64, 'UNVERIFIED_REVISION',
-            DIGEST, 'UNVERIFIED_ATTESTATION', NOW - 1
+            'file.txt', 'envelope-1', 1, 'APPLIED_VERIFIED', 'a' * 64, PINNED_REVISION,
+            DIGEST, ATTESTATION_REF, NOW - 1
         )
         (self.root / 'file.txt').write_bytes(CONTENT)
         self.grant = LocalTrustedGrantRegistry()
@@ -88,6 +90,7 @@ class CandidateGateRegression(unittest.TestCase):
         )
         self.verifier = LocalTargetReadbackVerifier()
         self.verifier.register_target_root(self.intent.target_id, self.root)
+        self.verifier.register_target_revision(self.intent.target_id, PINNED_REVISION)
 
     def fresh_store(self):
         store = FabricStoreMirror()
@@ -97,54 +100,115 @@ class CandidateGateRegression(unittest.TestCase):
         return store
 
     def test_sibling_root_prefix_escape_must_be_denied(self):
+        """Проверка path traversal: выход за пределы root отклоняется даже при валидной ревизии."""
         sibling = self.root.parent / 'approved_mimic'
         sibling.mkdir()
         (sibling / 'file.txt').write_bytes(CONTENT)
         sub = '..' + '/' + sibling.name + '/file.txt'
         intent = replace(self.intent, operation_id=sub)
         receipt = replace(self.receipt, operation_id=sub)
+        self.verifier.register_target_revision(self.intent.target_id, PINNED_REVISION, operation_id=sub)
+        # Должен вернуть None строго из-за невалидного пути (semantic path containment), а не из-за ревизии
         self.assertIsNone(self.verifier.verify_target(intent, receipt))
 
     def test_unverified_target_revision_must_be_denied(self):
-        self.assertIsNone(self.verifier.verify_target(self.intent, self.receipt))
+        """Проверка ревизий: отклоняются как плейсхолдеры, так и незарегистрированные ревизии."""
+        # 1. Явный unverified плейсхолдер
+        unverified_receipt = replace(self.receipt, target_revision="UNVERIFIED_REVISION")
+        self.assertIsNone(self.verifier.verify_target(self.intent, unverified_receipt))
+
+        # 2. Несовпадающая ревизия
+        mismatched_receipt = replace(self.receipt, target_revision="other-revision")
+        self.assertIsNone(self.verifier.verify_target(self.intent, mismatched_receipt))
+
+        # 3. Незарегистрированная ревизия на чистом верификаторе (fail-closed)
+        fresh_ver = LocalTargetReadbackVerifier()
+        fresh_ver.register_target_root(self.intent.target_id, self.root)
+        self.assertIsNone(fresh_ver.verify_target(self.intent, self.receipt))
 
     def test_unleased_queued_task_cannot_commit_real_pass(self):
+        """Неарендованная задача в статусе QUEUED не может совершить переход в COMPLETE/PASS."""
         store = self.fresh_store()
         row = store.db.execute("SELECT status,lease_epoch,lease_owner FROM tasks").fetchone()
         self.assertEqual((row['status'], row['lease_epoch'], row['lease_owner']), ('QUEUED', 0, None))
-        with self.assertRaises(ReceiptRejected):
+        
+        # Должен выбросить именно TASK_NOT_RUNNING (non-vacuous check)
+        with self.assertRaisesRegex(ReceiptRejected, "TASK_NOT_RUNNING"):
             commit_verified_effect_receipt(
                 store, self.intent, self.receipt, now_utc=NOW,
                 grant_registry=self.grant, target_verifier=self.verifier
             )
+        # Состояние базы данных не должно измениться
         self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'QUEUED')
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
 
     def test_cancelled_task_cannot_reanimate_into_complete(self):
+        """Отменённая задача не может быть реанимирована в COMPLETE."""
         store = self.fresh_store()
-        store.db.execute("UPDATE tasks SET status='CANCELLED',cancel_requested=1")
-        with self.assertRaises(ReceiptRejected):
+        lease_info = lease_real_task(store, self.intent)
+        store.db.execute("UPDATE tasks SET status='CANCELLED',cancel_requested=1 WHERE id=?", (self.intent.task_id,))
+        
+        # Должен выбросить именно TASK_CANCELLED
+        with self.assertRaisesRegex(ReceiptRejected, "TASK_CANCELLED"):
             commit_verified_effect_receipt(
                 store, self.intent, self.receipt, now_utc=NOW,
-                grant_registry=self.grant, target_verifier=self.verifier
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=lease_info["lease_token"]
             )
         self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'CANCELLED')
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
 
     def test_mismatched_persisted_intent_must_be_denied(self):
+        """Подделка данных в effect_intents отклоняется даже при активной аренде."""
         store = self.fresh_store()
-        store.db.execute("UPDATE effect_intents SET payload_sha256=?", ('f' * 64,))
-        with self.assertRaises(ReceiptRejected):
+        lease_info = lease_real_task(store, self.intent)
+        store.db.execute(
+            "UPDATE effect_intents SET payload_sha256=? WHERE task_id=?",
+            ('f' * 64, self.intent.task_id)
+        )
+        
+        # Должен выбросить именно PERSISTED_INTENT_TAMPERED
+        with self.assertRaisesRegex(ReceiptRejected, "PERSISTED_INTENT_TAMPERED"):
             commit_verified_effect_receipt(
                 store, self.intent, self.receipt, now_utc=NOW,
-                grant_registry=self.grant, target_verifier=self.verifier
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=lease_info["lease_token"]
             )
+        # Задача остаётся в статусе RUNNING, квитанция не зафиксирована
+        self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING')
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
 
     def test_corrupt_v2_missing_immutable_trigger_must_not_be_accepted(self):
+        """Повреждение схемы v2 (удаление триггера неизменяемости) приводит к отклонению миграции."""
         store = FabricStoreMirror()
         self.addCleanup(store.db.close)
         migrate_store_v1_to_v2(store)
         store.db.execute("DROP TRIGGER immutable_effect_receipt_delete")
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(FabricError, "immutable_effect_receipt_delete"):
             migrate_store_v1_to_v2(store)
+
+    def test_mismatched_lease_token_must_be_denied(self):
+        """Попытка коммита без токена аренды или с чужим токеном категорически отклоняется."""
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent)
+        
+        # 1. Отсутствие токена аренды
+        with self.assertRaisesRegex(ReceiptRejected, "MISSING_LEASE_TOKEN"):
+            commit_verified_effect_receipt(
+                store, self.intent, self.receipt, now_utc=NOW,
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=None
+            )
+        
+        # 2. Неверный токен аренды
+        with self.assertRaisesRegex(ReceiptRejected, "LEASE_TOKEN_MISMATCH"):
+            commit_verified_effect_receipt(
+                store, self.intent, self.receipt, now_utc=NOW,
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token="attacker-wrong-token-abc"
+            )
+        self.assertEqual(store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING')
+        self.assertEqual(store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0)
 
 
 if __name__ == '__main__':

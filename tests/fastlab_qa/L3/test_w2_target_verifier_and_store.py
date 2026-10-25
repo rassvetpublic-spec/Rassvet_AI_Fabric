@@ -34,6 +34,7 @@ def w2_env(tmp_path):
     grant_reg = LocalTrustedGrantRegistry("RASSVET_DESKTOP")
     target_ver = LocalTargetReadbackVerifier("RASSVET_DESKTOP")
     target_ver.register_target_root("approved-project", target_root)
+    target_ver.register_target_revision("approved-project", "rev-01")
 
     yield store, grant_reg, target_ver, target_root, tmp_path
     store.close()
@@ -168,13 +169,14 @@ def test_duplicate_effect_replay_rejected(w2_env):
 
     grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
     register_real_intent(store, intent, grant_reg, workspace=ws)
-    lease_real_task(store, intent)
+    lease_info = lease_real_task(store, intent)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     # Первый коммит проходит штатно
     ev1 = commit_verified_effect_receipt(
         store, intent, receipt, now_utc=NOW,
-        grant_registry=grant_reg, target_verifier=target_ver
+        grant_registry=grant_reg, target_verifier=target_ver,
+        lease_token=lease_info["lease_token"]
     )
     assert ev1.classification == "EVIDENCE_ADMISSIBLE_NOT_QA_PASS"
     assert store.get(intent.task_id)["status"] == "COMPLETE"
@@ -183,7 +185,8 @@ def test_duplicate_effect_replay_rejected(w2_env):
     with pytest.raises(ReceiptRejected, match="DUPLICATE_EFFECT_REPLAY"):
         commit_verified_effect_receipt(
             store, intent, receipt, now_utc=NOW,
-            grant_registry=grant_reg, target_verifier=target_ver
+            grant_registry=grant_reg, target_verifier=target_ver,
+            lease_token=lease_info["lease_token"]
         )
 
 
@@ -221,13 +224,14 @@ def test_full_positive_w2_effect_cycle(w2_env):
 
     grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
     register_real_intent(store, intent, grant_reg, workspace=ws)
-    lease_real_task(store, intent)
+    lease_info = lease_real_task(store, intent)
 
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     evidence = commit_verified_effect_receipt(
         store, intent, receipt, now_utc=NOW,
-        grant_registry=grant_reg, target_verifier=target_ver
+        grant_registry=grant_reg, target_verifier=target_ver,
+        lease_token=lease_info["lease_token"]
     )
     assert evidence.classification == "EVIDENCE_ADMISSIBLE_NOT_QA_PASS"
     assert evidence.task_id == intent.task_id

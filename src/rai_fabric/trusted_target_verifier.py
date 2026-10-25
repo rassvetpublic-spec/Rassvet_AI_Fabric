@@ -26,16 +26,18 @@ class PinnedGrant:
     host_id: str
     target_id: str
     deadline_utc: float
+    signature: str = ""
 
 
 class LocalTrustedGrantRegistry:
     """Локальный реестр мандатов владельца хоста (MTD 011011).
 
-    Мандат должен быть проверен локально, а не доверяться утверждению из сообщения.
+    Мандат должен быть проверен локально и криптографически опечатан, а не доверяться утверждению из сообщения.
     """
 
-    def __init__(self, expected_host_id: str = "RASSVET_DESKTOP"):
+    def __init__(self, expected_host_id: str = "RASSVET_DESKTOP", signing_key: bytes | None = None):
         self.expected_host_id = expected_host_id
+        self._signing_key = signing_key or b"rassvet-desktop-default-signing-key"
         self._grants: dict[str, PinnedGrant] = {}
 
     def register_grant(
@@ -47,12 +49,18 @@ class LocalTrustedGrantRegistry:
         host_id: Optional[str] = None,
     ) -> None:
         hid = host_id or self.expected_host_id
+        sig = hmac.new(
+            self._signing_key,
+            f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
         self._grants[grant_ref] = PinnedGrant(
             grant_ref=grant_ref,
             task_id=task_id,
             host_id=hid,
             target_id=target_id,
             deadline_utc=deadline_utc,
+            signature=sig,
         )
 
     def revoke_grant(self, grant_ref: str) -> None:
@@ -72,6 +80,13 @@ class LocalTrustedGrantRegistry:
         if grant.target_id != intent.target_id:
             return False
         if grant.deadline_utc < intent.lease_deadline_utc:
+            return False
+        expected_sig = hmac.new(
+            self._signing_key,
+            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(grant.signature, expected_sig):
             return False
         return True
 
@@ -115,11 +130,14 @@ class LocalTargetReadbackVerifier:
         if not receipt.target_revision or "UNVERIFIED" in receipt.target_revision.upper():
             return None
 
-        # Проверка зарегистрированной доверенной ревизии, если задана для цели/операции
+        # Проверка зарегистрированной доверенной ревизии (fail-closed если ревизия не подтверждена)
         expected_rev = self._target_revisions.get((intent.target_id, receipt.operation_id)) or self._target_revisions.get(intent.target_id)
-        if expected_rev is not None and receipt.target_revision != expected_rev:
+        if expected_rev is None:
+            # Ревизия не зарегистрирована независимым доверенным источником -> fail-closed
             return None
-        effective_rev = expected_rev if expected_rev is not None else receipt.target_revision
+        if receipt.target_revision != expected_rev:
+            return None
+        effective_rev = expected_rev
 
         # 1. Синтетический/тестовый sink
         if intent.target_id in self._synthetic_sinks:

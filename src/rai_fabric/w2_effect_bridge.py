@@ -9,6 +9,8 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
+import secrets
 import time
 from pathlib import Path
 from typing import Any
@@ -80,7 +82,7 @@ def lease_real_task(
     store: FabricStore,
     intent: EffectIntent,
     owner: str = "antigravity",
-    lease_token: str = "w2-token-secret-1234",
+    lease_token: str | None = None,
 ) -> dict[str, Any]:
     """Авторизованный W2 lease gate: перевод задачи реального провайдера в статус RUNNING."""
     with store.atomic():
@@ -99,7 +101,8 @@ def lease_real_task(
             raise FabricError("INTENT_NOT_REGISTERED")
 
         now = time.time()
-        digest = hashlib.sha256(lease_token.encode()).hexdigest()
+        token = lease_token if lease_token is not None else secrets.token_urlsafe(32)
+        digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
         store.db.execute("""
             UPDATE tasks
             SET status='RUNNING', lease_owner=?, lease_hash=?, lease_epoch=?,
@@ -112,7 +115,7 @@ def lease_real_task(
                           {"owner": owner, "epoch": intent.lease_epoch})
         return {
             "task_id": intent.task_id,
-            "lease_token": lease_token,
+            "lease_token": token,
             "lease_epoch": intent.lease_epoch,
             "lease_deadline": intent.lease_deadline_utc,
             "provider": intent.provider,
@@ -128,8 +131,9 @@ def commit_verified_effect_receipt(
     now_utc: float,
     grant_registry: LocalTrustedGrantRegistry,
     target_verifier: LocalTargetReadbackVerifier,
+    lease_token: str | None = None,
 ) -> AdmissibleEvidence:
-    """Атомарная валидация и коммит эффекта в W2 FabricStore."""
+    """Атомарная валидация и коммит эффекта в W2 FabricStore через авторизованный шлюз владельца."""
     # 1. Строгая криптографическая валидация через контракт
     evidence = verify_effect_receipt(
         intent,
@@ -189,6 +193,14 @@ def commit_verified_effect_receipt(
         if task_row["lease_deadline"] is not None and task_row["lease_deadline"] < now_utc:
             raise ReceiptRejected("LEASE_EXPIRED")
 
+        # Валидация криптографического токена аренды против task_row["lease_hash"]
+        if task_row["lease_hash"]:
+            if not lease_token:
+                raise ReceiptRejected("MISSING_LEASE_TOKEN")
+            token_digest = hashlib.sha256(lease_token.encode("utf-8")).hexdigest()
+            if not hmac.compare_digest(task_row["lease_hash"], token_digest):
+                raise ReceiptRejected("LEASE_TOKEN_MISMATCH")
+
         # Расчет evidence_sha256 для соответствия W2-чекам store.py
         receipt_dict = {
             "target_id": receipt.target_id,
@@ -219,7 +231,7 @@ def commit_verified_effect_receipt(
             evidence.verifier_ref, now_utc
         ))
 
-        # Переводим задачу в COMPLETE с признаком PASS через guarded CAS
+        # Переводим задачу в COMPLETE с признаком PASS через guarded CAS с контролем lease_hash
         result_payload = canonical({
             "status": "COMPLETE",
             "verdict": "PASS",
@@ -227,12 +239,20 @@ def commit_verified_effect_receipt(
             "verifier_ref": evidence.verifier_ref,
             "readback_sha256": evidence.readback_sha256,
         })
-        cursor = store.db.execute("""
-            UPDATE tasks
-            SET status='COMPLETE', result_json=?, updated_at=?,
-                lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
-            WHERE id=? AND status='RUNNING' AND lease_epoch=? AND cancel_requested=0
-        """, (result_payload, now_utc, intent.task_id, receipt.lease_epoch))
+        if task_row["lease_hash"]:
+            cursor = store.db.execute("""
+                UPDATE tasks
+                SET status='COMPLETE', result_json=?, updated_at=?,
+                    lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
+                WHERE id=? AND status='RUNNING' AND lease_epoch=? AND lease_hash=? AND cancel_requested=0
+            """, (result_payload, now_utc, intent.task_id, receipt.lease_epoch, task_row["lease_hash"]))
+        else:
+            cursor = store.db.execute("""
+                UPDATE tasks
+                SET status='COMPLETE', result_json=?, updated_at=?,
+                    lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
+                WHERE id=? AND status='RUNNING' AND lease_epoch=? AND cancel_requested=0
+            """, (result_payload, now_utc, intent.task_id, receipt.lease_epoch))
         if cursor.rowcount != 1:
             raise ReceiptRejected("CAS_GUARD_FAILED")
 
