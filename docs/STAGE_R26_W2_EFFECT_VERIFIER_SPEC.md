@@ -1,0 +1,31 @@
+# STAGE R26: W2 Trusted Target Verifier & Transactional Store Migration Specification
+
+**Версия:** `1.0.0-candidate`  
+**Статус:** `CANDIDATE_ONLY / NOT_WIRED_TO_PRODUCTION / SELF_QA_62_OF_62_PASS`  
+**Ветка:** `candidate/l3-w2-target-verifier-migration-20261025-r1` (база PR #26 @ `98d46af8614dd2441494338a4535e5e980ae9daf`)  
+
+---
+
+## 1. Архитектурный контекст и цель
+
+Модуль `effect_receipt_contract.py` (PR #26) ввёл чистый, не подключённый к выполнению интерфейс валидации квитанций эффекта (`verify_effect_receipt`). Настоящая спецификация и кандидатная реализация закрывают следующий шаг:
+1. **`trusted_target_verifier.py`**: реализация доверенных локальных верификаторов:
+   - `LocalTrustedGrantRegistry`: проверка мандата владельца против локально закреплённого реестра (не доверяет утверждениям из тела сообщения или заголовкам).
+   - `LocalTargetReadbackVerifier`: независимый криптографический readback целевого эффекта (прямое чтение файлов с расчётом `content_sha256` и проверка ревизии). Запрещено доверять `TransportMessageEnvelope.digest_sha256` как подтверждению целевого эффекта.
+2. **`w2_migration.py`**: транзакционная идемпотентная миграция `FabricStore` с `schema_version = '1'` до `'2'` с сохранением всех существующих задач.
+   - Добавление `effect_intents` (связка `task_id`, `envelope_id`, `payload_sha256`, `owner_grant_ref`, `lease_epoch`).
+   - Идемпотентное создание `effect_operations` и `effect_receipts` с триггерами неизменяемости.
+3. **`w2_effect_bridge.py`**: атомарный мост исполнения:
+   - `register_real_intent`: регистрация задачи и намерения эффекта с предварительной проверкой мандата владельца.
+   - `commit_verified_effect_receipt`: атомарная фиксация квитанции, перевод задачи в `COMPLETE` (вердикт `PASS`), фиксация неизменяемой записи в `effect_receipts`.
+   - Защита от Replay: повторное применение той же квитанции отклоняется (`DUPLICATE_EFFECT_REPLAY`).
+   - Защита от Stale Epoch: отклонение устаревшей эпохи аренды.
+   - Откат при ошибке: задача остаётся в `QUEUED`, запись в `effect_receipts` не создаётся.
+
+---
+
+## 2. Доказательства (Windows Runner Offline SELF_QA)
+
+* Окружение: `RASSVET_DESKTOP`, Windows 11 (`10.0.26220.0`), Python 3.13.14, pytest 9.1.1, оффлайн-гарда `qa_no_io_guard.py` (SHA-256 `ffdc6bd777f03fd016117b74a337ab4b200b41f620f2856e06dfad5ec7ca9a53`).
+* Набор тестов: `tests/fastlab_qa/L3/test_w2_target_verifier_and_store.py` (14 негативных и позитивных тестов) + полная L3 регрессия (48 тестов) = **62/62 PASS** (1.45s, exit code 0).
+* Полномочия и ограничения: боевая база SQLite (`tasks.db`) **не затрагивалась**, реальный запуск провайдеров не производился. Реализация сохранена в изолированной кандидатной ветке.
