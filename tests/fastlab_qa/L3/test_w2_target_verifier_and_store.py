@@ -13,7 +13,7 @@ from rai_fabric.trusted_target_verifier import (
     LocalTrustedGrantRegistry, LocalTargetReadbackVerifier
 )
 from rai_fabric.w2_effect_bridge import (
-    register_real_intent, commit_verified_effect_receipt
+    register_real_intent, commit_verified_effect_receipt, lease_real_task
 )
 
 DIGEST = "a" * 64
@@ -168,6 +168,7 @@ def test_duplicate_effect_replay_rejected(w2_env):
 
     grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
     register_real_intent(store, intent, grant_reg, workspace=ws)
+    lease_real_task(store, intent)
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 
     # Первый коммит проходит штатно
@@ -220,6 +221,7 @@ def test_full_positive_w2_effect_cycle(w2_env):
 
     grant_reg.register_grant(intent.owner_grant_ref, intent.task_id, intent.target_id, intent.lease_deadline_utc)
     register_real_intent(store, intent, grant_reg, workspace=ws)
+    lease_real_task(store, intent)
 
     (target_root / intent.operation_id).write_bytes(CONTENT_BODY.encode("utf-8"))
 

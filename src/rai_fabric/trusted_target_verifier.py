@@ -88,6 +88,7 @@ class LocalTargetReadbackVerifier:
         self.verifier_ref = verifier_ref
         self._target_roots: dict[str, Path] = {}
         self._synthetic_sinks: dict[str, dict[str, str]] = {}
+        self._target_revisions: dict[Any, str] = {}
 
     def register_target_root(self, target_id: str, root_path: Path) -> None:
         self._target_roots[target_id] = Path(root_path).resolve()
@@ -95,12 +96,30 @@ class LocalTargetReadbackVerifier:
     def register_synthetic_sink(self, target_id: str, sink_store: dict[str, str]) -> None:
         self._synthetic_sinks[target_id] = sink_store
 
+    def register_target_revision(self, target_id: str, revision: str, operation_id: Optional[str] = None) -> None:
+        if operation_id:
+            self._target_revisions[(target_id, operation_id)] = revision
+        else:
+            self._target_revisions[target_id] = revision
+
     def verify_target(self, intent: EffectIntent, receipt: TargetEffectReceipt) -> Optional[VerifiedReadback]:
         """Криптографический readback целевого эффекта."""
         if not isinstance(intent, EffectIntent) or not isinstance(receipt, TargetEffectReceipt):
             return None
         if intent.host_id != self.expected_host_id or receipt.host_id != self.expected_host_id:
             return None
+        if intent.operation_id != receipt.operation_id or intent.target_id != receipt.target_id:
+            return None
+
+        # Отклоняем невалидные, пустые или явно непроверенные ревизии (fail-closed)
+        if not receipt.target_revision or "UNVERIFIED" in receipt.target_revision.upper():
+            return None
+
+        # Проверка зарегистрированной доверенной ревизии, если задана для цели/операции
+        expected_rev = self._target_revisions.get((intent.target_id, receipt.operation_id)) or self._target_revisions.get(intent.target_id)
+        if expected_rev is not None and receipt.target_revision != expected_rev:
+            return None
+        effective_rev = expected_rev if expected_rev is not None else receipt.target_revision
 
         # 1. Синтетический/тестовый sink
         if intent.target_id in self._synthetic_sinks:
@@ -112,19 +131,35 @@ class LocalTargetReadbackVerifier:
             return VerifiedReadback(
                 target_id=intent.target_id,
                 host_id=self.expected_host_id,
-                target_revision=receipt.target_revision,
+                target_revision=effective_rev,
                 content_sha256=actual_sha,
                 verifier_ref=self.verifier_ref,
             )
 
         # 2. Файловый root target
         if intent.target_id in self._target_roots:
-            root = self._target_roots[intent.target_id]
-            # operation_id используется как относительный путь или идентификатор файла
-            target_file = (root / receipt.operation_id).resolve()
-            # Защита от path traversal
-            if not str(target_file).startswith(str(root)):
+            root = self._target_roots[intent.target_id].resolve()
+            op_id = receipt.operation_id
+            # Защита от path traversal, ADS (:), null bytes, абсолютных путей
+            if ":" in op_id or "\0" in op_id:
                 return None
+            try:
+                op_path = Path(op_id)
+                if op_path.is_absolute():
+                    return None
+                target_file = (root / op_path).resolve()
+                if not target_file.is_relative_to(root) or target_file == root:
+                    return None
+                if target_file.is_symlink():
+                    return None
+                parent = target_file.parent
+                while parent != root and parent != parent.parent:
+                    if parent.is_symlink():
+                        return None
+                    parent = parent.parent
+            except (ValueError, RuntimeError):
+                return None
+
             if not target_file.is_file():
                 return None
             data = target_file.read_bytes()
@@ -132,7 +167,7 @@ class LocalTargetReadbackVerifier:
             return VerifiedReadback(
                 target_id=intent.target_id,
                 host_id=self.expected_host_id,
-                target_revision=receipt.target_revision,
+                target_revision=effective_rev,
                 content_sha256=actual_sha,
                 verifier_ref=self.verifier_ref,
             )

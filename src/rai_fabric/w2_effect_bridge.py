@@ -76,6 +76,50 @@ def register_real_intent(
         return task
 
 
+def lease_real_task(
+    store: FabricStore,
+    intent: EffectIntent,
+    owner: str = "antigravity",
+    lease_token: str = "w2-token-secret-1234",
+) -> dict[str, Any]:
+    """Авторизованный W2 lease gate: перевод задачи реального провайдера в статус RUNNING."""
+    with store.atomic():
+        task_row = store.db.execute("SELECT * FROM tasks WHERE id=?", (intent.task_id,)).fetchone()
+        if not task_row:
+            raise FabricError("TASK_NOT_FOUND")
+        if task_row["status"] != "QUEUED":
+            raise FabricError(f"TASK_NOT_QUEUED: {task_row['status']}")
+        if task_row["cancel_requested"] != 0:
+            raise FabricError("TASK_CANCELLED")
+
+        intent_row = store.db.execute(
+            "SELECT * FROM effect_intents WHERE task_id=?", (intent.task_id,)
+        ).fetchone()
+        if not intent_row:
+            raise FabricError("INTENT_NOT_REGISTERED")
+
+        now = time.time()
+        digest = hashlib.sha256(lease_token.encode()).hexdigest()
+        store.db.execute("""
+            UPDATE tasks
+            SET status='RUNNING', lease_owner=?, lease_hash=?, lease_epoch=?,
+                lease_deadline=?, attempt=attempt+1, updated_at=?
+            WHERE id=? AND status='QUEUED'
+        """, (owner, digest, intent.lease_epoch, intent.lease_deadline_utc, now, intent.task_id))
+
+        store._event(intent.task_id, "CLAIMED_REAL_TASK", {"owner": owner, "epoch": intent.lease_epoch})
+        store._checkpoint(intent.task_id, "DISPATCHED_REAL_TASK", "PARTIAL", "EXECUTE",
+                          {"owner": owner, "epoch": intent.lease_epoch})
+        return {
+            "task_id": intent.task_id,
+            "lease_token": lease_token,
+            "lease_epoch": intent.lease_epoch,
+            "lease_deadline": intent.lease_deadline_utc,
+            "provider": intent.provider,
+            "owner": owner,
+        }
+
+
 def commit_verified_effect_receipt(
     store: FabricStore,
     intent: EffectIntent,
@@ -95,20 +139,8 @@ def commit_verified_effect_receipt(
         verify_target=target_verifier.verify_target,
     )
 
-    # 2. Атомарная фиксация в хранилище
+    # 2. Атомарная фиксация в хранилище с защитой аренды и статуса
     with store.atomic():
-        # Проверяем наличие задачи
-        task_row = store.db.execute("SELECT * FROM tasks WHERE id=?", (intent.task_id,)).fetchone()
-        if not task_row:
-            raise ReceiptRejected("TASK_NOT_FOUND")
-
-        # Защита от stale epoch
-        intent_row = store.db.execute(
-            "SELECT lease_epoch FROM effect_intents WHERE task_id=?", (intent.task_id,)
-        ).fetchone()
-        if not intent_row or intent_row["lease_epoch"] != receipt.lease_epoch:
-            raise ReceiptRejected("STALE_LEASE_EPOCH")
-
         # Защита от повтора/replay
         existing_receipt = store.db.execute(
             "SELECT 1 FROM effect_receipts WHERE target_id=? AND operation_id=?",
@@ -116,6 +148,46 @@ def commit_verified_effect_receipt(
         ).fetchone()
         if existing_receipt:
             raise ReceiptRejected("DUPLICATE_EFFECT_REPLAY")
+
+        # Проверяем наличие задачи
+        task_row = store.db.execute("SELECT * FROM tasks WHERE id=?", (intent.task_id,)).fetchone()
+        if not task_row:
+            raise ReceiptRejected("TASK_NOT_FOUND")
+
+        # Защита от отмены задачи
+        if task_row["cancel_requested"] != 0 or task_row["status"] == "CANCELLED":
+            raise ReceiptRejected("TASK_CANCELLED")
+
+        # Проверка зарегистрированного намерения (persisted effect_intents)
+        intent_row = store.db.execute(
+            "SELECT * FROM effect_intents WHERE task_id=?", (intent.task_id,)
+        ).fetchone()
+        if not intent_row:
+            raise ReceiptRejected("INTENT_NOT_FOUND")
+        if (
+            intent_row["payload_sha256"] != intent.payload_sha256
+            or intent_row["target_id"] != intent.target_id
+            or intent_row["host_id"] != intent.host_id
+            or intent_row["operation_id"] != intent.operation_id
+            or intent_row["owner_grant_ref"] != intent.owner_grant_ref
+            or intent_row["lease_epoch"] != receipt.lease_epoch
+            or intent_row["provider"] != intent.provider
+            or intent_row["envelope_id"] != intent.envelope_id
+        ):
+            raise ReceiptRejected("PERSISTED_INTENT_TAMPERED")
+
+        # Защита от непереведенной в исполнение / незанятой задачи (W2 lease fencing)
+        if task_row["status"] != "RUNNING":
+            raise ReceiptRejected("TASK_NOT_RUNNING")
+
+        if task_row["lease_epoch"] != receipt.lease_epoch or task_row["lease_epoch"] <= 0:
+            raise ReceiptRejected("STALE_LEASE_EPOCH")
+
+        if task_row["lease_owner"] is None:
+            raise ReceiptRejected("TASK_UNLEASED")
+
+        if task_row["lease_deadline"] is not None and task_row["lease_deadline"] < now_utc:
+            raise ReceiptRejected("LEASE_EXPIRED")
 
         # Расчет evidence_sha256 для соответствия W2-чекам store.py
         receipt_dict = {
@@ -147,7 +219,7 @@ def commit_verified_effect_receipt(
             evidence.verifier_ref, now_utc
         ))
 
-        # Переводим задачу в COMPLETE с признаком PASS
+        # Переводим задачу в COMPLETE с признаком PASS через guarded CAS
         result_payload = canonical({
             "status": "COMPLETE",
             "verdict": "PASS",
@@ -155,12 +227,14 @@ def commit_verified_effect_receipt(
             "verifier_ref": evidence.verifier_ref,
             "readback_sha256": evidence.readback_sha256,
         })
-        store.db.execute("""
+        cursor = store.db.execute("""
             UPDATE tasks
             SET status='COMPLETE', result_json=?, updated_at=?,
                 lease_owner=NULL, lease_hash=NULL, lease_deadline=NULL
-            WHERE id=?
-        """, (result_payload, now_utc, intent.task_id))
+            WHERE id=? AND status='RUNNING' AND lease_epoch=? AND cancel_requested=0
+        """, (result_payload, now_utc, intent.task_id, receipt.lease_epoch))
+        if cursor.rowcount != 1:
+            raise ReceiptRejected("CAS_GUARD_FAILED")
 
         # Записываем событие и чекпойнт
         store._event(intent.task_id, "EFFECT_COMMITTED", {

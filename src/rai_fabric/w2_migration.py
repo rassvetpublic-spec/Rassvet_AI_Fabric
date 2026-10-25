@@ -25,12 +25,22 @@ def migrate_store_v1_to_v2(store: FabricStore) -> bool:
 
         if current_version == "2":
             # Проверяем наличие всех необходимых таблиц
-            required = ("effect_intents", "effect_operations", "effect_receipts")
-            for table in required:
+            required_tables = ("effect_intents", "effect_operations", "effect_receipts")
+            for table in required_tables:
                 if not store.db.execute(
                     "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
                 ).fetchone():
                     raise FabricError(f"Схема v2 повреждена: отсутствует таблица {table}")
+            # Проверяем наличие обязательных триггеров неизменяемости квитанций
+            required_triggers = (
+                "immutable_effect_receipt_update",
+                "immutable_effect_receipt_delete",
+            )
+            for trigger in required_triggers:
+                if not store.db.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='trigger' AND name=?", (trigger,)
+                ).fetchone():
+                    raise FabricError(f"Схема v2 повреждена: отсутствует триггер {trigger}")
             return False
 
         if current_version != "1":
