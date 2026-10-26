@@ -90,7 +90,8 @@ class CandidateGateRegression(unittest.TestCase):
         self.grant = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=self.owner_key)
         grant = self.signer.issue_grant(
             self.intent.owner_grant_ref, self.intent.task_id,
-            self.intent.target_id, self.intent.lease_deadline_utc
+            self.intent.target_id, self.intent.lease_deadline_utc,
+            mandate_scope="OWNER_AUTHORIZED_FINAL_PASS"
         )
         self.grant.register_signed_grant(grant)
         self.verifier = LocalTargetReadbackVerifier()
@@ -477,6 +478,30 @@ class CandidateGateRegression(unittest.TestCase):
                     self.intent.owner_grant_ref, self.intent.task_id,
                     self.intent.target_id, value
                 )
+
+
+    def test_r6_default_owner_grant_is_evidence_only(self):
+        """Implicit grant cannot authorize final task completion (least privilege)."""
+        evidence_grant = self.signer.issue_grant(
+            self.intent.owner_grant_ref, self.intent.task_id,
+            self.intent.target_id, self.intent.lease_deadline_utc
+        )
+        self.assertEqual(evidence_grant.mandate_scope, "EVIDENCE_ADMISSIBLE_ONLY")
+        self.grant.register_signed_grant(evidence_grant)
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent, grant_registry=self.grant)
+        evidence = commit_verified_effect_receipt(
+            store, self.intent, self.receipt, now_utc=NOW,
+            grant_registry=self.grant, target_verifier=self.verifier,
+            lease_token=lease_info["lease_token"]
+        )
+        self.assertEqual(evidence.classification, "EVIDENCE_ADMISSIBLE_NOT_QA_PASS")
+        self.assertEqual(
+            store.db.execute("SELECT status FROM tasks").fetchone()[0], "RUNNING"
+        )
+        self.assertEqual(
+            store.db.execute("SELECT COUNT(*) FROM effect_receipts").fetchone()[0], 1
+        )
 
 
 if __name__ == '__main__':
