@@ -406,5 +406,55 @@ class CandidateGateRegression(unittest.TestCase):
         self.assertEqual(readback.content_sha256, DIGEST)
 
 
+    def test_r6_grant_field_delimiter_collision_denied(self):
+        """Colon shifts between signed fields must never reuse a valid signature."""
+        original = self.signer.issue_grant(
+            "authority:group", "task", self.intent.target_id, self.intent.lease_deadline_utc
+        )
+        shifted = replace(original, grant_ref="authority", task_id="group:task")
+        self.grant.register_signed_grant(original)
+        with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_SIGNATURE"):
+            self.grant.register_signed_grant(shifted)
+        self.assertIsNone(self.grant.get_grant("authority"))
+
+    def test_r6_provider_substitution_denied(self):
+        """A grant for antigravity does not also authorize codex-app."""
+        codex_intent = replace(self.intent, provider="codex-app")
+        self.assertFalse(self.grant.authorize(codex_intent))
+        signed_for_codex = self.signer.issue_grant(
+            self.intent.owner_grant_ref, self.intent.task_id,
+            self.intent.target_id, self.intent.lease_deadline_utc,
+            provider="codex-app"
+        )
+        self.grant.register_signed_grant(signed_for_codex)
+        self.assertTrue(self.grant.authorize(codex_intent))
+        self.assertFalse(self.grant.authorize(self.intent))
+
+    def test_r6_legacy_colon_signature_rejected_even_with_scope(self):
+        """R5 six-field colon HMAC must not be accepted as typed R6 proof."""
+        import hmac
+        old_sig = hmac.new(
+            self.owner_key,
+            f"{self.intent.owner_grant_ref}:{self.intent.task_id}:RASSVET_DESKTOP:"
+            f"{self.intent.target_id}:{self.intent.lease_deadline_utc}:"
+            f"OWNER_AUTHORIZED_FINAL_PASS".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        old_grant = replace(
+            self.grant.get_grant(self.intent.owner_grant_ref), signature=old_sig
+        )
+        with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_SIGNATURE"):
+            self.grant.register_signed_grant(old_grant)
+
+    def test_r6_unknown_grant_provider_rejected(self):
+        """Unrecognized providers cannot be signed into real task authority."""
+        with self.assertRaisesRegex(VerifierError, "UNAUTHORIZED_OWNER_GRANT_PROVIDER"):
+            self.signer.issue_grant(
+                self.intent.owner_grant_ref, self.intent.task_id,
+                self.intent.target_id, self.intent.lease_deadline_utc,
+                provider="remote-superuser"
+            )
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
