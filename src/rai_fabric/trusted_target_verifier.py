@@ -35,7 +35,7 @@ class PinnedGrant:
     target_id: str
     deadline_utc: float
     signature: str = ""
-    mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS"
+    mandate_scope: str = "EVIDENCE_ADMISSIBLE_ONLY"
     provider: str = "antigravity"
 
 
@@ -79,7 +79,7 @@ class OwnerGrantSigner:
         target_id: str,
         deadline_utc: float,
         host_id: Optional[str] = None,
-        mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
+        mandate_scope: str = "EVIDENCE_ADMISSIBLE_ONLY",
         provider: str = "antigravity",
     ) -> PinnedGrant:
         if not isinstance(provider, str) or provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
