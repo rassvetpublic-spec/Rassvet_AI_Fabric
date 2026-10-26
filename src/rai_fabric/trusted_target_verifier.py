@@ -200,8 +200,11 @@ class LocalTargetReadbackVerifier:
             return None
         effective_rev = expected_rev
 
-        # 1. Синтетический/тестовый sink
-        if intent.target_id in self._synthetic_sinks:
+        # 1. Синтетический/тестовый sink допускается только для offline mock.
+        # Для реального провайдера нельзя подменять файловый readback данными fixture,
+        # даже когда для того же target_id одновременно зарегистрированы root и sink.
+        # Реальный путь ниже читает исключительно разрешённый файловый root.
+        if intent.provider in ("mock", "codex-mock") and intent.target_id in self._synthetic_sinks:
             sink = self._synthetic_sinks[intent.target_id]
             content = sink.get(receipt.operation_id)
             if content is None:
