@@ -90,7 +90,8 @@ class CandidateGateRegression(unittest.TestCase):
         self.grant = LocalTrustedGrantRegistry("RASSVET_DESKTOP", owner_verifying_key=self.owner_key)
         grant = self.signer.issue_grant(
             self.intent.owner_grant_ref, self.intent.task_id,
-            self.intent.target_id, self.intent.lease_deadline_utc
+            self.intent.target_id, self.intent.lease_deadline_utc,
+            mandate_scope="OWNER_AUTHORIZED_FINAL_PASS"
         )
         self.grant.register_signed_grant(grant)
         self.verifier = LocalTargetReadbackVerifier()
@@ -353,6 +354,154 @@ class CandidateGateRegression(unittest.TestCase):
         )
         self.grant._grants[self.intent.owner_grant_ref] = forged_grant
         self.assertFalse(self.grant.authorize(self.intent))
+
+
+    def test_r6_synthetic_sink_cannot_forge_real_provider_effect(self):
+        """R6: внешняя fixture не может подменить реальный файловый readback и выдать COMPLETE."""
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent, grant_registry=self.grant)
+        forged_content = "attacker-controlled synthetic result only"
+        forged_sha = hashlib.sha256(forged_content.encode("utf-8")).hexdigest()
+
+        # При наличии реального root фальшивый sink НЕ должен перехватывать чтение.
+        self.verifier.register_synthetic_sink(
+            self.intent.target_id, {self.intent.operation_id: forged_content}
+        )
+        forged_receipt = replace(self.receipt, readback_sha256=forged_sha)
+        self.assertNotEqual(DIGEST, forged_sha)
+
+        # До исправления синтетический digest совпадал с receipt и проходил в COMPLETE.
+        with self.assertRaisesRegex(ReceiptRejected, "TARGET_READBACK_MISMATCH"):
+            commit_verified_effect_receipt(
+                store, self.intent, forged_receipt, now_utc=NOW,
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=lease_info["lease_token"]
+            )
+        self.assertEqual(
+            store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING'
+        )
+        self.assertEqual(
+            store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0
+        )
+
+    def test_r6_real_provider_rejects_synthetic_only_target(self):
+        """R6: только synthetic sink без файлового host readback для antigravity = отказ."""
+        verifier = LocalTargetReadbackVerifier()
+        verifier.register_target_revision(self.intent.target_id, PINNED_REVISION)
+        verifier.register_synthetic_sink(
+            self.intent.target_id, {self.intent.operation_id: CONTENT.decode("utf-8")}
+        )
+        self.assertIsNone(verifier.verify_target(self.intent, self.receipt))
+
+    def test_r6_mock_synthetic_sink_remains_offline_only(self):
+        """R6: поддержка mock fixture в чистых offline-тестах не нарушена."""
+        verifier = LocalTargetReadbackVerifier()
+        verifier.register_target_revision(self.intent.target_id, PINNED_REVISION)
+        verifier.register_synthetic_sink(
+            self.intent.target_id, {self.intent.operation_id: CONTENT.decode("utf-8")}
+        )
+        mock_intent = replace(self.intent, provider="mock")
+        mock_receipt = replace(self.receipt, provider="mock")
+        readback = verifier.verify_target(mock_intent, mock_receipt)
+        self.assertIsNotNone(readback)
+        self.assertEqual(readback.content_sha256, DIGEST)
+
+
+    def test_r6_grant_field_delimiter_collision_denied(self):
+        """Colon shifts between signed fields must never reuse a valid signature."""
+        original = self.signer.issue_grant(
+            "authority:group", "task", self.intent.target_id, self.intent.lease_deadline_utc
+        )
+        shifted = replace(original, grant_ref="authority", task_id="group:task")
+        self.grant.register_signed_grant(original)
+        with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_SIGNATURE"):
+            self.grant.register_signed_grant(shifted)
+        self.assertIsNone(self.grant.get_grant("authority"))
+
+    def test_r6_provider_substitution_denied(self):
+        """A grant for antigravity does not also authorize codex-app."""
+        codex_intent = replace(self.intent, provider="codex-app")
+        self.assertFalse(self.grant.authorize(codex_intent))
+        signed_for_codex = self.signer.issue_grant(
+            self.intent.owner_grant_ref, self.intent.task_id,
+            self.intent.target_id, self.intent.lease_deadline_utc,
+            provider="codex-app"
+        )
+        self.grant.register_signed_grant(signed_for_codex)
+        self.assertTrue(self.grant.authorize(codex_intent))
+        self.assertFalse(self.grant.authorize(self.intent))
+
+    def test_r6_legacy_colon_signature_rejected_even_with_scope(self):
+        """R5 six-field colon HMAC must not be accepted as typed R6 proof."""
+        import hmac
+        legacy_payload = (
+            f"{self.intent.owner_grant_ref}:{self.intent.task_id}:RASSVET_DESKTOP:"
+            f"{self.intent.target_id}:{self.intent.lease_deadline_utc}:"
+            "OWNER_AUTHORIZED_FINAL_PASS"
+        ).encode("utf-8")
+        old_sig = hmac.new(self.owner_key, legacy_payload, hashlib.sha256).hexdigest()
+        old_grant = replace(
+            self.grant.get_grant(self.intent.owner_grant_ref), signature=old_sig
+        )
+        with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_SIGNATURE"):
+            self.grant.register_signed_grant(old_grant)
+
+    def test_r6_unknown_grant_provider_rejected(self):
+        """Unrecognized providers cannot be signed into real task authority."""
+        with self.assertRaisesRegex(VerifierError, "UNAUTHORIZED_OWNER_GRANT_PROVIDER"):
+            self.signer.issue_grant(
+                self.intent.owner_grant_ref, self.intent.task_id,
+                self.intent.target_id, self.intent.lease_deadline_utc,
+                provider="remote-superuser"
+            )
+
+
+    def test_r6_malformed_signed_grant_fields_fail_closed(self):
+        """Malformed runtime grant fields must not raise or authorize a real effect."""
+        grant = self.grant.get_grant(self.intent.owner_grant_ref)
+        for invalid in (
+            replace(grant, mandate_scope=[]),
+            replace(grant, provider=[]),
+            replace(grant, deadline_utc="not-a-timestamp"),
+            replace(grant, deadline_utc=float("nan")),
+        ):
+            self.assertFalse(self.grant._verify_grant(invalid))
+            self.grant._grants[self.intent.owner_grant_ref] = invalid
+            self.assertFalse(self.grant.authorize(self.intent))
+        self.grant._grants[self.intent.owner_grant_ref] = grant
+
+    def test_r6_signer_refuses_nonfinite_deadline(self):
+        """A signer cannot create undefined or nonfinite lease authority."""
+        for value in ("invalid", float("nan"), float("inf"), True):
+            with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_DEADLINE"):
+                self.signer.issue_grant(
+                    self.intent.owner_grant_ref, self.intent.task_id,
+                    self.intent.target_id, value
+                )
+
+
+    def test_r6_default_owner_grant_is_evidence_only(self):
+        """Implicit grant cannot authorize final task completion (least privilege)."""
+        evidence_grant = self.signer.issue_grant(
+            self.intent.owner_grant_ref, self.intent.task_id,
+            self.intent.target_id, self.intent.lease_deadline_utc
+        )
+        self.assertEqual(evidence_grant.mandate_scope, "EVIDENCE_ADMISSIBLE_ONLY")
+        self.grant.register_signed_grant(evidence_grant)
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent, grant_registry=self.grant)
+        evidence = commit_verified_effect_receipt(
+            store, self.intent, self.receipt, now_utc=NOW,
+            grant_registry=self.grant, target_verifier=self.verifier,
+            lease_token=lease_info["lease_token"]
+        )
+        self.assertEqual(evidence.classification, "EVIDENCE_ADMISSIBLE_NOT_QA_PASS")
+        self.assertEqual(
+            store.db.execute("SELECT status FROM tasks").fetchone()[0], "RUNNING"
+        )
+        self.assertEqual(
+            store.db.execute("SELECT COUNT(*) FROM effect_receipts").fetchone()[0], 1
+        )
 
 
 if __name__ == '__main__':

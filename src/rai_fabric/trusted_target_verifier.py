@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-from dataclasses import dataclass
+import json
+import math
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
 
@@ -33,7 +35,29 @@ class PinnedGrant:
     target_id: str
     deadline_utc: float
     signature: str = ""
-    mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS"
+    mandate_scope: str = "EVIDENCE_ADMISSIBLE_ONLY"
+    provider: str = "antigravity"
+
+
+ALLOWED_OWNER_GRANT_PROVIDERS = frozenset({"antigravity", "codex-app"})
+
+
+def _grant_payload_bytes(grant: PinnedGrant) -> bytes:
+    """Versioned, unambiguous signing payload (no colon-delimited field collisions).
+
+    This is a local Python encoding contract, NOT RFC8785/JCS or host attestation.
+    Legacy colon-separated signatures must never be silently accepted.
+    """
+    return json.dumps({
+        "schema": "RAIF_PINNED_GRANT/2",
+        "grant_ref": grant.grant_ref,
+        "task_id": grant.task_id,
+        "host_id": grant.host_id,
+        "target_id": grant.target_id,
+        "deadline_utc": grant.deadline_utc,
+        "mandate_scope": grant.mandate_scope,
+        "provider": grant.provider,
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
 
 
 class OwnerGrantSigner:
@@ -55,25 +79,27 @@ class OwnerGrantSigner:
         target_id: str,
         deadline_utc: float,
         host_id: Optional[str] = None,
-        mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
+        mandate_scope: str = "EVIDENCE_ADMISSIBLE_ONLY",
+        provider: str = "antigravity",
     ) -> PinnedGrant:
-        if mandate_scope not in ALLOWED_MANDATE_SCOPES:
+        if not isinstance(provider, str) or provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
+            raise VerifierError(f"UNAUTHORIZED_OWNER_GRANT_PROVIDER: {provider}")
+        if type(deadline_utc) not in (int, float) or not math.isfinite(deadline_utc):
+            raise VerifierError("INVALID_OWNER_GRANT_DEADLINE")
+        if not isinstance(mandate_scope, str) or mandate_scope not in ALLOWED_MANDATE_SCOPES:
             raise VerifierError(f"UNAUTHORIZED_MANDATE_SCOPE: {mandate_scope}")
         hid = host_id or self.host_id
-        sig = hmac.new(
-            self._private_key,
-            f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}:{mandate_scope}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        return PinnedGrant(
+        unsigned = PinnedGrant(
             grant_ref=grant_ref,
             task_id=task_id,
             host_id=hid,
             target_id=target_id,
             deadline_utc=deadline_utc,
-            signature=sig,
             mandate_scope=mandate_scope,
+            provider=provider,
         )
+        sig = hmac.new(self._private_key, _grant_payload_bytes(unsigned), hashlib.sha256).hexdigest()
+        return replace(unsigned, signature=sig)
 
 
 DEFAULT_SIGNING_KEY = b"rassvet-desktop-default-signing-key"
@@ -123,16 +149,20 @@ class LocalTrustedGrantRegistry:
         return self._grants.get(grant_ref)
 
     def _verify_grant(self, grant: PinnedGrant) -> bool:
-        # Строгая проверка скоупа по allowlist
-        if grant.mandate_scope not in ALLOWED_MANDATE_SCOPES:
+        # Fail closed for malformed/unhashable values before cryptographic verification.
+        try:
+            if not isinstance(grant.mandate_scope, str) or grant.mandate_scope not in ALLOWED_MANDATE_SCOPES:
+                return False
+            if not isinstance(grant.provider, str) or grant.provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
+                return False
+            if type(grant.deadline_utc) not in (float, int) or not math.isfinite(grant.deadline_utc):
+                return False
+            expected_sig = hmac.new(
+                self._verifying_key, _grant_payload_bytes(grant), hashlib.sha256
+            ).hexdigest()
+            return hmac.compare_digest(grant.signature, expected_sig)
+        except (TypeError, ValueError, OverflowError, UnicodeError):
             return False
-        # Строгая криптографическая проверка подписи строго со скоупом (никаких легаси-обходов)
-        expected_sig = hmac.new(
-            self._verifying_key,
-            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}:{grant.mandate_scope}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        return hmac.compare_digest(grant.signature, expected_sig)
 
     def authorize(self, intent: EffectIntent) -> bool:
         """Валидация мандата в момент поступления квитанции."""
@@ -147,7 +177,12 @@ class LocalTrustedGrantRegistry:
             return False
         if grant.target_id != intent.target_id:
             return False
-        if grant.deadline_utc < intent.lease_deadline_utc:
+        if grant.provider != intent.provider:
+            return False
+        try:
+            if grant.deadline_utc < intent.lease_deadline_utc:
+                return False
+        except (TypeError, ValueError, OverflowError):
             return False
         return self._verify_grant(grant)
 
@@ -200,8 +235,11 @@ class LocalTargetReadbackVerifier:
             return None
         effective_rev = expected_rev
 
-        # 1. Синтетический/тестовый sink
-        if intent.target_id in self._synthetic_sinks:
+        # 1. Синтетический/тестовый sink допускается только для offline mock.
+        # Для реального провайдера нельзя подменять файловый readback данными fixture,
+        # даже когда для того же target_id одновременно зарегистрированы root и sink.
+        # Реальный путь ниже читает исключительно разрешённый файловый root.
+        if intent.provider in ("mock", "codex-mock") and intent.target_id in self._synthetic_sinks:
             sink = self._synthetic_sinks[intent.target_id]
             content = sink.get(receipt.operation_id)
             if content is None:
