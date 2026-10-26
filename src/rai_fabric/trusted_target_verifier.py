@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -34,6 +35,28 @@ class PinnedGrant:
     deadline_utc: float
     signature: str = ""
     mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS"
+    provider: str = "antigravity"
+
+
+ALLOWED_OWNER_GRANT_PROVIDERS = frozenset({"antigravity", "codex-app"})
+
+
+def _grant_payload_bytes(grant: PinnedGrant) -> bytes:
+    """Versioned, unambiguous signing payload (no colon-delimited field collisions).
+
+    This is a local Python encoding contract, NOT RFC8785/JCS or host attestation.
+    Legacy colon-separated signatures must never be silently accepted.
+    """
+    return json.dumps({
+        "schema": "RAIF_PINNED_GRANT/2",
+        "grant_ref": grant.grant_ref,
+        "task_id": grant.task_id,
+        "host_id": grant.host_id,
+        "target_id": grant.target_id,
+        "deadline_utc": grant.deadline_utc,
+        "mandate_scope": grant.mandate_scope,
+        "provider": grant.provider,
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
 
 
 class OwnerGrantSigner:
@@ -56,24 +79,25 @@ class OwnerGrantSigner:
         deadline_utc: float,
         host_id: Optional[str] = None,
         mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
+        provider: str = "antigravity",
     ) -> PinnedGrant:
+        if provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
+            raise VerifierError(f"UNAUTHORIZED_OWNER_GRANT_PROVIDER: {provider}")
         if mandate_scope not in ALLOWED_MANDATE_SCOPES:
             raise VerifierError(f"UNAUTHORIZED_MANDATE_SCOPE: {mandate_scope}")
         hid = host_id or self.host_id
-        sig = hmac.new(
-            self._private_key,
-            f"{grant_ref}:{task_id}:{hid}:{target_id}:{deadline_utc}:{mandate_scope}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        return PinnedGrant(
+        unsigned = PinnedGrant(
             grant_ref=grant_ref,
             task_id=task_id,
             host_id=hid,
             target_id=target_id,
             deadline_utc=deadline_utc,
-            signature=sig,
             mandate_scope=mandate_scope,
+            provider=provider,
         )
+        sig = hmac.new(self._private_key, _grant_payload_bytes(unsigned), hashlib.sha256).hexdigest()
+        from dataclasses import replace
+        return replace(unsigned, signature=sig)
 
 
 DEFAULT_SIGNING_KEY = b"rassvet-desktop-default-signing-key"
@@ -123,16 +147,18 @@ class LocalTrustedGrantRegistry:
         return self._grants.get(grant_ref)
 
     def _verify_grant(self, grant: PinnedGrant) -> bool:
-        # Строгая проверка скоупа по allowlist
+        # Scope and provider must both be explicitly authorized and cryptographically bound.
         if grant.mandate_scope not in ALLOWED_MANDATE_SCOPES:
             return False
-        # Строгая криптографическая проверка подписи строго со скоупом (никаких легаси-обходов)
-        expected_sig = hmac.new(
-            self._verifying_key,
-            f"{grant.grant_ref}:{grant.task_id}:{grant.host_id}:{grant.target_id}:{grant.deadline_utc}:{grant.mandate_scope}".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-        return hmac.compare_digest(grant.signature, expected_sig)
+        if grant.provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
+            return False
+        try:
+            expected_sig = hmac.new(
+                self._verifying_key, _grant_payload_bytes(grant), hashlib.sha256
+            ).hexdigest()
+            return hmac.compare_digest(grant.signature, expected_sig)
+        except (TypeError, ValueError, OverflowError, UnicodeError):
+            return False
 
     def authorize(self, intent: EffectIntent) -> bool:
         """Валидация мандата в момент поступления квитанции."""
@@ -146,6 +172,8 @@ class LocalTrustedGrantRegistry:
         if grant.host_id != intent.host_id or grant.host_id != self.expected_host_id:
             return False
         if grant.target_id != intent.target_id:
+            return False
+        if grant.provider != intent.provider:
             return False
         if grant.deadline_utc < intent.lease_deadline_utc:
             return False
