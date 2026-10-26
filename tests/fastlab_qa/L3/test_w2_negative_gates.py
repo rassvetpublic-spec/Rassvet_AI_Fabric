@@ -355,5 +355,56 @@ class CandidateGateRegression(unittest.TestCase):
         self.assertFalse(self.grant.authorize(self.intent))
 
 
+    def test_r6_synthetic_sink_cannot_forge_real_provider_effect(self):
+        """R6: внешняя fixture не может подменить реальный файловый readback и выдать COMPLETE."""
+        store = self.fresh_store()
+        lease_info = lease_real_task(store, self.intent, grant_registry=self.grant)
+        forged_content = "attacker-controlled synthetic result only"
+        forged_sha = hashlib.sha256(forged_content.encode("utf-8")).hexdigest()
+
+        # При наличии реального root фальшивый sink НЕ должен перехватывать чтение.
+        self.verifier.register_synthetic_sink(
+            self.intent.target_id, {self.intent.operation_id: forged_content}
+        )
+        forged_receipt = replace(self.receipt, readback_sha256=forged_sha)
+        self.assertNotEqual(DIGEST, forged_sha)
+
+        # До исправления синтетический digest совпадал с receipt и проходил в COMPLETE.
+        with self.assertRaisesRegex(ReceiptRejected, "TARGET_READBACK_MISMATCH"):
+            commit_verified_effect_receipt(
+                store, self.intent, forged_receipt, now_utc=NOW,
+                grant_registry=self.grant, target_verifier=self.verifier,
+                lease_token=lease_info["lease_token"]
+            )
+        self.assertEqual(
+            store.db.execute('SELECT status FROM tasks').fetchone()[0], 'RUNNING'
+        )
+        self.assertEqual(
+            store.db.execute('SELECT COUNT(*) FROM effect_receipts').fetchone()[0], 0
+        )
+
+    def test_r6_real_provider_rejects_synthetic_only_target(self):
+        """R6: только synthetic sink без файлового host readback для antigravity = отказ."""
+        verifier = LocalTargetReadbackVerifier()
+        verifier.register_target_revision(self.intent.target_id, PINNED_REVISION)
+        verifier.register_synthetic_sink(
+            self.intent.target_id, {self.intent.operation_id: CONTENT.decode("utf-8")}
+        )
+        self.assertIsNone(verifier.verify_target(self.intent, self.receipt))
+
+    def test_r6_mock_synthetic_sink_remains_offline_only(self):
+        """R6: поддержка mock fixture в чистых offline-тестах не нарушена."""
+        verifier = LocalTargetReadbackVerifier()
+        verifier.register_target_revision(self.intent.target_id, PINNED_REVISION)
+        verifier.register_synthetic_sink(
+            self.intent.target_id, {self.intent.operation_id: CONTENT.decode("utf-8")}
+        )
+        mock_intent = replace(self.intent, provider="mock")
+        mock_receipt = replace(self.receipt, provider="mock")
+        readback = verifier.verify_target(mock_intent, mock_receipt)
+        self.assertIsNotNone(readback)
+        self.assertEqual(readback.content_sha256, DIGEST)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
