@@ -9,7 +9,8 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
 
@@ -81,9 +82,11 @@ class OwnerGrantSigner:
         mandate_scope: str = "OWNER_AUTHORIZED_FINAL_PASS",
         provider: str = "antigravity",
     ) -> PinnedGrant:
-        if provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
+        if not isinstance(provider, str) or provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
             raise VerifierError(f"UNAUTHORIZED_OWNER_GRANT_PROVIDER: {provider}")
-        if mandate_scope not in ALLOWED_MANDATE_SCOPES:
+        if type(deadline_utc) not in (int, float) or not math.isfinite(deadline_utc):
+            raise VerifierError("INVALID_OWNER_GRANT_DEADLINE")
+        if not isinstance(mandate_scope, str) or mandate_scope not in ALLOWED_MANDATE_SCOPES:
             raise VerifierError(f"UNAUTHORIZED_MANDATE_SCOPE: {mandate_scope}")
         hid = host_id or self.host_id
         unsigned = PinnedGrant(
@@ -96,7 +99,6 @@ class OwnerGrantSigner:
             provider=provider,
         )
         sig = hmac.new(self._private_key, _grant_payload_bytes(unsigned), hashlib.sha256).hexdigest()
-        from dataclasses import replace
         return replace(unsigned, signature=sig)
 
 
@@ -147,12 +149,14 @@ class LocalTrustedGrantRegistry:
         return self._grants.get(grant_ref)
 
     def _verify_grant(self, grant: PinnedGrant) -> bool:
-        # Scope and provider must both be explicitly authorized and cryptographically bound.
-        if grant.mandate_scope not in ALLOWED_MANDATE_SCOPES:
-            return False
-        if grant.provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
-            return False
+        # Fail closed for malformed/unhashable values before cryptographic verification.
         try:
+            if not isinstance(grant.mandate_scope, str) or grant.mandate_scope not in ALLOWED_MANDATE_SCOPES:
+                return False
+            if not isinstance(grant.provider, str) or grant.provider not in ALLOWED_OWNER_GRANT_PROVIDERS:
+                return False
+            if type(grant.deadline_utc) not in (float, int) or not math.isfinite(grant.deadline_utc):
+                return False
             expected_sig = hmac.new(
                 self._verifying_key, _grant_payload_bytes(grant), hashlib.sha256
             ).hexdigest()
@@ -175,7 +179,10 @@ class LocalTrustedGrantRegistry:
             return False
         if grant.provider != intent.provider:
             return False
-        if grant.deadline_utc < intent.lease_deadline_utc:
+        try:
+            if grant.deadline_utc < intent.lease_deadline_utc:
+                return False
+        except (TypeError, ValueError, OverflowError):
             return False
         return self._verify_grant(grant)
 
