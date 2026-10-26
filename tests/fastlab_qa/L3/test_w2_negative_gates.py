@@ -433,13 +433,12 @@ class CandidateGateRegression(unittest.TestCase):
     def test_r6_legacy_colon_signature_rejected_even_with_scope(self):
         """R5 six-field colon HMAC must not be accepted as typed R6 proof."""
         import hmac
-        old_sig = hmac.new(
-            self.owner_key,
+        legacy_payload = (
             f"{self.intent.owner_grant_ref}:{self.intent.task_id}:RASSVET_DESKTOP:"
             f"{self.intent.target_id}:{self.intent.lease_deadline_utc}:"
-            f"OWNER_AUTHORIZED_FINAL_PASS".encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
+            "OWNER_AUTHORIZED_FINAL_PASS"
+        ).encode("utf-8")
+        old_sig = hmac.new(self.owner_key, legacy_payload, hashlib.sha256).hexdigest()
         old_grant = replace(
             self.grant.get_grant(self.intent.owner_grant_ref), signature=old_sig
         )
@@ -454,6 +453,30 @@ class CandidateGateRegression(unittest.TestCase):
                 self.intent.target_id, self.intent.lease_deadline_utc,
                 provider="remote-superuser"
             )
+
+
+    def test_r6_malformed_signed_grant_fields_fail_closed(self):
+        """Malformed runtime grant fields must not raise or authorize a real effect."""
+        grant = self.grant.get_grant(self.intent.owner_grant_ref)
+        for invalid in (
+            replace(grant, mandate_scope=[]),
+            replace(grant, provider=[]),
+            replace(grant, deadline_utc="not-a-timestamp"),
+            replace(grant, deadline_utc=float("nan")),
+        ):
+            self.assertFalse(self.grant._verify_grant(invalid))
+            self.grant._grants[self.intent.owner_grant_ref] = invalid
+            self.assertFalse(self.grant.authorize(self.intent))
+        self.grant._grants[self.intent.owner_grant_ref] = grant
+
+    def test_r6_signer_refuses_nonfinite_deadline(self):
+        """A signer cannot create undefined or nonfinite lease authority."""
+        for value in ("invalid", float("nan"), float("inf"), True):
+            with self.assertRaisesRegex(VerifierError, "INVALID_OWNER_GRANT_DEADLINE"):
+                self.signer.issue_grant(
+                    self.intent.owner_grant_ref, self.intent.task_id,
+                    self.intent.target_id, value
+                )
 
 
 if __name__ == '__main__':
