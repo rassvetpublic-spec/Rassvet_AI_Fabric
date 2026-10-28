@@ -1,0 +1,108 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "w2_effect_bridge",
+  "version": "1.0.0",
+  "layer": "candidate_only",
+  "description": "W2 Effect Bridge: безопасное проведение реальных эффектов через доверенный верификатор.",
+  "invariants": [
+    "CANDIDATE_ONLY",
+    "NOT_WIRED_TO_PRODUCTION"
+  ],
+  "functions": {
+    "register_real_intent": {
+      "fn_id": "w2_effect_bridge.register_real_intent",
+      "description": "Регистрация намерения реального провайдера с фиксацией в effect_intents.",
+      "args": [
+        "store",
+        "intent",
+        "grant_registry",
+        "workspace"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "intent": {
+          "type": "EffectIntent",
+          "required": true,
+          "default": null
+        },
+        "grant_registry": {
+          "type": "LocalTrustedGrantRegistry",
+          "required": true,
+          "default": null
+        },
+        "workspace": {
+          "type": "str | Path | None",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "dict[str, Any]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "commit_verified_effect_receipt": {
+      "fn_id": "w2_effect_bridge.commit_verified_effect_receipt",
+      "description": "Атомарная валидация и коммит эффекта в W2 FabricStore.",
+      "args": [
+        "store",
+        "intent",
+        "receipt",
+        "now_utc",
+        "grant_registry",
+        "target_verifier"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        },
+        "intent": {
+          "type": "EffectIntent",
+          "required": true,
+          "default": null
+        },
+        "receipt": {
+          "type": "TargetEffectReceipt",
+          "required": true,
+          "default": null
+        },
+        "now_utc": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "grant_registry": {
+          "type": "LocalTrustedGrantRegistry",
+          "required": true,
+          "default": null
+        },
+        "target_verifier": {
+          "type": "LocalTargetReadbackVerifier",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "AdmissibleEvidence"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  },
+  "metrics": {
+    "code_sha256": "0d04fcb783ae48a9f3b6a487e2ea66bf6f05ce24589e98074120f46a9eb0927a",
+    "bytes": 7466,
+    "loc": 181
+  }
+}

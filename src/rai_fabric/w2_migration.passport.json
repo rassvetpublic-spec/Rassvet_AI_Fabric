@@ -1,0 +1,39 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "w2_migration",
+  "version": "1.0.0",
+  "layer": "candidate_only",
+  "description": "Идемпотентная миграция схемы W2 для FabricStore (L3 / W2).",
+  "invariants": [
+    "CANDIDATE_ONLY",
+    "NOT_WIRED_TO_PRODUCTION"
+  ],
+  "functions": {
+    "migrate_store_v1_to_v2": {
+      "fn_id": "w2_migration.migrate_store_v1_to_v2",
+      "description": "Идемпотентное повышение схемы FabricStore с v1 до v2.",
+      "args": [
+        "store"
+      ],
+      "inputs": {
+        "store": {
+          "type": "FabricStore",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  },
+  "metrics": {
+    "code_sha256": "817d8ddb3f62f68f577653414b997f87e289fd784ab8f5643edf9d13bd5fdb9b",
+    "bytes": 5217,
+    "loc": 113
+  }
+}

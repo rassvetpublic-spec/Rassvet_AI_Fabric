@@ -1,0 +1,186 @@
+{
+  "schema": "BPR40_SIDECAR_PASSPORT/1.1",
+  "module_id": "trusted_target_verifier",
+  "version": "1.0.0",
+  "layer": "candidate_only",
+  "description": "Доверенные верификаторы мандата владельца и целевого эффекта (L3 / W2).",
+  "invariants": [
+    "CANDIDATE_ONLY",
+    "NOT_WIRED_TO_PRODUCTION"
+  ],
+  "functions": {
+    "LocalTrustedGrantRegistry.register_grant": {
+      "fn_id": "trusted_target_verifier.LocalTrustedGrantRegistry.register_grant",
+      "description": "Функция LocalTrustedGrantRegistry.register_grant",
+      "args": [
+        "grant_ref",
+        "task_id",
+        "target_id",
+        "deadline_utc",
+        "host_id"
+      ],
+      "inputs": {
+        "grant_ref": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "task_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "deadline_utc": {
+          "type": "float",
+          "required": true,
+          "default": null
+        },
+        "host_id": {
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None"
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalTrustedGrantRegistry.revoke_grant": {
+      "fn_id": "trusted_target_verifier.LocalTrustedGrantRegistry.revoke_grant",
+      "description": "Функция LocalTrustedGrantRegistry.revoke_grant",
+      "args": [
+        "grant_ref"
+      ],
+      "inputs": {
+        "grant_ref": {
+          "type": "str",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalTrustedGrantRegistry.authorize": {
+      "fn_id": "trusted_target_verifier.LocalTrustedGrantRegistry.authorize",
+      "description": "Валидация мандата в момент поступления квитанции.",
+      "args": [
+        "intent"
+      ],
+      "inputs": {
+        "intent": {
+          "type": "EffectIntent",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "bool"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalTargetReadbackVerifier.register_target_root": {
+      "fn_id": "trusted_target_verifier.LocalTargetReadbackVerifier.register_target_root",
+      "description": "Функция LocalTargetReadbackVerifier.register_target_root",
+      "args": [
+        "target_id",
+        "root_path"
+      ],
+      "inputs": {
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "root_path": {
+          "type": "Path",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalTargetReadbackVerifier.register_synthetic_sink": {
+      "fn_id": "trusted_target_verifier.LocalTargetReadbackVerifier.register_synthetic_sink",
+      "description": "Функция LocalTargetReadbackVerifier.register_synthetic_sink",
+      "args": [
+        "target_id",
+        "sink_store"
+      ],
+      "inputs": {
+        "target_id": {
+          "type": "str",
+          "required": true,
+          "default": null
+        },
+        "sink_store": {
+          "type": "dict[str, str]",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "None"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    },
+    "LocalTargetReadbackVerifier.verify_target": {
+      "fn_id": "trusted_target_verifier.LocalTargetReadbackVerifier.verify_target",
+      "description": "Криптографический readback целевого эффекта.",
+      "args": [
+        "intent",
+        "receipt"
+      ],
+      "inputs": {
+        "intent": {
+          "type": "EffectIntent",
+          "required": true,
+          "default": null
+        },
+        "receipt": {
+          "type": "TargetEffectReceipt",
+          "required": true,
+          "default": null
+        }
+      },
+      "outputs": {
+        "return_type": "Optional[VerifiedReadback]"
+      },
+      "invariants": [
+        "FAIL_CLOSED",
+        "DETERMINISTIC"
+      ]
+    }
+  },
+  "metrics": {
+    "code_sha256": "ca828f1bacc6057d750c42925a397235b794ddf6201a3b34417ff7777cfc2d27",
+    "bytes": 5763,
+    "loc": 142
+  }
+}
