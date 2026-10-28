@@ -14,5 +14,15 @@
     "IN_CODE_ONLY_VERSION",
     "FAIL_CLOSED"
   ],
-  "functions": {}
+  "functions": {},
+  "metrics": {
+    "code_sha256": "5d09f0f801487c8d8082dea160c23d0f89a5b49341c27a2ef7a632d8b8af1a9e",
+    "bytes": 56,
+    "loc": 4,
+    "classes_count": 0,
+    "functions_count": 0,
+    "slo_target_ms": 50.0,
+    "telemetry_binding": "ako_index.db::mcp_invocations,mcp_tool_stats,self_learning_signals,inbox_records",
+    "updated_at": "2026-10-24T14:45:31.849053+00:00"
+  }
 }

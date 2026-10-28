@@ -67,5 +67,15 @@
         "DETERMINISTIC"
       ]
     }
+  },
+  "metrics": {
+    "code_sha256": "bd1f8a36614ca2285572e2de2ec65e7fe1c954a8a408fc45b771bbb9f9e58e0b",
+    "bytes": 5904,
+    "loc": 137,
+    "classes_count": 0,
+    "functions_count": 2,
+    "slo_target_ms": 50.0,
+    "telemetry_binding": "ako_index.db::mcp_invocations,mcp_tool_stats,self_learning_signals,inbox_records",
+    "updated_at": "2026-10-24T14:45:31.058790+00:00"
   }
 }
